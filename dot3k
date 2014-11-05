@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# This boilerplate get script does nothing
+# but serves as an example for making your own.
+# Run with -y switch to skip confirmation and intro.
+
+if ! [[ $1 == '-y' ]]
+then
+
+	echo ""
+	echo "This script will install dot3k and dependencies"
+	echo ""
+	echo "--- Warning ---"
+	echo ""
+	echo "Always be careful when running scripts and commands"
+	echo "copied from the internet. Ensure they are from a"
+	echo "trusted source."
+	echo ""
+	echo "If you want to see what this script does before"
+	echo "running it, you should run:"
+	echo "    \curl -sS get.pimoroni.com/dot3k"
+	echo ""
+	echo ""
+
+	read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
+response=${response,,}
+
+fi
+
+if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
+then
+
+	read -r -p "Dot3k requires SPI and I2C, enable now? [Y/n] " response < /dev/tty
+	response=${response,,}
+	
+	if [[ $response =~ ^(yes|y)$ ]]
+	then
+
+		\curl -sS get.pimoroni.com/spi | bash -s - "-y"
+		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+
+	fi
+
+	echo ""
+	echo "Note: Dot3k supports Python 2 only."
+	echo "Installing modules..."
+	echo ""
+
+	if ! hash pip 2>/dev/null; then
+		echo "pip required, installing..."
+		echo ""
+		sudo apt-get update
+		sudo apt-get install python-pip
+	fi
+
+	sudo pip install dot3k
+	
+	echo "Done!"
+	echo ""
+
+	read -r -p "Would you like to download Dot3k example code? [Y/n] " response < /dev/tty
+	response=${response,,}
+
+	if [[ $response =~ ^(yes|y)$ ]]
+	then
+
+		echo ""
+		echo "Downloading to $(pwd)/dot3k"
+		echo ""
+		git clone https://github.com/pimoroni/dot3k
+
+	fi
+
+	echo ""
+	echo "All done!"
+	echo "Enjoy your new Display-o-Tron 3000!"
+	echo ""
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
