@@ -30,7 +30,11 @@ then
 	
 	echo ""
 	echo "Installing UnicornHat requirements..."
-	sudo apt-get --yes --force-yes install python-pip python3-pip python-dev python3-dev
+
+	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+	\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
+	\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
+	\curl -sS get.pimoroni.com/package | bash -s - "python3-dev"
 	
 	echo ""
 	echo "Installing UnicornHat for Python 2..."

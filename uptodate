@@ -15,6 +15,11 @@ echo "    \curl -sS get.pimoroni.com/uptodate"
 echo ""
 echo ""
 
+echo "This script will update software on your Raspberry Pi"
+echo "which might replace or change something you were previously"
+echo "relying upon. Use with care!"
+echo ""
+
 read -r -p "Do you wish to continue? [Y/n]" response < /dev/tty
 response=${response,,}
 

@@ -46,7 +46,8 @@ then
 	echo "Installing modules..."
 	echo ""
 
-	\curl -sS get.pimoroni.com/pip | bash	
+	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+	\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
 
 	sudo pip install dot3k
 	
