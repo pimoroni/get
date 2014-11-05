@@ -1,0 +1,67 @@
+#!/bin/bash
+
+if ! [[ $1 == '-y' ]]
+then 
+
+	echo ""
+	echo "This script will enable i2c on your Raspberry Pi"
+	echo ""
+	echo "--- Warning ---"
+	echo ""
+	echo "Always be careful when running scripts and commands"
+	echo "copied from the internet. Ensure they are from a"
+	echo "trusted source."
+	echo ""
+	echo "If you want to see what this script does before"
+	echo "running it, you should run:"
+	echo "    \curl -sS get.pimoroni.com/i2c"
+	echo ""
+	echo ""
+
+	read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
+	response=${response,,}
+
+fi
+
+if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
+then
+
+	if [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+
+		echo ""
+		echo "Enabling I2C..."
+		echo ""
+
+		echo "Commenting out Blacklist entry in "
+		echo "/etc/modprobe.d/raspi-blacklist.conf"
+		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
+		sudo modprobe i2c-bcm2708
+
+		echo ""
+		echo "I2C Enabled"
+		echo ""
+	else
+		echo ""
+		echo "I2C Already Enabled"
+		echo
+	fi
+
+
+	if ! grep -qe "i2c-dev" "/etc/modules"; then
+		echo "Adding "
+		echo "i2c-dev" | sudo tee -a "/etc/modules"
+		echo " to /etc/modules"
+	fi
+
+	if ! grep -qe "i2c-bcm2708" "/etc/modules"; then
+		echo "Adding "
+		echo "i2c-bcm2708" | sudo tee -a "/etc/modules"
+		echo " to /etc/modules"
+	fi
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
+
