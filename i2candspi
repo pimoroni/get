@@ -21,8 +21,8 @@ response=${response,,}
 if [[ $response =~ ^(yes|y)$ ]]
 then
 
-	\curl -sS get.pimoroni.com/i2c | bash -s -yes
-	\curl -sS get.pimoroni.com/spi | bash -s -yes
+	\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+	\curl -sS get.pimoroni.com/spi | bash -s - "-y"
 
 fi
 
