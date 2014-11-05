@@ -46,12 +46,7 @@ then
 	echo "Installing modules..."
 	echo ""
 
-	if ! hash pip 2>/dev/null; then
-		echo "pip required, installing..."
-		echo ""
-		sudo apt-get update
-		sudo apt-get install python-pip
-	fi
+	\curl -sS get.pimoroni.com/pip | bash	
 
 	sudo pip install dot3k
 	

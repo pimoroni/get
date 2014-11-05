@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! hash pip 2>/dev/null; then
+	echo "pip required, installing..."
+	echo ""
+	sudo apt-get update
+	sudo apt-get install python-pip
+fi
