@@ -41,12 +41,47 @@ then
 	sudo pip-3.2 install unicornhat
 
 	echo ""
-	echo "All done!"
-	echo "For examples"
-	echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
-	echo "And visit forums.pimoroni.com for support"	
-	echo "Have fun!"
-	echo ""
+	echo "Unicorn Paint requires the Flask python module ( Python 2.x only )"
+	read -r -p "Would you like to install it? [Y/n]" response < /dev/tty
+	response=${response,,}
+
+	if [[ $response =~ ^(yes|y)$ ]]
+	then
+		echo ""
+		sudo pip install flask
+		echo ""
+	fi
+
+	read -r -p "Would you like to download Unicorn Hat example code? [Y/n] " response < /dev/tty
+	response=${response,,}
+
+	if [[ $response =~ ^(yes|y)$ ]]
+	then
+
+		echo ""
+		echo "Downloading to $(pwd)/unicornhat"
+		echo ""
+		git clone https://github.com/pimoroni/unicornhat
+
+		echo ""
+		echo "All done!"
+		echo "For examples"
+		echo "see $(pwd)/unicornhat/python/examples"
+		echo "Have fun!"
+		echo ""
+
+	else
+	
+		echo ""
+		echo "All done!"
+		echo "For examples"
+		echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
+		echo "And visit forums.pimoroni.com for support"	
+		echo "Have fun!"
+		echo ""
+
+	fi
+
 
 else
 	echo ""
