@@ -34,17 +34,27 @@ then
 	echo "Running: sudo apt-get upgrade"
 	sudo apt-get upgrade
 
-	echo ""
-	echo "Running: sudo rpi-update"
-	sudo rpi-update
 
-	echo ""
-	read -r -p "Reboot now? [Y/n]" response < /dev/tty
-	response=${response,,}
+	\curl -sS get.pimoroni.com/package | bash -s - "rpi-update"
 
-	if [[ $response =~ ^(yes|y)$ ]]
+	sudo JUST_CHECK=1 rpi-update
+
+	if ! [[ $? == 0 ]]
 	then
-		sudo reboot
+
+		echo ""
+		echo "Running: sudo rpi-update"
+		sudo rpi-update
+
+		echo ""
+		read -r -p "Reboot now? [Y/n]" response < /dev/tty
+		response=${response,,}
+
+		if [[ $response =~ ^(yes|y)$ ]]
+		then
+			sudo reboot
+		fi
+
 	fi
 
 	echo ""
