@@ -42,8 +42,6 @@ then
 	fi
 
 	echo ""
-	echo "Note: Dot3k supports Python 2 only."
-	echo ""
 
 	echo ""
 	echo "Updating package indexes..."
@@ -79,6 +77,8 @@ then
 	echo ""
 	echo "All done!"
 	echo "Enjoy your new Display-o-Tron 3000!"
+	echo ""
+	echo "Note: Dot3k currently supports Python 2 only."
 	echo ""
 
 else
