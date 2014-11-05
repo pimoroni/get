@@ -1,0 +1,52 @@
+#!/bin/bash
+
+echo ""
+echo "This script will make sure your Raspberry Pi is up to date"
+echo ""
+echo "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/uptodate"
+echo ""
+echo ""
+
+read -r -p "Do you wish to continue? [Y/n]" response < /dev/tty
+response=${response,,}
+
+if [[ $response =~ ^(yes|y)$ ]]
+then
+	echo ""
+	echo "Running: sudo apt-get update"
+	echo ""
+	sudo apt-get update
+
+	echo ""
+	echo "Running: sudo apt-get upgrade"
+	sudo apt-get upgrade
+
+	echo ""
+	echo "Running: sudo rpi-update"
+	sudo rpi-update
+
+	echo ""
+	read -r -p "Reboot now? [Y/n]" response < /dev/tty
+	response=${response,,}
+
+	if [[ $response =~ ^(yes|y)$ ]]
+	then
+		sudo reboot
+	fi
+
+	echo ""
+	echo "All done!"
+	echo ""
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
