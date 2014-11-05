@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# This boilerplate get script does nothing
+# but serves as an example for making your own.
+# Run with -y switch to skip confirmation and intro.
+
+if ! [[ $1 == '-y' ]]
+then
+
+echo ""
+echo "This script will <do something>"
+echo ""
+echo "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/boilerplate"
+echo ""
+echo ""
+
+read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
+response=${response,,}
+
+fi
+
+if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
+then
+	echo ""
+	echo "This boilerplate script doesn't do anything..."
+	echo ""
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
