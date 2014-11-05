@@ -43,14 +43,23 @@ then
 
 	echo ""
 	echo "Note: Dot3k supports Python 2 only."
-	echo "Installing modules..."
 	echo ""
+
+	echo ""
+	echo "Updating package indexes..."
+	echo ""
+	sudo apt-get update
 
 	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
 	\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
 
+	echo ""
+	echo "Insalling Python module"
+	echo ""
+
 	sudo pip install dot3k
 	
+	echo ""
 	echo "Done!"
 	echo ""
 
