@@ -74,6 +74,7 @@ then
 
 	fi
 
+	sudo python -c $'import dot3k\n\ndot3k.backlight.rgb(0,255,0)\ndot3k.lcd.clear()\ndot3k.lcd.write("Install CompleteHave fun!")' >> /dev/null 2>&1
 	echo ""
 	echo "All done!"
 	echo "Enjoy your new Display-o-Tron 3000!"

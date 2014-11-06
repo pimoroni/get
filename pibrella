@@ -1,0 +1,55 @@
+#!/bin/bash
+
+echo ""
+echo "This script will install Pibrella libraries"
+echo "and dependencies for both Python 2 and 3."
+echo ""
+echo "This process may take several minutes."
+echo ""
+echo "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/pibrella"
+echo ""
+echo ""
+
+
+read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
+response=${response,,}
+
+if [[ $response =~ ^(yes|y)$ ]]
+then
+	echo ""
+	echo "Updating package indexes..."
+	sudo apt-get update
+	
+	echo ""
+	echo "Installing UnicornHat requirements..."
+
+	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+	\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
+	
+	echo ""
+	echo "Installing Pibrella for Python 2..."
+	sudo pip install pibrella
+
+	echo ""
+	echo "Installing Pibrella for Python 3..."
+	sudo pip-3.2 install pibrella
+	
+	echo ""
+	echo "All done!"
+	echo "Enjoy your Pibrella"
+	echo "And visit forums.pimoroni.com for support"	
+	echo ""
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
