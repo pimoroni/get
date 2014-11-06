@@ -36,6 +36,7 @@ then
 		echo "/etc/modprobe.d/raspi-blacklist.conf"
 		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
 		sudo modprobe i2c-bcm2708
+		sudo modprobe i2c-dev
 
 		echo ""
 		echo "I2C Enabled"
@@ -44,6 +45,8 @@ then
 		echo ""
 		echo "I2C Already Enabled"
 		echo
+		sudo modprobe i2c-bcm2708
+		sudo modprobe i2c-dev
 	fi
 
 
