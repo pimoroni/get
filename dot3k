@@ -51,13 +51,16 @@ then
 	if [ "" == "$PIP_OK" ] || [ "" == "$SMBUS_OK" ] || [ "" == "$DEV_OK" ]; then
 
 		echo ""
+		echo "One or more requires packages not found..."
+		echo ""
 		echo "Updating package indexes..."
 		echo ""
 		sudo apt-get update
 
-		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
-		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
-		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
+		echo ""
+		echo "Installing required packages..."
+		echo ""
+		sudo apt-get --force-yes --yes install python-dev python-pip python-smbus
 	fi
 
 	echo ""
