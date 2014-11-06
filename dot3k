@@ -43,19 +43,25 @@ then
 
 	echo ""
 
-	echo ""
-	echo "Updating package indexes..."
-	echo ""
-	sudo apt-get update
+	PIP_OK=$(dpkg-query -W --showformat='${Status}\n' python-pip|grep "install ok installed")
+	SMBUS_OK=$(dpkg-query -W --showformat='${Status}\n' python-smbus|grep "install ok installed")
 
-	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
-	\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
+	if [ "" == "$PIP_OK" ] || [ "" == "$SMBUS_OK" ]; then
+
+		echo ""
+		echo "Updating package indexes..."
+		echo ""
+		sudo apt-get update
+
+		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
+	fi
 
 	echo ""
 	echo "Insalling Python module"
 	echo ""
 
-	sudo pip install dot3k
+	sudo pip install dot3k -I
 	
 	echo ""
 	echo "Done!"
