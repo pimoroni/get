@@ -43,15 +43,19 @@ then
 	fi
 
 	PIP_OK=$(dpkg-query -W --showformat='${Status}\n' python-pip|grep "install ok installed")
+	
 	SMBUS_OK=$(dpkg-query -W --showformat='${Status}\n' python-smbus|grep "install ok installed")
 
-	if [ "" == "$PIP_OK" ] || [ "" == "$SMBUS_OK" ]; then
+	DEV_OK=$(dpkg-query -W --showformat='${Status}\n' python-dev|grep "install ok installed")
+
+	if [ "" == "$PIP_OK" ] || [ "" == "$SMBUS_OK" ] || [ "" == "$DEV_OK" ]; then
 
 		echo ""
 		echo "Updating package indexes..."
 		echo ""
 		sudo apt-get update
 
+		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
 		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
 		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"	
 	fi
