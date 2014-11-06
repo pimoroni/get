@@ -30,6 +30,7 @@ fi
 if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
 then
 
+	echo ""
 	read -r -p "Dot3k requires SPI and I2C, enable now? [Y/n] " response < /dev/tty
 	response=${response,,}
 	
@@ -40,8 +41,6 @@ then
 		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
 
 	fi
-
-	echo ""
 
 	PIP_OK=$(dpkg-query -W --showformat='${Status}\n' python-pip|grep "install ok installed")
 	SMBUS_OK=$(dpkg-query -W --showformat='${Status}\n' python-smbus|grep "install ok installed")
@@ -58,13 +57,34 @@ then
 	fi
 
 	echo ""
-	echo "Insalling Python module"
-	echo ""
-
-	sudo pip install dot3k -I
+	echo "Checking for Python modules..."
+	DOT3K_OK=$(pip search dot3k | grep INSTALLED)
 	
-	echo ""
-	echo "Done!"
+	if [ "" == "$PIP_OK" ]; then
+
+		echo ""
+		echo "Insalling Python module"
+		echo ""
+
+		sudo pip install dot3k -I
+	
+	else
+	
+		echo ""
+		echo "Python modules already installed"
+
+		read -r -p "do you want to update them? [Y/n] " response < /dev/tty
+		response=${response,,}
+
+		if [[ $response =~ ^(yes|y)$ ]]; then
+
+			echo ""
+			sudo pip install dot3k -I
+			echo ""
+
+		fi
+	fi
+
 	echo ""
 
 	read -r -p "Would you like to download Dot3k example code? [Y/n] " response < /dev/tty
