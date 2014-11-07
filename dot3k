@@ -1,8 +1,40 @@
 #!/bin/bash
 
-# This boilerplate get script does nothing
-# but serves as an example for making your own.
-# Run with -y switch to skip confirmation and intro.
+confirm () {
+	read -r -p "$1 [y/N] " response < /dev/tty
+	response=${response,,}
+	if [[ $response =~ ^(yes|y)$ ]]; then
+		true
+	else
+		false
+	fi
+}
+
+pip_pkg_req () {
+	PIP_CHK=$(pip search $1 | grep INSTALLED)
+	if [ "" == "$PIP_CHK" ]; then
+		true	
+	else
+		false
+	fi
+}
+
+apt_pkg_req () {
+	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+	if [ "" == "$APT_CHK" ]; then
+		true
+	else
+		false
+	fi
+}
+
+success () {
+	echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+	echo "$(tput setaf 1)$1$(tput sgr0)"
+}
 
 if ! [[ $1 == '-y' ]]
 then
@@ -10,7 +42,7 @@ then
 	echo ""
 	echo "This script will install dot3k and dependencies"
 	echo ""
-	echo "--- Warning ---"
+	warning "--- Warning ---"
 	echo ""
 	echo "Always be careful when running scripts and commands"
 	echo "copied from the internet. Ensure they are from a"
@@ -22,33 +54,27 @@ then
 	echo ""
 	echo ""
 
-	read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
-response=${response,,}
-
+	if confirm "Do you wish to continue?"; then
+		RESP="true"
+	else
+		RESP="false"
+	fi
 fi
 
-if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
-then
+if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
-	read -r -p "Dot3k requires SPI and I2C, enable now? [Y/n] " response < /dev/tty
-	response=${response,,}
-	
-	if [[ $response =~ ^(yes|y)$ ]]
-	then
+	if confirm "Dot3k requires SPI and I2C, enable now?"; then
 
 		\curl -sS get.pimoroni.com/spi | bash -s - "-y"
 		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
 
 	fi
 
-	PIP_OK=$(dpkg-query -W --showformat='${Status}\n' python-pip|grep "install ok installed")
-	
-	SMBUS_OK=$(dpkg-query -W --showformat='${Status}\n' python-smbus|grep "install ok installed")
+	echo ""
+	echo "Checking for install requirements..."
 
-	DEV_OK=$(dpkg-query -W --showformat='${Status}\n' python-dev|grep "install ok installed")
-
-	if [ "" == "$PIP_OK" ] || [ "" == "$SMBUS_OK" ] || [ "" == "$DEV_OK" ]; then
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
 
 		echo ""
 		echo "One or more requires packages not found..."
@@ -61,13 +87,15 @@ then
 		echo "Installing required packages..."
 		echo ""
 		sudo apt-get --force-yes --yes install python-dev python-pip python-smbus
+	else
+		echo ""
+		success "Found!"	
 	fi
 
 	echo ""
 	echo "Checking for Python modules..."
-	DOT3K_OK=$(pip search dot3k | grep INSTALLED)
 	
-	if [ "" == "$PIP_OK" ]; then
+	if pip_pkg_req "dot3k"; then
 
 		echo ""
 		echo "Insalling Python module"
@@ -78,12 +106,11 @@ then
 	else
 	
 		echo ""
+		success "Found!"
+		echo ""
 		echo "Python modules already installed"
 
-		read -r -p "do you want to update them? [Y/n] " response < /dev/tty
-		response=${response,,}
-
-		if [[ $response =~ ^(yes|y)$ ]]; then
+		if confirm "do you want to update them?"; then
 
 			echo ""
 			sudo pip install dot3k -I
@@ -94,11 +121,7 @@ then
 
 	echo ""
 
-	read -r -p "Would you like to download Dot3k example code? [Y/n] " response < /dev/tty
-	response=${response,,}
-
-	if [[ $response =~ ^(yes|y)$ ]]
-	then
+	if confirm "Would you like to download Dot3k example code?"; then
 
 		echo ""
 		echo "Downloading to $(pwd)/dot3k"
@@ -107,9 +130,40 @@ then
 
 	fi
 
-	sudo python -c $'import dot3k\n\ndot3k.backlight.rgb(0,255,0)\ndot3k.lcd.clear()\ndot3k.lcd.write("Install CompleteHave fun!")' >> /dev/null 2>&1
 	echo ""
-	echo "All done!"
+	echo "Checking additional software requirements..."
+
+	if apt_pkg_req "vlc" || pip_pkg_req "psutil"; then
+
+		echo ""
+		echo "Some Dot3k examples/plugins require additional software and/or modules"
+
+		if confirm "Would you like to install them now? (~11mb download)"; then
+
+			if apt_pkg_req "vlc"; then
+				echo ""
+				echo "Installing vlc for Radio plugin..."
+				echo ""
+				sudo apt-get --force-yes --yes install vlc
+			fi
+			if pip_pkg_req "psutil"; then
+				echo ""
+				echo "Installing psutil for CPU plugin..."
+				echo ""
+				sudo pip install psutil
+			fi
+
+		fi
+	else
+		echo ""
+		success "Found!"
+	fi
+
+	# Display success message on display-o-tron
+	sudo python -c $'from dot3k import backlight,lcd\n\nbacklight.rgb(0,255,0)\nlcd.clear()\nlcd.write("Install CompleteHave fun!")' >> /dev/null 2>&1
+	echo ""
+	success "All done!"
+	echo ""
 	echo "Enjoy your new Display-o-Tron 3000!"
 	echo ""
 	echo "Note: Dot3k currently supports Python 2 only."
