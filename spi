@@ -1,11 +1,19 @@
 #!/bin/bash
 
+success () {
+        echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+        echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
 if ! [[ $1 == '-y' ]]
 then
 	echo ""
 	echo "This script will enable spi on your Raspberry Pi"
 	echo ""
-	echo "--- Warning ---"
+	warning "--- Warning ---"
 	echo ""
 	echo "Always be careful when running scripts and commands"
 	echo "copied from the internet. Ensure they are from a"
@@ -34,15 +42,15 @@ then
 		sudo modprobe spi-bcm2708
 
 		echo ""
-		echo "SPI enabled"
+		success "SPI enabled"
 	else
 
 		echo ""
-		echo "SPI Already Enabled"
-		echo ""
+		success "SPI Already Enabled"
 	fi
 
 	if ! grep -qe "spi-bcm2708" "/etc/modules"; then
+		echo ""
 		echo "Adding "
 		echo "spi-bcm2708" | sudo tee -a "/etc/modules"
 		echo " to /etc/modules"

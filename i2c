@@ -1,12 +1,20 @@
 #!/bin/bash
 
+success () {
+        echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+        echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
 if ! [[ $1 == '-y' ]]
 then 
 
 	echo ""
 	echo "This script will enable i2c on your Raspberry Pi"
 	echo ""
-	echo "--- Warning ---"
+	warning "--- Warning ---"
 	echo ""
 	echo "Always be careful when running scripts and commands"
 	echo "copied from the internet. Ensure they are from a"
@@ -39,24 +47,24 @@ then
 		sudo modprobe i2c-dev
 
 		echo ""
-		echo "I2C Enabled"
-		echo ""
+		success "I2C Enabled"
 	else
 		echo ""
-		echo "I2C Already Enabled"
-		echo
+		success "I2C Already Enabled"
 		sudo modprobe i2c-bcm2708
 		sudo modprobe i2c-dev
 	fi
 
 
 	if ! grep -qe "i2c-dev" "/etc/modules"; then
+		echo ""
 		echo "Adding "
 		echo "i2c-dev" | sudo tee -a "/etc/modules"
 		echo " to /etc/modules"
 	fi
 
 	if ! grep -qe "i2c-bcm2708" "/etc/modules"; then
+		echo ""
 		echo "Adding "
 		echo "i2c-bcm2708" | sudo tee -a "/etc/modules"
 		echo " to /etc/modules"
