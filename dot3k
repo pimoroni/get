@@ -108,9 +108,8 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		echo ""
 		success "Found!"
 		echo ""
-		echo "Python modules already installed"
 
-		if confirm "do you want to update them?"; then
+		if confirm "Python modules found. Reinstall/Update?"; then
 
 			echo ""
 			sudo pip install dot3k -I
