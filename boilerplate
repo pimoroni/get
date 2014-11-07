@@ -4,37 +4,79 @@
 # but serves as an example for making your own.
 # Run with -y switch to skip confirmation and intro.
 
-if ! [[ $1 == '-y' ]]
-then
+# Core functions/helpers
 
-echo ""
-echo "This script will <do something>"
-echo ""
-echo "--- Warning ---"
-echo ""
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-echo ""
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/boilerplate"
-echo ""
-echo ""
+confirm () {
+	read -r -p "$1 [y/N] " response < /dev/tty
+	response=${response,,}
+	if [[ $response =~ ^(yes|y)$ ]]; then
+		true
+	else
+		false
+	fi
+}
 
-read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
-response=${response,,}
+pip_pkg_req () {
+	PIP_CHK=$(pip search $1 | grep INSTALLED)
+	if [ "" == "$PIP_CHK" ]; then
+		true	
+	else
+		false
+	fi
+}
+
+apt_pkg_req () {
+	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+	if [ "" == "$APT_CHK" ]; then
+		true
+	else
+		false
+	fi
+}
+
+success () {
+	echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+	echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+if ! [[ $1 == '-y' ]]; then
+
+	echo ""
+	echo "This script will <do something>"
+	echo ""
+	warning "--- Warning ---"
+	echo ""
+	echo "Always be careful when running scripts and commands"
+	echo "copied from the internet. Ensure they are from a"
+	echo "trusted source."
+	echo ""
+	echo "If you want to see what this script does before"
+	echo "running it, you should run:"
+	echo "    \curl -sS get.pimoroni.com/boilerplate"
+	echo ""
+	echo ""
+
+	if confirm "Do you wish to continue?"; then
+		RESP="true"
+	else
+		RESP="false"
+	fi
 
 fi
 
-if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
-then
+if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
+
 	echo ""
-	echo "This boilerplate script doesn't do anything..."
+	success "This boilerplate script doesn't do anything..."
 	echo ""
 
 else
+
 	echo ""
 	echo "Aborting..."
 	echo ""
+
 fi
