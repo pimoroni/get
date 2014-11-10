@@ -1,51 +1,156 @@
 #!/bin/bash
 
-echo ""
-echo "This script will install Pibrella libraries"
-echo "and dependencies for both Python 2 and 3."
-echo ""
-echo "This process may take several minutes."
-echo ""
-echo "--- Warning ---"
-echo ""
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-echo ""
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/pibrella"
-echo ""
-echo ""
+confirm () {
+	read -r -p "$1 [y/N] " response < /dev/tty
+	response=${response,,}
+	if [[ $response =~ ^(yes|y)$ ]]; then
+		true
+	else
+		false
+	fi
+}
 
+pip_pkg_req () {
+	PIP_CHK=$(pip search $1 | grep INSTALLED)
+	if [ "" == "$PIP_CHK" ]; then
+		true	
+	else
+		false
+	fi
+}
 
-read -r -p "Do you wish to continue? [y/N] " response < /dev/tty
-response=${response,,}
+apt_pkg_req () {
+	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+	if [ "" == "$APT_CHK" ]; then
+		true
+	else
+		false
+	fi
+}
 
-if [[ $response =~ ^(yes|y)$ ]]
+success () {
+	echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+	echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+if ! [[ $1 == '-y' ]]
 then
-	echo ""
-	echo "Updating package indexes..."
-	sudo apt-get update
-	
-	echo ""
-	echo "Installing UnicornHat requirements..."
-
-	\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
-	\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
-	
-	echo ""
-	echo "Installing Pibrella for Python 2..."
-	sudo pip install pibrella
 
 	echo ""
-	echo "Installing Pibrella for Python 3..."
-	sudo pip-3.2 install pibrella
-	
+	echo "This script will install pibrella and dependencies"
 	echo ""
-	echo "All done!"
-	echo "Enjoy your Pibrella"
-	echo "And visit forums.pimoroni.com for support"	
+	warning "--- Warning ---"
+	echo ""
+	echo "Always be careful when running scripts and commands"
+	echo "copied from the internet. Ensure they are from a"
+	echo "trusted source."
+	echo ""
+	echo "If you want to see what this script does before"
+	echo "running it, you should run:"
+	echo "    \curl -sS get.pimoroni.com/pibrella"
+	echo ""
+	echo ""
+
+	if confirm "Do you wish to continue?"; then
+		RESP="true"
+	else
+		RESP="false"
+	fi
+fi
+
+if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
+
+	echo ""
+	if confirm "Pibrella requires I2C, enable now?"; then
+
+		\curl -sS get.pimoroni.com/spi | bash -s - "-y"
+
+	fi
+
+	echo ""
+	echo "Checking for install requirements..."
+
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev"; then
+
+		echo ""
+		echo "One or more requires packages not found..."
+		echo ""
+		echo "Updating package indexes..."
+		echo ""
+		sudo apt-get update
+
+		echo ""
+		echo "Installing required packages..."
+		echo ""
+		sudo apt-get --force-yes --yes install python-dev python-pip
+	else
+		echo ""
+		success "Found!"	
+	fi
+
+	echo ""
+	echo "Checking for Python modules..."
+	
+	if pip_pkg_req "pibrella"; then
+
+		echo ""
+		echo "Insalling Python module"
+		echo ""
+
+		sudo pip install pibrella -I
+	
+	else
+	
+		echo ""
+		success "Found!"
+		echo ""
+
+		if confirm "Python modules found. Reinstall/Update?"; then
+
+			echo ""
+			sudo pip install pibrella -I
+			echo ""
+
+		fi
+	fi
+
+	echo ""
+
+	if confirm "Would you like to install Scratch GPIO5 with Pibrella support?"; then
+		echo "Installing..."
+		export TMPDIR=`mktemp -d /tmp/selfextract.XXXXXX`
+		curl -sSL http://goo.gl/Pthh62 | sed '1,/^__ARCHIVE_BELOW__/d' | tar xzv -C $TMPDIR
+
+		CDIR=`pwd`
+		cd $TMPDIR
+		sudo ./installer.sh $1
+		
+		cd $CDIR
+		rm -rf $TMPDIR
+		
+	fi
+
+	echo ""
+
+	if confirm "Would you like to download Pibrella example code?"; then
+
+		echo ""
+		echo "Downloading to $(pwd)/pibrella"
+		echo ""
+		git clone https://github.com/pimoroni/pibrella
+
+	fi
+
+	echo ""
+
+	sudo python -c $'from pibrella import backlight,lcd\n\nbacklight.rgb(0,255,0)\nlcd.clear()\nlcd.write("Install CompleteHave fun!")' >> /dev/null 2>&1
+	echo ""
+	success "All done!"
+	echo ""
+	echo "Enjoy your Pibrella!"
 	echo ""
 
 else
