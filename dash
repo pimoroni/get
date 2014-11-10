@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Pimoroni Product Setup Dashboard
+# Provides a familiar GUI for choosing which product installer to run
+
+WT_HEIGHT=17
+WT_WIDTH=$(tput cols)
+
+# Borrowed from Raspi-Config! https://github.com/asb/raspi-config/blob/master/raspi-config
+if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 60 ]; then
+	WT_WIDTH=80
+fi
+if [ "$WT_WIDTH" -gt 178 ]; then
+	WT_WIDTH=120
+fi
+
+WT_MENU_HEIGHT=$(($WT_HEIGHT-8))
+
+pim_msgbox() {
+	whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
+}
+
+pim_about() {
+	pim_msgbox "\
+Ahoy!
+
+This handy tool will help you get started with Pimoroni products. Simply pick the add-on board you want to install software for from the list, hit select and we'll walk you through the install process in a few easy steps.
+
+Enjoy
+
+- The Pimoroni Crew\
+"
+}
+
+pim_menu() {
+	FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-20)) $WT_MENU_HEIGHT \
+	--cancel-button Quit \
+	--ok-button Select \
+	"1 Pibrella" "Install Pibrella software & examples" \
+	"2 Display-o-Tron 3000" "Install Dot3k software & examples" \
+	"3 Unicorn Hat" "Install Unicorn Hat software & examples" \
+	3>&1 1>&2 2>&3)
+
+	#"4 PiGlow" "Install PiGlow software" \
+	
+	RETURN=$?
+	if [ $RETURN -eq 1 ]; then
+		return 0
+	elif [ $RETURN -eq 0 ]; then
+		case "$FUNCTION" in
+			1\ *) pim_net_install pibrella ;;
+			2\ *) pim_net_install dot3k ;;
+			3\ *) pim_net_install unicornhat ;;
+			4\ *) pim_net_install piglow ;;
+			*) pim_msgbox "Error: unrecognized option";;
+		esac ||pim_msgbox "There was an error running option $FUNCTION"
+	fi
+}
+
+pim_check_network() {
+	ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
+}
+
+# Runs the relevant net install script and then returns to the menu
+pim_net_install() {
+	pim_check_network || (pim_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+
+	\curl -sS get.pimoroni.com/$1 | bash
+
+	read -p "Press [Enter] key to continue..." < /dev/tty
+
+	pim_menu
+}
+
+pim_about # Display Splash
+pim_menu  # Display Menu
