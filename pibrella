@@ -36,6 +36,14 @@ warning () {
 	echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+	warning "Warning!"
+	echo "Please only run this script on Raspbian on your Raspberry Pi"
+	exit 1;
+fi
+
 if ! [[ $1 == '-y' ]]
 then
 
@@ -135,13 +143,15 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 
-	if confirm "Would you like to download Pibrella example code?"; then
+	if [ -d ${pwd}/pibrella ]; then
+		if confirm "Would you like to download Pibrella example code?"; then
 
-		echo ""
-		echo "Downloading to $(pwd)/pibrella"
-		echo ""
-		git clone https://github.com/pimoroni/pibrella
-
+			echo ""
+			echo "Downloading to $(pwd)/pibrella"
+			echo ""
+			git clone https://github.com/pimoroni/pibrella
+	
+		fi
 	fi
 
 	echo ""

@@ -4,11 +4,13 @@
 # Provides a familiar GUI for choosing which product installer to run
 
 PIM_VERSION=1
+
 if [ $EUID -ne 0 ]; then
 	USER_HOME=$(getent passwd $USER | cut -d: -f6)
 else
 	USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
 fi
+WORKING_DIR=$USER_HOME/Pimoroni
 DESKTOP_FILE="$USER_HOME/Desktop/pimoroni-dashboard.desktop"
 DESKTOP_APP_FILE="/usr/share/applications/pimoroni-dashboard.desktop"
 DESKTOP_ICON="/usr/share/pixmaps/pimoroni-dashboard.png"
@@ -26,6 +28,26 @@ if [ "$WT_WIDTH" -gt 178 ]; then
 fi
 
 WT_MENU_HEIGHT=$(($WT_HEIGHT-8))
+
+success () {
+	echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+	echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+pim_check_distro() {
+
+	IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+	if [[ "" == $IS_RASPBIAN ]]; then
+		warning "Warning!"
+		echo "Please only run this script on Raspbian on your Raspberry Pi"
+		exit 1;
+	fi
+
+}
 
 pim_msgbox() {
 	whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
@@ -105,7 +127,7 @@ pim_update() {
 }
 
 pim_menu() {
-	FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-20)) $WT_MENU_HEIGHT \
+	FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
 	--cancel-button Quit \
 	--ok-button Select \
 	"1 Pibrella" "Install Pibrella software & examples" \
@@ -144,7 +166,10 @@ pim_net_install() {
 	pim_menu
 }
 
-cd $USER_HOME
+pim_check_distro
+
+[ -d $WORKING_DIR ] || mkdir $WORKING_DIR
+cd $WORKING_DIR
 
 if [[ $1 == 'uninstall' ]]; then
 

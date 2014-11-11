@@ -1,5 +1,13 @@
 #!/bin/bash
 
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+	warning "Warning!"
+	echo "Please only run this script on Raspbian on your Raspberry Pi"
+	exit 1;
+fi
+
 echo ""
 echo "This script will make sure your Raspberry Pi is up to date"
 echo ""

@@ -42,6 +42,14 @@ warning () {
 	echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+	warning "Warning!"
+	echo "Please only run this script on Raspbian on your Raspberry Pi"
+	exit 1;
+fi
+
 if ! [[ $1 == '-y' ]]; then
 
 	echo ""
