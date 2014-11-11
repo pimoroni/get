@@ -3,6 +3,17 @@
 # Pimoroni Product Setup Dashboard
 # Provides a familiar GUI for choosing which product installer to run
 
+PIM_VERSION=1
+if [ $EUID -ne 0 ]; then
+	USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+	USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+DESKTOP_FILE="$USER_HOME/Desktop/pimoroni-dashboard.desktop"
+DESKTOP_APP_FILE="/usr/share/applications/pimoroni-dashboard.desktop"
+DESKTOP_ICON="/usr/share/pixmaps/pimoroni-dashboard.png"
+DASHBOARD_SCRIPT="/usr/bin/pimoroni-dashboard"
+
 WT_HEIGHT=17
 WT_WIDTH=$(tput cols)
 
@@ -20,6 +31,10 @@ pim_msgbox() {
 	whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
 }
 
+pim_yesno() {
+	whiptail --yesno "$1" $WT_HEIGHT $(($WT_WIDTH-20))
+}
+
 pim_about() {
 	pim_msgbox "\
 Ahoy!
@@ -30,6 +45,63 @@ Enjoy
 
 - The Pimoroni Crew\
 "
+}
+
+pim_uninstall() {
+	sudo rm $DASHBOARD_SCRIPT
+	sudo rm $DESKTOP_ICON
+	sudo rm $DESKTOP_FILE
+	sudo rm $DESKTOP_APP_FILE
+	pim_msgbox "Pimoroni Dashboard uninstalled!"
+}
+
+pim_install() {
+	if [ ! -f $DESKTOP_FILE ]; then
+		if pim_yesno "Do you want to add the Pimoroni Dashboard to your desktop?"; then
+			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+			curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
+			curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
+			sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
+			sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
+			sudo chmod +x $DASHBOARD_SCRIPT
+			sudo gtk-update-icon-cache
+			echo "\
+[Desktop Entry]
+Encoding=UTF-8
+Name=Pimoroni Dash
+GenericName=Pimoroni Dash
+Comment=Manage software for Pimoroni products
+TryExec=lxterminal
+Exec=lxterminal --command $DASHBOARD_SCRIPT
+Icon=$DESKTOP_ICON
+Type=Application
+Categories=Utility;\
+" >> $TMPDIR/pimoroni-dashboard.desktop
+
+			sudo desktop-file-install $TMPDIR/pimoroni-dashboard.desktop
+			cp $DESKTOP_APP_FILE $DESKTOP_FILE
+			rm -rf $TMPDIR
+
+			rm -rf $TMPDIR
+		fi
+	fi
+}
+
+pim_update() {
+	if pim_check_network && [ -f $DESKTOP_FILE ]; then
+		if [[ $1 == 'noupdate' ]]; then
+			return
+		fi
+		echo "Updating..."
+		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+		curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
+		curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
+		sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
+		sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
+		rm -rf $TMPDIR
+		pimoroni-dashboard noupdate
+		exit 0
+	fi
 }
 
 pim_menu() {
@@ -72,5 +144,17 @@ pim_net_install() {
 	pim_menu
 }
 
-pim_about # Display Splash
-pim_menu  # Display Menu
+cd $USER_HOME
+
+if [[ $1 == 'uninstall' ]]; then
+
+	pim_uninstall
+
+else
+
+	pim_update $1
+	pim_about # Display Splash
+	pim_menu  # Display Menu
+	pim_install
+
+fi
