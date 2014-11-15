@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+WORKING_DIR=$USER_HOME/Pimoroni
+
 confirm () {
         read -r -p "$1 [y/N] " response < /dev/tty
         response=${response,,}
@@ -169,33 +176,49 @@ if confirm "Do you wish to continue?"; then
 	fi
 
 	echo ""
-	if confirm "Would you like to download Unicorn Hat example code?"; then
 
-		echo ""
-		echo "Downloading to $(pwd)/unicornhat"
-		echo ""
+
+        if ! [ -d $WORKING_DIR ]; then
+                mkdir $WORKING_DIR
+        fi
+
+	if ! [ -d $WORKING_DIR/unicornhat ]; then
+		echo "Downloading Unicorn Hat examples..."
+		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+		cd $TMPDIR
 		git clone https://github.com/pimoroni/unicornhat
-
+		cd $WORKING_DIR
+		mkdir dot3k
+		cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
+		rm -rf $TMPDIR
 		echo ""
-		success "All done!"
-		echo ""
-		echo "For examples"
-		echo "see $(pwd)/unicornhat/python/examples"
-		echo "Have fun!"
-		echo ""
-
-	else
+		success "Examples copied to $WORKING_DIR/unicornhat/"
 	
-		echo ""
-		success "All done!"
-		echo ""
-		echo "For examples"
-		echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
-		echo "And visit forums.pimoroni.com for support"	
-		echo "Have fun!"
-		echo ""
-
+	else
+		if confirm "Examples already exist, shall I replace them?"; then
+			mv $WORKING_DIR/unicornhat $WORKING_DIR/unicornhat-backup
+			echo "Updating Unicorn Hat examples..."
+			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+			cd $TMPDIR
+			git clone https://github.com/pimoroni/unicornhat
+			cd $WORKING_DIR
+			mkdir dot3k
+			cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
+			rm -rf $TMPDIR
+			echo ""
+			warning "I backed up the examples to unicornhat-backup, just in case you've changed anything!"
+			success "Examples copied to $WORKING_DIR/unicornhat/"
+		fi
 	fi
+
+	echo ""
+	success "All done!"
+	echo ""
+	echo "For examples"
+	echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
+	echo "And visit forums.pimoroni.com for support"	
+	echo "Have fun!"
+	echo ""
 
 else
 	echo ""

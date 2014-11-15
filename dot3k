@@ -136,6 +136,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 
+        if ! [ -d $WORKING_DIR ]; then
+                mkdir $WORKING_DIR
+        fi
+
 	if ! [ -d $WORKING_DIR/dot3k ]; then
 		echo "Downloading Dot3k examples..."
 		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
