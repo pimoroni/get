@@ -168,7 +168,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	echo "Checking additional software requirements..."
 
-	if apt_pkg_req "vlc" || pip_pkg_req "psutil"; then
+	if apt_pkg_req "vlc" || pip_pkg_req "psutil" || pip_pkg_req "pyusb" || pip_pkg_req "wifi"; then
 
 		echo ""
 		echo "Some Dot3k examples/plugins require additional software and/or modules"
@@ -187,6 +187,20 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 				echo ""
 				sudo pip install psutil
 			fi
+			if pip_pkg_req "pyusb"; then
+				echo ""
+				echo "Installing pyusb for remote control..."
+				echo ""
+				sudo pip install pyusb
+			fi
+			if pip_pkg_req "wifi"; then
+				echo ""
+				echo "Installing wifi for WLan plugin..."
+				echo ""
+				sudo pip install wifi
+			fi
+
+
 
 		fi
 	else
