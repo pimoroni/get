@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+WORKING_DIR=$USER_HOME/Pimoroni
+
 confirm () {
 	read -r -p "$1 [y/N] " response < /dev/tty
 	response=${response,,}
@@ -143,16 +150,45 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 
-	if [ -d ${pwd}/pibrella ]; then
-		if confirm "Would you like to download Pibrella example code?"; then
+	if ! [ -d $WORKING_DIR/pibrella ]; then
+               echo "Downloading Pibrella examples..."
+               export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+               cd $TMPDIR
+               git clone https://github.com/pimoroni/pibrella
+               cd $WORKING_DIR
+               mkdir pibrella
+               cp -R $TMPDIR/pibrella/examples/* $WORKING_DIR/pibrella/
+               rm -rf $TMPDIR
+               echo ""
+               success "Examples copied to $WORKING_DIR/pibrella/"
+	else
+               if confirm "Examples already exist, shall I replace them?"; then
+                       mv $WORKING_DIR/pibrella $WORKING_DIR/pibrella-backup
+                       echo "Updating Dot3k examples..."
+                       export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                       cd $TMPDIR
+                       git clone https://github.com/pimoroni/pibrella
+                       cd $WORKING_DIR
+                       mkdir pibrella
+                       cp -R $TMPDIR/pibrella/examples/* $WORKING_DIR/pibrella
 
-			echo ""
-			echo "Downloading to $(pwd)/pibrella"
-			echo ""
-			git clone https://github.com/pimoroni/pibrella
-	
+                       rm -rf $TMPDIR
+                       echo ""
+                       warning "I backed up the examples to pibrella-backup, just in case you've changed anything!"
+                       success "Examples copied to $WORKING_DIR/pibrella/"
 		fi
 	fi
+
+	#if [ -d ${pwd}/pibrella ]; then
+	#	if confirm "Would you like to download Pibrella example code?"; then
+
+	#		echo ""
+	#		echo "Downloading to $(pwd)/pibrella"
+	#		echo ""
+	#		git clone https://github.com/pimoroni/pibrella
+	#
+	#	fi
+	#fi
 
 	echo ""
 
