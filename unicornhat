@@ -188,7 +188,7 @@ if confirm "Do you wish to continue?"; then
 		cd $TMPDIR
 		git clone https://github.com/pimoroni/unicornhat
 		cd $WORKING_DIR
-		mkdir dot3k
+		mkdir unicornhat
 		cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
 		rm -rf $TMPDIR
 		echo ""
@@ -202,7 +202,7 @@ if confirm "Do you wish to continue?"; then
 			cd $TMPDIR
 			git clone https://github.com/pimoroni/unicornhat
 			cd $WORKING_DIR
-			mkdir dot3k
+			mkdir unicornhat
 			cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
 			rm -rf $TMPDIR
 			echo ""
