@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+WORKING_DIR=$USER_HOME/Pimoroni
+
 confirm () {
 	read -r -p "$1 [y/N] " response < /dev/tty
 	response=${response,,}
@@ -129,13 +136,33 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 
-	if confirm "Would you like to download Dot3k example code?"; then
-
-		echo ""
-		echo "Downloading to $(pwd)/dot3k"
-		echo ""
+	if ! [ -d $WORKING_DIR/dot3k ]; then
+		echo "Downloading Dot3k examples..."
+		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+		cd $TMPDIR
 		git clone https://github.com/pimoroni/dot3k
-
+		cd $WORKING_DIR
+		mkdir dot3k
+		cp -R $TMPDIR/dot3k/python/examples/* $WORKING_DIR/dot3k/
+		rm -rf $TMPDIR
+		echo ""
+		success "Examples copied to $WORKING_DIR/dot3k/"
+	
+	else
+		if confirm "Examples already exist, shall I replace them?"; then
+			mv $WORKING_DIR/dot3k $WORKING_DIR/dot3k-backup
+			echo "Updating Dot3k examples..."
+			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+			cd $TMPDIR
+			git clone https://github.com/pimoroni/dot3k
+			cd $WORKING_DIR
+			mkdir dot3k
+			cp -R $TMPDIR/dot3k/python/examples/* $WORKING_DIR/dot3k/
+			rm -rf $TMPDIR
+			echo ""
+			warning "I backed up the examples to dot3k-backup, just in case you've changed anything!"
+			success "Examples copied to $WORKING_DIR/dot3k/"
+		fi
 	fi
 
 	echo ""
