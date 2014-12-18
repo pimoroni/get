@@ -216,10 +216,13 @@ pim_screenshot() {
 		sudo apt-get --force-yes --yes install scrot
 	fi	
 	pim_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nWarning!\nThis screenshot will be uploaded to imgur so you can share it with us, make sure it's not showing anything sensitive!"
+	export PIMCWD=$(pwd)
+	cd /tmp
 	export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
 	export IMGURL=$(imgur_upload $IMGNAME)
-	rm $IMGNAME
-	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!"
+	#rm $IMGNAME
+	cd $PIMCWD
+	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!\n\nYou can also find it in /tmp/$IMGNAME"
 	
 		
 }
