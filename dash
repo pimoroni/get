@@ -220,10 +220,9 @@ pim_screenshot() {
 	cd /tmp
 	export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
 	export IMGURL=$(imgur_upload $IMGNAME)
-	rm $IMGNAME
+	#rm $IMGNAME
 	cd $PIMCWD
-	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!"
-	
+	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!\n\nYou can also find it in /tmp/$IMGNAME"
 		
 }
 
