@@ -49,6 +49,39 @@ pim_check_distro() {
 
 }
 
+imgur_upload() {
+	# original imgur script by Bart Nagel <bart@tremby.net>
+	# modified from version 4
+	# Required: curl
+	
+	# API Key provided by Alan@imgur.com
+
+	file="$1"
+
+	apikey="b3625162d3418ac51a9ee805b1840452"
+
+	# upload the image
+	response=$(curl -F "key=$apikey" -H "Expect: " -F "image=@$file" \
+		http://imgur.com/api/upload.xml 2>/dev/null)
+	# the "Expect: " header is to get around a problem when using this through 
+	# the Squid proxy. Not sure if it's a Squid bug or what.
+	if [ $? -ne 0 ]; then
+		echo "Upload failed" >&2
+	elif [ $(echo $response | grep -c "<error_msg>") -gt 0 ]; then
+		echo "Error message from imgur:" >&2
+		echo $response | sed -r 's/.*<error_msg>(.*)<\/error_msg>.*/\1/' >&2
+	fi
+
+	# parse the response and output our stuff
+	url=$(echo $response | sed -r 's/.*<original_image>(.*)<\/original_image>.*/\1/')
+	deleteurl=$(echo $response | sed -r 's/.*<delete_page>(.*)<\/delete_page>.*/\1/')
+	echo $url
+	return 0
+	#echo $url
+	#echo "Delete page: $deleteurl" >&2
+
+}
+
 pim_msgbox() {
 	whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
 }
@@ -133,9 +166,10 @@ pim_menu() {
 	"1 Pibrella" "Install Pibrella software & examples" \
 	"2 Display-o-Tron 3000" "Install Dot3k software & examples" \
 	"3 Unicorn Hat" "Install Unicorn Hat software & examples" \
+	"4 Take Screenshot" "Take a screenshot to help solve a problem" \
 	3>&1 1>&2 2>&3)
 
-	#"4 PiGlow" "Install PiGlow software" \
+	#"4 PiGlow" "Install PiGlow software & examples" \
 	
 	RETURN=$?
 	if [ $RETURN -eq 1 ]; then
@@ -145,7 +179,8 @@ pim_menu() {
 			1\ *) pim_net_install pibrella ;;
 			2\ *) pim_net_install dot3k ;;
 			3\ *) pim_net_install unicornhat ;;
-			4\ *) pim_net_install piglow ;;
+			#4\ *) pim_net_install piglow ;;
+			4\ *) pim_screenshot ;;
 			*) pim_msgbox "Error: unrecognized option";;
 		esac ||pim_msgbox "There was an error running option $FUNCTION"
 	fi
@@ -164,6 +199,29 @@ pim_net_install() {
 	read -p "Press [Enter] key to continue..." < /dev/tty
 
 	pim_menu
+}
+
+apt_pkg_req () {
+	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+	if [ "" == "$APT_CHK" ]; then
+		true
+	else
+		false
+	fi
+}
+
+pim_screenshot() {
+
+	if apt_pkg_req "scrot"; then
+		sudo apt-get --force-yes --yes install scrot
+	fi	
+	pim_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nWarning!\nThis screenshot will be uploaded to imgur so you can share it with us, make sure it's not showing anything sensitive!"
+	export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
+	export IMGURL=$(imgur_upload $IMGNAME)
+	rm $IMGNAME
+	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!"
+	
+		
 }
 
 pim_check_distro
