@@ -63,7 +63,7 @@ fi
 
 echo ""
 echo "This script will install Skywriter libraries"
-echo "and dependencies for both Python 2 and 3."
+echo "and dependencies for both Python 2."
 echo ""
 echo "This process may take several minutes."
 echo ""
@@ -91,18 +91,16 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 	echo "Checking install requirements..."
 	echo ""
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python3-pip" || apt_pkg_req "python3-dev"; then
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev"; then
 
 		echo "Updating package indexes..."
 		sudo apt-get update
 	
 		echo ""
-		echo "Installing UnicornHat requirements..."
+		echo "Installing Skywriter requirements..."
 
 		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
 		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
-		\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
-		\curl -sS get.pimoroni.com/package | bash -s - "python3-dev"
 	else
 	
 		success "Found!"
@@ -139,33 +137,6 @@ if confirm "Do you wish to continue?"; then
 
 	fi
 
-	echo ""
-	echo "Checking for Python 3 library..."
-
-	if pip_pkg_req3 "skywriter"; then
-
-		echo ""
-		echo "Installing Skywriter for Python 3..."
-		if ! sudo pip-3.2 install skywriter; then
-			warning "Python 3 library install failed!"
-			echo ""
-			exit
-		fi
-	
-	else
-
-		echo ""
-		success "Found!"
-		echo ""
-		if confirm "Python 3 module found. Reinstall/Update?"; then
-			if ! sudo pip-3.2 install skywriter -I; then
-				warning "Python 3 library install failed!"
-				echo ""
-				exit
-			fi
-		fi
-
-	fi
 	
 	echo ""
 
