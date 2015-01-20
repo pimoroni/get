@@ -166,7 +166,8 @@ pim_menu() {
 	"1 Pibrella" "Install Pibrella software & examples" \
 	"2 Display-o-Tron 3000" "Install Dot3k software & examples" \
 	"3 Unicorn Hat" "Install Unicorn Hat software & examples" \
-	"4 Take Screenshot" "Take a screenshot to help solve a problem" \
+	"4 Skywriter Hat" "Install Skywriter Hat software & examples" \
+	"5 Take Screenshot" "Take a screenshot to help solve a problem" \
 	3>&1 1>&2 2>&3)
 
 	#"4 PiGlow" "Install PiGlow software & examples" \
@@ -179,8 +180,9 @@ pim_menu() {
 			1\ *) pim_net_install pibrella ;;
 			2\ *) pim_net_install dot3k ;;
 			3\ *) pim_net_install unicornhat ;;
+			4\ *) pim_net_install skywriter ;;
 			#4\ *) pim_net_install piglow ;;
-			4\ *) pim_screenshot ;;
+			5\ *) pim_screenshot ;;
 			*) pim_msgbox "Error: unrecognized option";;
 		esac ||pim_msgbox "There was an error running option $FUNCTION"
 	fi

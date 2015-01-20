@@ -1,0 +1,219 @@
+#!/bin/bash
+
+if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+WORKING_DIR=$USER_HOME/Pimoroni
+
+confirm () {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+                true
+        else
+                false
+        fi
+}
+
+pip_pkg_req3 () {
+        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
+        if [ "" == "$PIP_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
+pip_pkg_req () {
+        PIP_CHK=$(pip search $1 | grep INSTALLED)
+        if [ "" == "$PIP_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
+apt_pkg_req () {
+        APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+        if [ "" == "$APT_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
+success () {
+        echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+        echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+	warning "Warning!"
+	echo "Please only run this script on Raspbian on your Raspberry Pi"
+	exit 1;
+fi
+
+
+echo ""
+echo "This script will install Skywriter libraries"
+echo "and dependencies for both Python 2 and 3."
+echo ""
+echo "This process may take several minutes."
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/skywriter"
+echo ""
+echo ""
+
+if confirm "Do you wish to continue?"; then
+
+	echo ""
+	if confirm "Skywriter requires I2C, enable now?"; then
+
+		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+
+	fi
+
+	echo ""
+	echo "Checking install requirements..."
+	echo ""
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python3-pip" || apt_pkg_req "python3-dev"; then
+
+		echo "Updating package indexes..."
+		sudo apt-get update
+	
+		echo ""
+		echo "Installing UnicornHat requirements..."
+
+		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
+		\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
+		\curl -sS get.pimoroni.com/package | bash -s - "python3-dev"
+	else
+	
+		success "Found!"
+
+	fi
+
+	echo ""
+	echo "Checking for Python 2 library..."
+
+	if pip_pkg_req "skywriter"; then
+
+		echo ""
+		echo "Installing Skywriter for Python 2..."
+		if ! sudo pip install skywriter; then
+			warning "Python 2 library install failed!"
+			echo ""
+			exit
+		fi
+		success "Done!"
+
+	else
+		
+		echo ""
+		success "Found!"
+		echo ""
+		if confirm "Python 2 module found. Reinstall/Update?"; then
+			if ! sudo pip install skywriter -I; then
+				warning "Python 2 library install failed!"
+				echo ""
+				exit
+			fi
+			success "Done!"
+		fi
+
+	fi
+
+	echo ""
+	echo "Checking for Python 3 library..."
+
+	if pip_pkg_req3 "skywriter"; then
+
+		echo ""
+		echo "Installing Skywriter for Python 3..."
+		if ! sudo pip-3.2 install skywriter; then
+			warning "Python 3 library install failed!"
+			echo ""
+			exit
+		fi
+	
+	else
+
+		echo ""
+		success "Found!"
+		echo ""
+		if confirm "Python 3 module found. Reinstall/Update?"; then
+			if ! sudo pip-3.2 install skywriter -I; then
+				warning "Python 3 library install failed!"
+				echo ""
+				exit
+			fi
+		fi
+
+	fi
+	
+	echo ""
+
+
+        if ! [ -d $WORKING_DIR ]; then
+                mkdir $WORKING_DIR
+        fi
+
+	if ! [ -d $WORKING_DIR/unicornhat ]; then
+		echo "Downloading Skywriter Hat examples..."
+		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+		cd $TMPDIR
+		git clone https://github.com/pimoroni/skywriter-hat
+		cd $WORKING_DIR
+		mkdir unicornhat
+		cp -R $TMPDIR/skywriter-hat/python/examples/* $WORKING_DIR/skywriter/
+		rm -rf $TMPDIR
+		echo ""
+		success "Examples copied to $WORKING_DIR/skywriter/"
+	
+	else
+		if confirm "Examples already exist, shall I replace them?"; then
+			mv $WORKING_DIR/skywriter $WORKING_DIR/skywriter-backup
+			echo "Updating Skywriter Hat examples..."
+			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+			cd $TMPDIR
+			git clone https://github.com/pimoroni/skywriter-hat
+			cd $WORKING_DIR
+			mkdir skywriter
+			cp -R $TMPDIR/skywriter-hat/python/examples/* $WORKING_DIR/skywriter/
+			rm -rf $TMPDIR
+			echo ""
+			warning "I backed up the examples to skywriter-backup, just in case you've changed anything!"
+			success "Examples copied to $WORKING_DIR/skywriter/"
+		fi
+	fi
+
+	echo ""
+	success "All done!"
+	echo ""
+	echo "For examples"
+	echo "see https://github.com/pimoroni/skywriter-hat/tree/master/python/examples"
+	echo "And visit forums.pimoroni.com for support"	
+	echo "Have fun!"
+	echo ""
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
