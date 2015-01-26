@@ -91,7 +91,7 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 	echo "Checking install requirements..."
 	echo ""
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev"; then
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python-smbus"; then
 
 		echo "Updating package indexes..."
 		sudo apt-get update
@@ -101,6 +101,7 @@ if confirm "Do you wish to continue?"; then
 
 		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
 		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
+		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"
 	else
 	
 		success "Found!"
