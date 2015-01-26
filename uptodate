@@ -43,27 +43,15 @@ then
 	sudo apt-get upgrade
 
 
-	\curl -sS get.pimoroni.com/package | bash -s - "rpi-update"
+	echo ""
+	read -r -p "Reboot now? [Y/n]" response < /dev/tty
+	response=${response,,}
 
-	sudo JUST_CHECK=1 rpi-update
-
-	if ! [[ $? == 0 ]]
+	if [[ $response =~ ^(yes|y)$ ]]
 	then
-
-		echo ""
-		echo "Running: sudo rpi-update"
-		sudo rpi-update
-
-		echo ""
-		read -r -p "Reboot now? [Y/n]" response < /dev/tty
-		response=${response,,}
-
-		if [[ $response =~ ^(yes|y)$ ]]
-		then
-			sudo reboot
-		fi
-
+		sudo reboot
 	fi
+
 
 	echo ""
 	echo "All done!"
