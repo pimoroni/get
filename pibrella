@@ -134,10 +134,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 
-	if confirm "Would you like to install Scratch GPIO5 with Pibrella support?"; then
+	if confirm "Would you like to install Scratch GPIO7 with Pibrella support?"; then
 		echo "Installing..."
 		export TMPDIR=`mktemp -d /tmp/selfextract.XXXXXX`
-		curl -sSL http://goo.gl/Pthh62 | sed '1,/^__ARCHIVE_BELOW__/d' | tar xzv -C $TMPDIR
+		curl -sSL http://bit.ly/1wxrqdp | sed '1,/^__ARCHIVE_BELOW__/d' | tar xzv -C $TMPDIR
 
 		CDIR=`pwd`
 		cd $TMPDIR
