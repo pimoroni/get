@@ -42,9 +42,23 @@ fi
 if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
 then
 
-	if [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+	DEVICE_TREE="yes" # assume not disabled
+	DEFAULT=
+	if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+		DEVICE_TREE="no"
+	fi
+	
+	CURRENT_SETTING="off" # assume disabled
+	DEFAULT=--defaultno
+	if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+		CURRENT_SETTING="on"
+		DEFAULT=
+	fi
+
+	if  [ $DEVICE_TREE = "off" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
 
 		echo ""
+		echo "No Device Tree Detected"
 		echo "Enabling I2C..."
 		echo ""
 
@@ -56,6 +70,28 @@ then
 
 		echo ""
 		success "I2C Enabled"
+		
+	elif [ $CURRENT_SETTING = "off" ];then
+	
+		echo ""
+		echo "Device Tree Detected"
+		echo "Enabling I2C..."
+		echo ""
+		
+		echo "Adding Device Tree Entry to "
+		echo "/boot/config.txt"
+		echo "dtparam=i2c_arm=on" | sudo tee -a "/boot/config.txt"
+
+		echo "Commenting out Blacklist entry in "
+		echo "/etc/modprobe.d/raspi-blacklist.conf"
+		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
+		sudo modprobe i2c-bcm2708
+		sudo modprobe i2c-dev
+
+		echo ""
+		success "I2C Enabled"
+		warning "Reboot required!"
+		
 	else
 		echo ""
 		success "I2C Already Enabled"
