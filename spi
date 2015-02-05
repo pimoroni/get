@@ -1,11 +1,24 @@
 #!/bin/bash
 
+CONFIG=/boot/config.txt
+
 success () {
         echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 warning () {
         echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+# Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
+kernelatleast() { # provide number like 2639
+	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
+	kver=${kver:0:4}
+	if [ $1 -ge $kver ] ; then
+		return 0;
+	else
+		return 1;
+	fi
 }
 
 IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
@@ -39,10 +52,42 @@ fi
 
 if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
 then
-	if [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+
+	DEVICE_TREE="yes" # assume not disabled
+	if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+		DEVICE_TREE="no"
+	fi
+	if ! kernelatleast 31850 ;then
+		DEVICE_TREE="no"
+	fi
+	
+	CURRENT_SETTING="off" # assume disabled
+	if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+		CURRENT_SETTING="on"
+	fi
+	
+	if [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
 		echo ""
+		echo "No Device Tree Detected"
 		echo "Enabling SPI..."
 		echo ""
+
+		echo "Commenting out Blacklist entry in "
+		echo "/etc/modprobe.d/raspi-blacklist.conf"
+		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+		sudo modprobe spi-bcm2708
+
+		echo ""
+		success "SPI enabled"
+	elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ];then
+		echo ""
+		echo "Device Tree Detected"
+		echo "Enabling SPI..."
+		echo ""
+		
+		echo "Adding Device Tree Entry to "
+		echo $CONFIG
+		echo "dtparam=spi=on" | sudo tee -a $CONFIG
 
 		echo "Commenting out Blacklist entry in "
 		echo "/etc/modprobe.d/raspi-blacklist.conf"
