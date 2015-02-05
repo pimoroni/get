@@ -10,6 +10,17 @@ warning () {
         echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
+# Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
+kernelatleast() { # provide number like 2639
+	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
+	kver=${kver:0:4}
+	if [ $1 -ge $kver ] ; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
 IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
 
 if [[ "" == $IS_RASPBIAN ]]; then
@@ -46,6 +57,9 @@ then
 
 	DEVICE_TREE="yes" # assume not disabled
 	if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+		DEVICE_TREE="no"
+	fi
+	if ! kernelatleast 31850 ;then
 		DEVICE_TREE="no"
 	fi
 	
