@@ -68,7 +68,7 @@ then
 		CURRENT_SETTING="on"
 	fi
 
-	if  [ $DEVICE_TREE = "off" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+	if  [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
 
 		echo ""
 		echo "No Device Tree Detected"
@@ -84,7 +84,7 @@ then
 		echo ""
 		success "I2C Enabled"
 		
-	elif [ $CURRENT_SETTING = "off" ];then
+	elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ];then
 	
 		echo ""
 		echo "Device Tree Detected"
