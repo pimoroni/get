@@ -79,7 +79,7 @@ then
 
 		echo ""
 		success "SPI enabled"
-	elif
+	elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ];then
 		echo ""
 		echo "Device Tree Detected"
 		echo "Enabling SPI..."
