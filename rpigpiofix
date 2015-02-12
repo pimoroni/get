@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+success () {
+        echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+        echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+# Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
+kernelatleast() { # provide number like 2639
+	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
+	kver=${kver:0:4}
+	if [ $1 -ge $kver ] ; then
+		return 0;
+	else
+		return 1;
+	fi
+}
+
+if kernelatleast 31850 && [ cat /proc/cpuinfo | grep ARMv7 ] ;then
+
+	echo "Installing necessary packages..."
+	echo ""
+
+	sudo apt-get update
+	sudo apt-get install mercurial device-tree-compiler
+
+	echo ""
+	echo "Compiling DTS overlay..."
+	echo ""
+
+	echo "/dts-v1/;
+	 
+	/ {
+	        compatible = "brcm,bcm2709";
+	 
+	        fragment@0 {
+	                target-path = "/timer";
+	                __overlay__ {
+	                        always-on;
+	                };
+	        };
+	};" >> timer-always-on.dts
+
+	dtc -I dts -O dtb -o timer-always-on.dtb timer-always-on.dts
+
+	echo ""
+	echo "Installing and enabling DTS overlay..."
+	echo ""
+
+	sudo cp timer-always-on.dts /boot/overlays/
+
+	echo "device_tree_overlay=overlays/timer-always-on.dtb" | sudo tee -a /boot/config.txt
+
+	echo ""
+	echo "Installing RPi.GPIO from source..."
+	echo ""
+
+	hg clone http://hg.code.sf.net/p/raspberry-gpio-python/code raspberry-gpio-python-code
+
+	cd raspberry-gpio-python-code
+
+	sudo python setup.py install
+
+	echo ""
+	success "All done..."
+	warning "You must reboot your Pi for changes to take effect!"
+
+else
+
+	warning "You must be running the latest Raspbian on a Pi 2"
+
+fi
