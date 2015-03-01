@@ -146,13 +146,13 @@ if confirm "Do you wish to continue?"; then
                 mkdir $WORKING_DIR
         fi
 
-	if ! [ -d $WORKING_DIR/unicornhat ]; then
+	if ! [ -d $WORKING_DIR/skywriter ]; then
 		echo "Downloading Skywriter Hat examples..."
 		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 		cd $TMPDIR
 		git clone https://github.com/pimoroni/skywriter-hat
 		cd $WORKING_DIR
-		mkdir unicornhat
+		mkdir skywriter
 		cp -R $TMPDIR/skywriter-hat/python/examples/* $WORKING_DIR/skywriter/
 		rm -rf $TMPDIR
 		echo ""
