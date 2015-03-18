@@ -1,5 +1,7 @@
 #!/bin/bash
 
+FORCE=$1
+
 if [ $EUID -ne 0 ]; then
         USER_HOME=$(getent passwd $USER | cut -d: -f6)
 else
@@ -8,12 +10,16 @@ fi
 WORKING_DIR=$USER_HOME/Pimoroni
 
 confirm () {
-        read -r -p "$1 [y/N] " response < /dev/tty
-        response=${response,,}
-        if [[ $response =~ ^(yes|y)$ ]]; then
-                true
+        if [ $FORCE == '-y' ]; then
+            true
         else
-                false
+            read -r -p "$1 [y/N] " response < /dev/tty
+            response=${response,,}
+            if [[ $response =~ ^(yes|y)$ ]]; then
+                    true
+            else
+                    false
+            fi
         fi
 }
 
