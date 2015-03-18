@@ -1,0 +1,184 @@
+#!/bin/bash
+
+if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+WORKING_DIR=$USER_HOME/Pimoroni
+
+confirm () {
+	read -r -p "$1 [y/N] " response < /dev/tty
+	response=${response,,}
+	if [[ $response =~ ^(yes|y)$ ]]; then
+		true
+	else
+		false
+	fi
+}
+
+pip_pkg_req () {
+	PIP_CHK=$(pip search $1 | grep INSTALLED)
+	if [ "" == "$PIP_CHK" ]; then
+		true	
+	else
+		false
+	fi
+}
+
+apt_pkg_req () {
+	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+	if [ "" == "$APT_CHK" ]; then
+		true
+	else
+		false
+	fi
+}
+
+success () {
+	echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+	echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+	warning "Warning!"
+	echo "Please only run this script on Raspbian on your Raspberry Pi"
+	exit 1;
+fi
+
+
+if ! [[ $1 == '-y' ]]
+then
+
+	echo ""
+	echo "This script will install PiGlow and dependencies"
+	echo ""
+	warning "--- Warning ---"
+	echo ""
+	echo "Always be careful when running scripts and commands"
+	echo "copied from the internet. Ensure they are from a"
+	echo "trusted source."
+	echo ""
+	echo "If you want to see what this script does before"
+	echo "running it, you should run:"
+	echo "    \curl -sS get.pimoroni.com/piglow"
+	echo ""
+	echo ""
+
+	if confirm "Do you wish to continue?"; then
+		RESP="true"
+	else
+		RESP="false"
+	fi
+fi
+
+if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
+
+	echo ""
+	if confirm "PiGlow requires I2C, enable now?"; then
+
+		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+
+	fi
+
+	echo ""
+	echo "Checking for install requirements..."
+
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
+
+		echo ""
+		echo "One or more requires packages not found..."
+		echo ""
+		echo "Updating package indexes..."
+		echo ""
+		sudo apt-get update
+
+		echo ""
+		echo "Installing required packages..."
+		echo ""
+		sudo apt-get --force-yes --yes install python-dev python-pip python-smbus
+	else
+		echo ""
+		success "Found!"	
+	fi
+
+	echo ""
+	echo "Checking for Python modules..."
+	
+	if pip_pkg_req "pimoroni-piglow"; then
+
+		echo ""
+		echo "Insalling Python module"
+		echo ""
+
+		sudo pip install pimoroni-piglow -I
+	
+	else
+	
+		echo ""
+		success "Found!"
+		echo ""
+
+		if confirm "Python modules found. Reinstall/Update?"; then
+
+			echo ""
+			sudo pip install pimoroni-piglow -I
+			echo ""
+
+		fi
+	fi
+
+	echo ""
+
+        if ! [ -d $WORKING_DIR ]; then
+                mkdir $WORKING_DIR
+        fi
+
+	if ! [ -d $WORKING_DIR/piglow ]; then
+		echo "Downloading PiGlow examples..."
+		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+		cd $TMPDIR
+		git clone https://github.com/gadgetoid/piglow
+		cd $WORKING_DIR
+		mkdir piglow
+		cp -R $TMPDIR/piglow/Examples/* $WORKING_DIR/piglow/
+		rm -rf $TMPDIR
+		echo ""
+		success "Examples copied to $WORKING_DIR/piglow/"
+	
+	else
+		if confirm "Examples already exist, shall I replace them?"; then
+			mv $WORKING_DIR/piglow $WORKING_DIR/piglow-backup
+			echo "Updating PiGlow examples..."
+			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+			cd $TMPDIR
+			git clone https://github.com/pimoroni/piglow
+			cd $WORKING_DIR
+			mkdir piglow
+			cp -R $TMPDIR/piglow/python/Examples/* $WORKING_DIR/piglow/
+			rm -rf $TMPDIR
+			echo ""
+			warning "I backed up the examples to piglow-backup, just in case you've changed anything!"
+			success "Examples copied to $WORKING_DIR/piglow/"
+		fi
+	fi
+
+	echo ""
+	
+	success "All done!"
+	echo ""
+	echo "Enjoy your new PiGlow!"
+	echo ""
+	echo "Note: PiGlow currently supports Python 2 only."
+	echo ""
+
+else
+	echo ""
+	echo "Aborting..."
+	echo ""
+fi
