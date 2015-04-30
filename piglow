@@ -157,10 +157,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 			echo "Updating PiGlow examples..."
 			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 			cd $TMPDIR
-			git clone https://github.com/pimoroni/piglow
+			git clone https://github.com/gadgetoid/python-piglow
 			cd $WORKING_DIR
 			mkdir piglow
-			cp -R $TMPDIR/piglow/python/Examples/* $WORKING_DIR/piglow/
+			cp -R $TMPDIR/python-piglow/examples/* $WORKING_DIR/piglow/
 			rm -rf $TMPDIR
 			echo ""
 			warning "I backed up the examples to piglow-backup, just in case you've changed anything!"
