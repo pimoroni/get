@@ -110,13 +110,13 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	echo "Checking for Python modules..."
 	
-	if pip_pkg_req "pimglow"; then
+	if pip_pkg_req "piglow"; then
 
 		echo ""
 		echo "Insalling Python module"
 		echo ""
 
-		sudo pip install pimglow -I
+		sudo pip install piglow -I
 	
 	else
 	
@@ -127,7 +127,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		if confirm "Python modules found. Reinstall/Update?"; then
 
 			echo ""
-			sudo pip install pimglow -I
+			sudo pip install piglow -I
 			echo ""
 
 		fi
@@ -143,10 +143,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		echo "Downloading PiGlow examples..."
 		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 		cd $TMPDIR
-		git clone https://github.com/gadgetoid/python-piglow
+		git clone https://github.com/pimoroni/piglow
 		cd $WORKING_DIR
 		mkdir piglow
-		cp -R $TMPDIR/python-piglow/examples/* $WORKING_DIR/piglow/
+		cp -R $TMPDIR/piglow/examples/* $WORKING_DIR/piglow/
 		rm -rf $TMPDIR
 		echo ""
 		success "Examples copied to $WORKING_DIR/piglow/"
@@ -157,10 +157,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 			echo "Updating PiGlow examples..."
 			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 			cd $TMPDIR
-			git clone https://github.com/gadgetoid/python-piglow
+			git clone https://github.com/pimoroni/piglow
 			cd $WORKING_DIR
 			mkdir piglow
-			cp -R $TMPDIR/python-piglow/examples/* $WORKING_DIR/piglow/
+			cp -R $TMPDIR/piglow/examples/* $WORKING_DIR/piglow/
 			rm -rf $TMPDIR
 			echo ""
 			warning "I backed up the examples to piglow-backup, just in case you've changed anything!"
