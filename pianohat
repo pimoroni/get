@@ -181,7 +181,7 @@ echo ""
 		git clone https://github.com/pimoroni/piano-hat
 		cd $WORKING_DIR
 		mkdir pianohat
-		cp -R $TMPDIR/piano-hat/python/examples/* $WORKING_DIR/pianohat/
+		cp -R $TMPDIR/piano-hat/examples/* $WORKING_DIR/pianohat/
 		rm -rf $TMPDIR
 		echo ""
 		success "Examples copied to $WORKING_DIR/pianohat/"
@@ -195,7 +195,7 @@ echo ""
 			git clone https://github.com/pimoroni/piano-hat
 			cd $WORKING_DIR
 			mkdir pianohat
-			cp -R $TMPDIR/piano-hat/python/examples/* $WORKING_DIR/pianohat/
+			cp -R $TMPDIR/piano-hat/examples/* $WORKING_DIR/pianohat/
 			rm -rf $TMPDIR
 			echo ""
 			warning "I backed up the examples to pianohat-backup, just in case you've changed anything!"
@@ -207,7 +207,7 @@ echo ""
 	success "All done!"
 	echo ""
 	echo "For examples"
-	echo "see https://github.com/pimoroni/pianohat-hat/tree/master/python/examples"
+	echo "see https://github.com/pimoroni/pianohat-hat/tree/master/examples"
 	echo "And visit forums.pimoroni.com for support"	
 	echo "Have fun!"
 	echo ""
