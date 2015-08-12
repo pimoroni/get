@@ -111,6 +111,15 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	echo "Checking for Python modules..."
 	
+	if pip_pkg_req "cap1xxx"; then
+	
+		echo ""
+		echo "Insalling Python requirements"
+		echo ""
+
+		sudo pip install cap1xxx -I
+	fi
+	
 	if pip_pkg_req "dot3k"; then
 
 		echo ""
