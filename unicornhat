@@ -10,7 +10,7 @@ fi
 WORKING_DIR=$USER_HOME/Pimoroni
 
 confirm () {
-        if [ $FORCE == '-y' ]; then
+        if [ "$FORCE" == '-y' ]; then
             true
         else
             read -r -p "$1 [y/N] " response < /dev/tty
