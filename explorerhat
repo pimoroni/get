@@ -26,6 +26,15 @@ pip_pkg_req () {
 	fi
 }
 
+pip3_pkg_req (){
+        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
+        if [ "" == "$PIP_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
 apt_pkg_req () {
 	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
 	if [ "" == "$APT_CHK" ]; then
@@ -88,9 +97,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
 	echo "Checking for install requirements..."
-
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
-
+        if apt_pkg_req "python3-smbus" || apt_pkg_req "python3-pip" || apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
 		echo ""
 		echo "One or more requires packages not found..."
 		echo ""
@@ -101,19 +108,19 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		echo ""
 		echo "Installing required packages..."
 		echo ""
-		sudo apt-get --force-yes --yes install python-dev python-pip python-smbus
+		sudo apt-get --force-yes --yes install python-dev python3-dev python-pip python3-pip python-smbus python3-smbus
 	else
 		echo ""
 		success "Found!"	
 	fi
 
 	echo ""
-	echo "Checking for Python modules..."
+	echo "Checking for Python 2 modules..."
 	
 	if pip_pkg_req "explorerhat"; then
 
 		echo ""
-		echo "Insalling Python module"
+		echo "Insalling Python 2 module"
 		echo ""
 
 		sudo pip install explorerhat -I
@@ -124,10 +131,36 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		success "Found!"
 		echo ""
 
-		if confirm "Python modules found. Reinstall/Update?"; then
+		if confirm "Python 2 modules found. Reinstall/Update?"; then
 
 			echo ""
 			sudo pip install explorerhat -I
+			echo ""
+
+		fi
+	fi
+
+	echo ""
+	echo "Checking for Python 3 modules..."
+	
+	if pip3_pkg_req "explorerhat"; then
+
+		echo ""
+		echo "Insalling Python 3 module"
+		echo ""
+
+		sudo pip-3.2 install explorerhat -I
+	
+	else
+	
+		echo ""
+		success "Found!"
+		echo ""
+
+		if confirm "Python 3 modules found. Reinstall/Update?"; then
+
+			echo ""
+			sudo pip-3.2 install explorerhat -I
 			echo ""
 
 		fi
@@ -174,8 +207,6 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	success "All done!"
 	echo ""
 	echo "Enjoy your new Explorer HAT!"
-	echo ""
-	echo "Note: Explorer HAT currently supports Python 2 only."
 	echo ""
 
 else
