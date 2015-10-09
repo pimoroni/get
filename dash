@@ -164,13 +164,15 @@ pim_menu() {
 	--cancel-button Quit \
 	--ok-button Select \
 	"1 Pibrella" "Install Pibrella software & examples" \
-	"2 Display-o-Tron 3000" "Install Dot3k software & examples" \
-	"3 Unicorn Hat" "Install Unicorn Hat software & examples" \
-	"4 Skywriter Hat" "Install Skywriter Hat software & examples" \
-	"5 Take Screenshot" "Take a screenshot to help solve a problem" \
+	"2 PiGlow" "Install PiGlow software & examples" \
+	"3 Display-o-Tron 3000/HAT" "Install Dot3k/DotHAT software & examples" \
+	"4 Unicorn Hat" "Install Unicorn Hat software & examples" \
+	"5 Skywriter Hat" "Install Skywriter Hat software & examples" \
+	"6 Piano HAT" "Install Piano Hat software & examples" \
+	"7 Explorer HAT" "Install Piano Hat software & examples" \
+	"8 Take Screenshot" "Take a screenshot to help solve a problem" \
 	3>&1 1>&2 2>&3)
 
-	#"4 PiGlow" "Install PiGlow software & examples" \
 	
 	RETURN=$?
 	if [ $RETURN -eq 1 ]; then
@@ -178,11 +180,13 @@ pim_menu() {
 	elif [ $RETURN -eq 0 ]; then
 		case "$FUNCTION" in
 			1\ *) pim_net_install pibrella ;;
-			2\ *) pim_net_install dot3k ;;
-			3\ *) pim_net_install unicornhat ;;
-			4\ *) pim_net_install skywriter ;;
-			#4\ *) pim_net_install piglow ;;
-			5\ *) pim_screenshot ;;
+			2\ *) pim_net_install piglow ;;
+			3\ *) pim_net_install dot3k ;;
+			4\ *) pim_net_install unicornhat ;;
+			5\ *) pim_net_install skywriter ;;
+			6\ *) pim_net_install pianohat ;;
+			7\ *) pim_net_install explorerhat ;;
+			8\ *) pim_screenshot ;;
 			*) pim_msgbox "Error: unrecognized option";;
 		esac ||pim_msgbox "There was an error running option $FUNCTION"
 	fi
