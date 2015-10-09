@@ -163,14 +163,14 @@ pim_menu() {
 	FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
 	--cancel-button Quit \
 	--ok-button Select \
-	"1 Pibrella" "Install Pibrella software & examples" \
-	"2 PiGlow" "Install PiGlow software & examples" \
-	"3 Display-o-Tron 3000/HAT" "Install Dot3k/DotHAT software & examples" \
-	"4 Unicorn Hat" "Install Unicorn Hat software & examples" \
-	"5 Skywriter Hat" "Install Skywriter Hat software & examples" \
-	"6 Piano HAT" "Install Piano Hat software & examples" \
-	"7 Explorer HAT" "Install Piano Hat software & examples" \
-	"8 Take Screenshot" "Take a screenshot to help solve a problem" \
+	"1 Pibrella" "Install software & examples" \
+	"2 PiGlow" "Install software & examples" \
+	"3 Display-o-Tron 3000/HAT" "Install software & examples" \
+	"4 Unicorn Hat" "Install software & examples" \
+	"5 Skywriter Hat" "Install software & examples" \
+	"6 Piano HAT" "Install software & examples" \
+	"7 Explorer HAT" "Install software & examples" \
+	"8 Take Screenshot" "Useful to help solve a problem" \
 	3>&1 1>&2 2>&3)
 
 	
