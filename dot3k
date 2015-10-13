@@ -26,6 +26,16 @@ pip_pkg_req () {
 	fi
 }
 
+pip3_pkg_req (){
+        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
+        if [ "" == "$PIP_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
+
 apt_pkg_req () {
 	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
 	if [ "" == "$APT_CHK" ]; then
@@ -56,7 +66,7 @@ if ! [[ $1 == '-y' ]]
 then
 
 	echo ""
-	echo "This script will install dot3k and dependencies"
+	echo "This script will install dot3k/dothat and dependencies"
 	echo ""
 	warning "--- Warning ---"
 	echo ""
@@ -90,7 +100,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	echo "Checking for install requirements..."
 
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
+	if apt_pkg_req "python3-pip" || apt_pkg_req "python3-smbus" || apt_pkg_req "python3-dev" || apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python-dev"; then
 
 		echo ""
 		echo "One or more requires packages not found..."
@@ -102,7 +112,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		echo ""
 		echo "Installing required packages..."
 		echo ""
-		sudo apt-get --force-yes --yes install python-dev python-pip python-smbus
+		sudo apt-get --force-yes --yes install python3-dev python3-pip python3-smbus python-dev python-pip python-smbus
 	else
 		echo ""
 		success "Found!"	
@@ -111,19 +121,10 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	echo "Checking for Python modules..."
 	
-	if pip_pkg_req "cap1xxx"; then
-	
-		echo ""
-		echo "Insalling Python requirements"
-		echo ""
-
-		sudo pip install cap1xxx -I
-	fi
-	
 	if pip_pkg_req "dot3k"; then
 
 		echo ""
-		echo "Insalling Python module"
+		echo "Insalling Python 2 module"
 		echo ""
 
 		sudo pip install dot3k -I
@@ -134,10 +135,33 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 		success "Found!"
 		echo ""
 
-		if confirm "Python modules found. Reinstall/Update?"; then
+		if confirm "Python 2 module found. Reinstall/Update?"; then
 
 			echo ""
 			sudo pip install dot3k -I
+			echo ""
+
+		fi
+	fi
+	
+	if pip3_pkg_req "dot3k"; then
+
+		echo ""
+		echo "Insalling Python 3 module"
+		echo ""
+
+		sudo pip-3.2 install dot3k -I
+	
+	else
+	
+		echo ""
+		success "Found!"
+		echo ""
+
+		if confirm "Python 3 module found. Reinstall/Update?"; then
+
+			echo ""
+			sudo pip-3.2 install dot3k -I
 			echo ""
 
 		fi
@@ -194,6 +218,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 				echo ""
 				sudo apt-get --force-yes --yes install vlc
 			fi
+			echo "Installing additional Python 2 modules.."
 			if pip_pkg_req "psutil"; then
 				echo ""
 				echo "Installing psutil for CPU plugin..."
@@ -212,9 +237,26 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 				echo ""
 				sudo pip install wifi
 			fi
-
-
-
+			echo "Installing additional Python 3 modules.."
+			if pip3_pkg_req "psutil"; then
+				echo ""
+				echo "Installing psutil for CPU plugin..."
+				echo ""
+				sudo pip-3.2 install psutil
+			fi
+			if pip3_pkg_req "pyusb"; then
+				echo ""
+				echo "Installing pyusb for remote control..."
+				echo ""
+				sudo pip-3.2 install pyusb --pre
+			fi
+			if pip3_pkg_req "wifi"; then
+				echo ""
+				echo "Installing wifi for WLan plugin..."
+				echo ""
+				sudo pip-3.2 install wifi
+			fi
+			
 		fi
 	else
 		echo ""
@@ -226,9 +268,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	echo ""
 	success "All done!"
 	echo ""
-	echo "Enjoy your new Display-o-Tron 3000!"
-	echo ""
-	echo "Note: Dot3k currently supports Python 2 only."
+	echo "Enjoy your new Display-o-Tron 3000/HAT!"
 	echo ""
 
 else
