@@ -102,10 +102,10 @@ if confirm "Do you wish to continue?"; then
 		echo ""
 		echo "Installing UnicornHat requirements..."
 
-        apt_pkg_install "python-pip-asdas"
-        apt_pkg_install "python-dev-asdasd"
-        apt_pkg_install "python3-pip-asdasd"
-        apt_pkg_install "python3-dev-asdasdasd"
+        apt_pkg_install "python-pip"
+        apt_pkg_install "python-dev"
+        apt_pkg_install "python3-pip"
+        apt_pkg_install "python3-dev"
 	else
 	
 		success "Found!"
