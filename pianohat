@@ -1,7 +1,5 @@
 #!/bin/bash
 
-FORCE=$1
-
 if [ $EUID -ne 0 ]; then
         USER_HOME=$(getent passwd $USER | cut -d: -f6)
 else
@@ -10,20 +8,25 @@ fi
 WORKING_DIR=$USER_HOME/Pimoroni
 
 confirm () {
-        if [ "$FORCE" == '-y' ]; then
-            true
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+                true
         else
-            read -r -p "$1 [y/N] " response < /dev/tty
-            response=${response,,}
-            if [[ $response =~ ^(yes|y)$ ]]; then
-                    true
-            else
-                    false
-            fi
+                false
         fi
 }
 
 pip_pkg_req3 () {
+        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
+        if [ "" == "$PIP_CHK" ]; then
+                true
+        else
+                false
+        fi
+}
+
+pip3_pkg_req (){
         PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
         if [ "" == "$PIP_CHK" ]; then
                 true
@@ -50,10 +53,6 @@ apt_pkg_req () {
         fi
 }
 
-apt_pkg_install () {
-		\curl -sS get.pimoroni.com/package | bash -s - $1 || warning "Sorry, Apt failed to install $1, I can't continue!" && exit
-}
-
 success () {
         echo "$(tput setaf 2)$1$(tput sgr0)"
 }
@@ -72,40 +71,36 @@ fi
 
 
 echo ""
-echo "This script will install Unicorn Hat libraries"
+echo "This script will install Piano HAT libraries"
 echo "and dependencies for both Python 2 and 3."
 echo ""
 echo "This process may take several minutes."
-echo ""
-warning "--- Warning ---"
-echo ""
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-echo ""
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/unicornhat"
-echo ""
 echo ""
 
 if confirm "Do you wish to continue?"; then
 
 	echo ""
+	if confirm "Piano HAT requires I2C, enable now?"; then
+
+		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+
+	fi
+
+	echo ""
 	echo "Checking install requirements..."
 	echo ""
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python3-pip" || apt_pkg_req "python3-dev"; then
+	if apt_pkg_req "python-pip" || apt_pkg_req "python-smbus" || apt_pkg_req "python3-smbus" || apt_pkg_req "python3-pip"; then
 
 		echo "Updating package indexes..."
 		sudo apt-get update
 	
 		echo ""
-		echo "Installing UnicornHat requirements..."
+		echo "Installing Piano HAT requirements..."
 
-        apt_pkg_install "python-pip"
-        apt_pkg_install "python-dev"
-        apt_pkg_install "python3-pip"
-        apt_pkg_install "python3-dev"
+		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
+		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"
+		\curl -sS get.pimoroni.com/package | bash -s - "python3-pip"
+		\curl -sS get.pimoroni.com/package | bash -s - "python3-smbus"
 	else
 	
 		success "Found!"
@@ -115,11 +110,11 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 	echo "Checking for Python 2 library..."
 
-	if pip_pkg_req "unicornhat"; then
+	if pip_pkg_req "pianohat"; then
 
 		echo ""
-		echo "Installing UnicornHat for Python 2..."
-		if ! sudo pip install unicornhat; then
+		echo "Installing Piano HAT for Python..."
+		if ! sudo pip install pianohat; then
 			warning "Python 2 library install failed!"
 			echo ""
 			exit
@@ -132,7 +127,7 @@ if confirm "Do you wish to continue?"; then
 		success "Found!"
 		echo ""
 		if confirm "Python 2 module found. Reinstall/Update?"; then
-			if ! sudo pip install unicornhat -I; then
+			if ! sudo pip install pianohat -I; then
 				warning "Python 2 library install failed!"
 				echo ""
 				exit
@@ -141,50 +136,37 @@ if confirm "Do you wish to continue?"; then
 		fi
 
 	fi
-
-	echo ""
+	
+echo ""
 	echo "Checking for Python 3 library..."
 
-	if pip_pkg_req3 "unicornhat"; then
+	if pip3_pkg_req "pianohat"; then
 
 		echo ""
-		echo "Installing UnicornHat for Python 3..."
-		if ! sudo pip-3.2 install unicornhat; then
+		echo "Installing Piano HAT for Python 3..."
+		if ! sudo pip-3.2 install pianohat; then
 			warning "Python 3 library install failed!"
 			echo ""
 			exit
 		fi
-	
-	else
+		success "Done!"
 
+	else
+		
 		echo ""
 		success "Found!"
 		echo ""
 		if confirm "Python 3 module found. Reinstall/Update?"; then
-			if ! sudo pip-3.2 install unicornhat -I; then
+			if ! sudo pip-3.2 install pianohat -I; then
 				warning "Python 3 library install failed!"
 				echo ""
 				exit
 			fi
+			success "Done!"
 		fi
 
 	fi
-
-	echo ""
-	echo "Checking for additional modules..."
 	
-	if pip_pkg_req "flask"; then
-		echo ""
-		echo "Unicorn Paint requires the Flask python module ( Python 2.x only )"
-		if confirm "Would you like to install it?"; then
-			echo ""
-			sudo pip install flask
-		fi
-	else
-		echo ""
-		success "Found!"
-	fi
-
 	echo ""
 
 
@@ -192,32 +174,32 @@ if confirm "Do you wish to continue?"; then
                 mkdir $WORKING_DIR
         fi
 
-	if ! [ -d $WORKING_DIR/unicornhat ]; then
-		echo "Downloading Unicorn Hat examples..."
+	if ! [ -d $WORKING_DIR/pianohat ]; then
+		echo "Downloading Piano Hat examples..."
 		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 		cd $TMPDIR
-		git clone https://github.com/pimoroni/unicornhat
+		git clone https://github.com/pimoroni/piano-hat
 		cd $WORKING_DIR
-		mkdir unicornhat
-		cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
+		mkdir pianohat
+		cp -R $TMPDIR/piano-hat/examples/* $WORKING_DIR/pianohat/
 		rm -rf $TMPDIR
 		echo ""
-		success "Examples copied to $WORKING_DIR/unicornhat/"
+		success "Examples copied to $WORKING_DIR/pianohat/"
 	
 	else
 		if confirm "Examples already exist, shall I replace them?"; then
-			mv $WORKING_DIR/unicornhat $WORKING_DIR/unicornhat-backup
-			echo "Updating Unicorn Hat examples..."
+			mv $WORKING_DIR/pianohat $WORKING_DIR/pianohat-backup
+			echo "Updating Piano Hat examples..."
 			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
 			cd $TMPDIR
-			git clone https://github.com/pimoroni/unicornhat
+			git clone https://github.com/pimoroni/piano-hat
 			cd $WORKING_DIR
-			mkdir unicornhat
-			cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
+			mkdir pianohat
+			cp -R $TMPDIR/piano-hat/examples/* $WORKING_DIR/pianohat/
 			rm -rf $TMPDIR
 			echo ""
-			warning "I backed up the examples to unicornhat-backup, just in case you've changed anything!"
-			success "Examples copied to $WORKING_DIR/unicornhat/"
+			warning "I backed up the examples to pianohat-backup, just in case you've changed anything!"
+			success "Examples copied to $WORKING_DIR/pianohat/"
 		fi
 	fi
 
@@ -225,7 +207,7 @@ if confirm "Do you wish to continue?"; then
 	success "All done!"
 	echo ""
 	echo "For examples"
-	echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
+	echo "see https://github.com/pimoroni/pianohat-hat/tree/master/examples"
 	echo "And visit forums.pimoroni.com for support"	
 	echo "Have fun!"
 	echo ""

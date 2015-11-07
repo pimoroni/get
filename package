@@ -12,8 +12,11 @@ if [ "" == "$PKG_OK" ]; then
 	echo "Running sudo apt-get install $1"
 	echo ""
 	sudo apt-get --force-yes --yes install $1
+    STATUS=$?
 	echo ""
 else
 	success "$1 already installed."
+    STATUS=0
 fi
 echo ""
+exit $STATUS

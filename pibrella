@@ -79,13 +79,6 @@ fi
 if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 
 	echo ""
-	if confirm "Pibrella requires I2C, enable now?"; then
-
-		\curl -sS get.pimoroni.com/spi | bash -s - "-y"
-
-	fi
-
-	echo ""
 	echo "Checking for install requirements..."
 
 	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev"; then
