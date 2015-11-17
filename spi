@@ -13,7 +13,7 @@ warning () {
 # Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
 kernelatleast() { # provide number like 2639
 	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-	kver=${kver:0:4}
+	kver=${kver:0:3}
 	if [ $1 -ge $kver ] ; then
 		return 0;
 	else
@@ -60,12 +60,12 @@ then
 	if ! kernelatleast 31850 ;then
 		DEVICE_TREE="no"
 	fi
-	
+
 	CURRENT_SETTING="off" # assume disabled
 	if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
 		CURRENT_SETTING="on"
 	fi
-	
+
 	if [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
 		echo ""
 		echo "No Device Tree Detected"
@@ -84,7 +84,7 @@ then
 		echo "Device Tree Detected"
 		echo "Enabling SPI..."
 		echo ""
-		
+
 		echo "Adding Device Tree Entry to "
 		echo $CONFIG
 		echo "dtparam=spi=on" | sudo tee -a $CONFIG
@@ -97,7 +97,6 @@ then
 		echo ""
 		success "SPI enabled"
 	else
-
 		echo ""
 		success "SPI Already Enabled"
 	fi
@@ -109,10 +108,8 @@ then
 		echo " to /etc/modules"
 	fi
 
-
 else
 	echo ""
 	echo "Aborting..."
 	echo ""
 fi
-
