@@ -51,7 +51,7 @@ apt_pkg_req () {
 }
 
 apt_pkg_install () {
-		\curl -sS get.pimoroni.com/package | bash -s - $1 || warning "Sorry, Apt failed to install $1, I can't continue!" && exit
+		\curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
 }
 
 success () {
@@ -69,7 +69,6 @@ if [[ "" == $IS_RASPBIAN ]]; then
 	echo "Please only run this script on Raspbian on your Raspberry Pi"
 	exit 1;
 fi
-
 
 echo ""
 echo "This script will install Unicorn Hat libraries"
@@ -94,22 +93,30 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 	echo "Checking install requirements..."
 	echo ""
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python3-pip" || apt_pkg_req "python3-dev"; then
 
+        updatedb=false
+        pkgdeplist=( "python-pip" "python-dev" "python3-pip" "python3-dev" )
+
+        for pkgdep in ${pkgdeplist[@]}
+            do if apt_pkg_req "$pkgdep" ; then
+                   updatedb=true
+               fi
+            done 
+
+        if $updatedb ; then
 		echo "Updating package indexes..."
 		sudo apt-get update
-	
+
 		echo ""
 		echo "Installing UnicornHat requirements..."
 
-        apt_pkg_install "python-pip"
-        apt_pkg_install "python-dev"
-        apt_pkg_install "python3-pip"
-        apt_pkg_install "python3-dev"
+            for pkgdep in ${pkgdeplist[@]}
+            do if apt_pkg_req "$pkgdep" ; then
+                   apt_pkg_install "$pkgdep"
+               fi
+            done 
 	else
-	
 		success "Found!"
-
 	fi
 
 	echo ""
@@ -125,9 +132,7 @@ if confirm "Do you wish to continue?"; then
 			exit
 		fi
 		success "Done!"
-
 	else
-		
 		echo ""
 		success "Found!"
 		echo ""
@@ -139,7 +144,6 @@ if confirm "Do you wish to continue?"; then
 			fi
 			success "Done!"
 		fi
-
 	fi
 
 	echo ""
@@ -154,7 +158,6 @@ if confirm "Do you wish to continue?"; then
 			echo ""
 			exit
 		fi
-	
 	else
 
 		echo ""
@@ -167,12 +170,11 @@ if confirm "Do you wish to continue?"; then
 				exit
 			fi
 		fi
-
 	fi
 
 	echo ""
 	echo "Checking for additional modules..."
-	
+
 	if pip_pkg_req "flask"; then
 		echo ""
 		echo "Unicorn Paint requires the Flask python module ( Python 2.x only )"
@@ -186,7 +188,6 @@ if confirm "Do you wish to continue?"; then
 	fi
 
 	echo ""
-
 
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
@@ -203,7 +204,6 @@ if confirm "Do you wish to continue?"; then
 		rm -rf $TMPDIR
 		echo ""
 		success "Examples copied to $WORKING_DIR/unicornhat/"
-	
 	else
 		if confirm "Examples already exist, shall I replace them?"; then
 			mv $WORKING_DIR/unicornhat $WORKING_DIR/unicornhat-backup
@@ -226,10 +226,9 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 	echo "For examples"
 	echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
-	echo "And visit forums.pimoroni.com for support"	
+	echo "And visit forums.pimoroni.com for support"
 	echo "Have fun!"
 	echo ""
-
 else
 	echo ""
 	echo "Aborting..."

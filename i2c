@@ -13,7 +13,7 @@ warning () {
 # Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
 kernelatleast() { # provide number like 2639
 	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-	kver=${kver:0:4}
+	kver=${kver:0:3}
 	if [ $1 -ge $kver ] ; then
 		return 0;
 	else
@@ -49,7 +49,6 @@ then
 
 	read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
 	response=${response,,}
-
 fi
 
 if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
@@ -62,7 +61,7 @@ then
 	if ! kernelatleast 31850 ;then
 		DEVICE_TREE="no"
 	fi
-	
+
 	CURRENT_SETTING="off" # assume disabled
 	if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
 		CURRENT_SETTING="on"
@@ -83,14 +82,14 @@ then
 
 		echo ""
 		success "I2C Enabled"
-		
+
 	elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ];then
-	
+
 		echo ""
 		echo "Device Tree Detected"
 		echo "Enabling I2C..."
 		echo ""
-		
+
 		echo "Adding Device Tree Entry to "
 		echo $CONFIG
 		echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG
@@ -104,14 +103,13 @@ then
 		echo ""
 		success "I2C Enabled"
 		warning "Reboot required!"
-		
+
 	else
 		echo ""
 		success "I2C Already Enabled"
 		sudo modprobe i2c-bcm2708
 		sudo modprobe i2c-dev
 	fi
-
 
 	if ! grep -qe "i2c-dev" "/etc/modules"; then
 		echo ""
@@ -126,10 +124,8 @@ then
 		echo "i2c-bcm2708" | sudo tee -a "/etc/modules"
 		echo " to /etc/modules"
 	fi
-
 else
 	echo ""
 	echo "Aborting..."
 	echo ""
 fi
-
