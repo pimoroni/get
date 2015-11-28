@@ -9,6 +9,12 @@ else
 fi
 WORKING_DIR=$USER_HOME/Pimoroni
 
+if [ -e /usr/bin/pip3  ]; then
+        PIP3_BIN="pip3"
+else
+        PIP3_BIN="pip-3.2"
+fi
+
 confirm () {
         if [ "$FORCE" == '-y' ]; then
             true
@@ -24,7 +30,7 @@ confirm () {
 }
 
 pip_pkg_req3 () {
-        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
+        PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
         if [ "" == "$PIP_CHK" ]; then
                 true
         else
@@ -95,7 +101,7 @@ if confirm "Do you wish to continue?"; then
 	echo ""
 
         updatedb=false
-        pkgdeplist=( "python-pip" "python-dev" "python3-pip" "python3-dev" )
+        pkgdeplist=( "git" "python-pip" "python-dev" "python3-pip" "python3-dev" )
 
         for pkgdep in ${pkgdeplist[@]}
             do if apt_pkg_req "$pkgdep" ; then
@@ -153,7 +159,7 @@ if confirm "Do you wish to continue?"; then
 
 		echo ""
 		echo "Installing UnicornHat for Python 3..."
-		if ! sudo pip-3.2 install unicornhat; then
+		if ! sudo $PIP3_BIN install unicornhat; then
 			warning "Python 3 library install failed!"
 			echo ""
 			exit
@@ -164,7 +170,7 @@ if confirm "Do you wish to continue?"; then
 		success "Found!"
 		echo ""
 		if confirm "Python 3 module found. Reinstall/Update?"; then
-			if ! sudo pip-3.2 install unicornhat -I; then
+			if ! sudo $PIP3_BIN install unicornhat -I; then
 				warning "Python 3 library install failed!"
 				echo ""
 				exit
