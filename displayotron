@@ -219,7 +219,7 @@ if confirm "Do you wish to continue?"; then
         git clone https://github.com/pimoroni/$gitreponame
         cd $WORKING_DIR
         mkdir $piplibname
-        cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+        cp -R $TMPDIR/$gitreponame/python/examples/* $WORKING_DIR/$piplibname/
         rm -rf $TMPDIR
         echo ""
         success "Examples copied to $WORKING_DIR/$piplibname/"
@@ -233,7 +233,7 @@ if confirm "Do you wish to continue?"; then
             git clone https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $piplibname
-            cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+            cp -R $TMPDIR/$gitreponame/python/examples/* $WORKING_DIR/$piplibname/
             rm -rf $TMPDIR
             echo ""
             warning "I backed up the examples to $piplibname-backup, just in case you've changed anything!"
