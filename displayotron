@@ -1,0 +1,299 @@
+#!/bin/bash
+
+#product specific variables
+
+productname="Display-o-Tron 3000/HAT"
+gitreponame="dot3k"
+piplibname="dot3k" # should really be named displayotron
+pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "python3-dev" "python3-smbus" )
+moreaptdep=( "vlc" )
+morepipdep=( "psutil" "pyusb" "wifi" )
+
+FORCE=$1
+
+if [ $EUID -ne 0 ]; then
+    USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+
+WORKING_DIR=$USER_HOME/Pimoroni
+
+confirm () {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+                true
+        else
+                false
+        fi
+    fi
+}
+
+pip_chk_pip3 () {
+    if [ -e /usr/bin/pip3  ]; then
+        PIP3_BIN="pip3"
+    else
+        PIP3_BIN="pip-3.2"
+    fi
+}
+
+pip_pkg_req3 () {
+    pip_chk_pip3
+    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip_pkg_req () {
+    PIP_CHK=$(pip search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_req () {
+    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_install () {
+    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
+}
+
+success () {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1;
+fi
+
+echo ""
+echo "This script will install $productname libraries"
+echo "and dependencies for both Python 2 and 3."
+echo ""
+echo "This process may take several minutes."
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/$piplibname"
+echo ""
+echo ""
+
+if confirm "Do you wish to continue?"; then
+
+    echo ""
+    echo "Checking install requirements..."
+    echo ""
+
+    echo ""
+    if confirm "Hardware requires SPI and I2C, enable now?"; then
+        \curl -sS get.pimoroni.com/spi | bash -s - "-y"
+        \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+    fi
+    
+    echo ""
+    echo "Checking install requirements..."
+    echo ""
+
+    updatedb=false
+
+    for pkgdep in ${pkgdeplist[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            updatedb=true
+        fi
+        done 
+
+    if $updatedb ; then
+    echo "Updating package indexes..."
+    sudo apt-get update
+
+    echo ""
+    echo "Installing hardware requirements..."
+
+    for pkgdep in ${pkgdeplist[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            apt_pkg_install "$pkgdep"
+        fi
+        done 
+    else
+        success "Found!"
+    fi
+
+    echo ""
+    echo "Checking for Python 2 library..."
+
+    if pip_pkg_req "$piplibname"; then
+
+        echo ""
+        echo "Installing libraries required for Python 2..."
+        if ! sudo pip install $piplibname; then
+            warning "Python 2 library install failed!"
+            echo ""
+            exit
+        fi
+        success "Done!"
+    else
+        echo ""
+        success "Found!"
+        echo ""
+        if confirm "Python 2 module found. Reinstall/Update?"; then
+            if ! sudo pip install $piplibname -I; then
+                warning "Python 2 library install failed!"
+                echo ""
+                exit
+            fi
+            success "Done!"
+        fi
+    fi
+    
+    echo ""
+    echo "Checking for Python 3 library..."
+
+    if pip_pkg_req3 "$piplibname"; then
+
+        echo ""
+        echo "Installing required libraries for Python 3..."
+            pip_chk_pip3
+        if ! sudo $PIP3_BIN install $piplibname; then
+            warning "Python 3 library install failed!"
+            echo ""
+            exit
+        fi
+    else
+
+        echo ""
+        success "Found!"
+        echo ""
+
+        if confirm "Python 3 module found. Reinstall/Update?"; then
+            pip_chk_pip3
+            if ! sudo $PIP3_BIN install $piplibname -I; then
+                warning "Python 3 library install failed!"
+                echo ""
+                exit
+            fi
+        fi
+    fi
+    
+    echo ""
+
+        if ! [ -d $WORKING_DIR ]; then
+                mkdir $WORKING_DIR
+        fi
+
+    if ! [ -d $WORKING_DIR/$piplibname ]; then
+        echo "Downloading $productname examples..."
+        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $TMPDIR
+        git clone https://github.com/pimoroni/$gitreponame
+        cd $WORKING_DIR
+        mkdir $piplibname
+        cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+        rm -rf $TMPDIR
+        echo ""
+        success "Examples copied to $WORKING_DIR/$piplibname/"
+
+    else
+        if confirm "Examples already exist, shall I replace them?"; then
+            mv $WORKING_DIR/$piplibname $WORKING_DIR/$piplibname-backup
+            echo "Updating $productname examples..."
+            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $TMPDIR
+            git clone https://github.com/pimoroni/$gitreponame
+            cd $WORKING_DIR
+            mkdir $piplibname
+            cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+            rm -rf $TMPDIR
+            echo ""
+            warning "I backed up the examples to $piplibname-backup, just in case you've changed anything!"
+            success "Examples copied to $WORKING_DIR/$piplibname/"
+        fi
+    fi
+
+    echo ""
+    echo "Checking additional software requirements..."
+
+    if apt_pkg_req "vlc" || pip_pkg_req "psutil" || pip_pkg_req "pyusb" || pip_pkg_req "wifi"; then
+
+        echo ""
+        echo "Some $productname examples/plugins require additional software and/or modules"
+
+        if confirm "Would you like to install them now? (~11mb download)"; then
+
+            if apt_pkg_req "vlc"; then
+                sudo apt-get --force-yes --yes install vlc
+            fi
+            echo "Installing additional Python 2 modules..."
+            if pip_pkg_req "psutil"; then
+                sudo pip install psutil
+            fi
+            if pip_pkg_req "pyusb"; then
+                sudo pip install pyusb
+            fi
+            if pip_pkg_req "wifi"; then
+                sudo pip install wifi
+            fi
+            
+            echo "Installing additional Python 3 modules..."
+            pip_chk_pip3
+            
+            if pip3_pkg_req "psutil"; then
+                sudo $PIP3_BIN install psutil
+            fi
+            if pip3_pkg_req "pyusb"; then
+                sudo $PIP3_BIN install pyusb --pre
+            fi
+            if pip3_pkg_req "wifi"; then
+                sudo $PIP3_BIN install wifi
+            fi
+        fi
+    else
+        echo ""
+        success "Found!"
+    fi
+    
+    echo ""
+    success "All done!"
+    echo ""
+    echo "For examples"
+    echo "see https://github.com/pimoroni/$gitreponame/tree/master/examples"
+    echo "And visit forums.pimoroni.com for support"	
+    echo "Have fun!"
+    echo ""
+
+else
+    echo ""
+    echo "Aborting..."
+    echo ""
+fi
