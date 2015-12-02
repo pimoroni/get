@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo ""
-echo "This script will enable i2c and spi on your Raspberry Pi"
+echo "This script will enable I2C and SPI on your Raspberry Pi"
 echo ""
 echo "--- Warning ---"
 echo ""
@@ -11,19 +11,16 @@ echo "trusted source."
 echo ""
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/unicornhat"
+echo "    \curl -sS get.pimoroni.com/i2candspi"
 echo ""
 echo ""
 
 read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
 response=${response,,}
 
-if [[ $response =~ ^(yes|y)$ ]]
-then
-
-	\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
-	\curl -sS get.pimoroni.com/spi | bash -s - "-y"
-
+if [[ $response =~ ^(yes|y)$ ]]; then
+    \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+    \curl -sS get.pimoroni.com/spi | bash -s - "-y"
 fi
 
 echo ""
