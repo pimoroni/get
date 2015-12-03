@@ -12,104 +12,102 @@ warning () {
 
 # Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
 kernelatleast() { # provide number like 2639
-	kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-	kver=${kver:0:3}
-	if [ $1 -ge $kver ] ; then
-		return 0;
-	else
-		return 1;
-	fi
+    kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
+    kver=${kver:0:3}
+    if [ $1 -ge $kver ]; then
+        return 0;
+    else
+        return 1;
+    fi
 }
 
 IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
 
 if [[ "" == $IS_RASPBIAN ]]; then
-	warning "Warning!"
-	echo "Please only run this script on Raspbian on your Raspberry Pi"
-	exit 1;
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1;
 fi
 
-if ! [[ $1 == '-y' ]]
-then
-	echo ""
-	echo "This script will enable spi on your Raspberry Pi"
-	echo ""
-	warning "--- Warning ---"
-	echo ""
-	echo "Always be careful when running scripts and commands"
-	echo "copied from the internet. Ensure they are from a"
-	echo "trusted source."
-	echo ""
-	echo "If you want to see what this script does before"
-	echo "running it, you should run:"
-	echo "    \curl -sS get.pimoroni.com/spi"
-	echo ""
-	echo ""
+if ! [[ $1 == '-y' ]]; then
+    echo ""
+    echo "This script will enable SPI on your Raspberry Pi"
+    echo ""
+    warning "--- Warning ---"
+    echo ""
+    echo "Always be careful when running scripts and commands"
+    echo "copied from the internet. Ensure they are from a"
+    echo "trusted source."
+    echo ""
+    echo "If you want to see what this script does before"
+    echo "running it, you should run:"
+    echo "    \curl -sS get.pimoroni.com/spi"
+    echo ""
+    echo ""
 
-	read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
-	response=${response,,}
+    read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
+    response=${response,,}
 fi
 
-if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]
-then
+if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]; then
 
-	DEVICE_TREE="yes" # assume not disabled
-	if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-		DEVICE_TREE="no"
-	fi
-	if ! kernelatleast 31850 ;then
-		DEVICE_TREE="no"
-	fi
+    DEVICE_TREE="yes" # assume not disabled
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE="no"
+    fi
+    if ! kernelatleast 31850; then
+        DEVICE_TREE="no"
+    fi
 
-	CURRENT_SETTING="off" # assume disabled
-	if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-		CURRENT_SETTING="on"
-	fi
+    CURRENT_SETTING="off" # assume disabled
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING="on"
+    fi
 
-	if [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
-		echo ""
-		echo "No Device Tree Detected"
-		echo "Enabling SPI..."
-		echo ""
+    if [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+        echo ""
+        echo "No Device Tree Detected"
+        echo "Enabling SPI..."
+        echo ""
 
-		echo "Commenting out Blacklist entry in "
-		echo "/etc/modprobe.d/raspi-blacklist.conf"
-		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
-		sudo modprobe spi-bcm2708
+        echo "Commenting out Blacklist entry in "
+        echo "/etc/modprobe.d/raspi-blacklist.conf"
+        sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+        sudo modprobe spi-bcm2708
 
-		echo ""
-		success "SPI enabled"
-	elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ];then
-		echo ""
-		echo "Device Tree Detected"
-		echo "Enabling SPI..."
-		echo ""
+        echo ""
+        success "SPI enabled"
+    elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ]; then
+        echo ""
+        echo "Device Tree Detected"
+        echo "Enabling SPI..."
+        echo ""
 
-		echo "Adding Device Tree Entry to "
-		echo $CONFIG
-		echo "dtparam=spi=on" | sudo tee -a $CONFIG
+        echo "Adding Device Tree Entry to "
+        echo $CONFIG
+        echo "dtparam=spi=on" | sudo tee -a $CONFIG
 
-		echo "Commenting out Blacklist entry in "
-		echo "/etc/modprobe.d/raspi-blacklist.conf"
-		sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
-		sudo modprobe spi-bcm2708
+        echo "Commenting out Blacklist entry in "
+        echo "/etc/modprobe.d/raspi-blacklist.conf"
+        sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+        sudo modprobe spi-bcm2708
 
-		echo ""
-		success "SPI enabled"
-	else
-		echo ""
-		success "SPI Already Enabled"
-	fi
+        echo ""
+        success "SPI enabled"
+    else
+        echo ""
+        success "SPI Already Enabled"
+    fi
 
-	if ! grep -qe "spi-bcm2708" "/etc/modules"; then
-		echo ""
-		echo "Adding "
-		echo "spi-bcm2708" | sudo tee -a "/etc/modules"
-		echo " to /etc/modules"
-	fi
+    if ! grep -qe "spi-bcm2708" "/etc/modules"; then
+        echo ""
+        echo "Adding "
+        echo "spi-bcm2708" | sudo tee -a "/etc/modules"
+        echo " to /etc/modules"
+    fi
 
 else
-	echo ""
-	echo "Aborting..."
-	echo ""
+    echo ""
+    echo "Aborting..."
+    echo ""
 fi
