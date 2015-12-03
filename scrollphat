@@ -1,12 +1,5 @@
 #!/bin/bash
 
-#product specific variables
-
-productname="Piano HAT"
-gitreponame="piano-hat"
-piplibname="pianohat"
-pkgdeplist=( "git" "python-pip" "python-smbus" "python3-pip" "python3-smbus" )
-
 FORCE=$1
 
 if [ $EUID -ne 0 ]; then
@@ -91,10 +84,7 @@ if [[ "" == $IS_RASPBIAN ]]; then
 fi
 
 echo ""
-echo "This script will install $productname libraries"
-echo "and dependencies for both Python 2 and 3."
-echo ""
-echo "This process may take several minutes."
+echo "This script will install Scroll pHAT examples and dependencies"
 echo ""
 warning "--- Warning ---"
 echo ""
@@ -104,7 +94,7 @@ echo "trusted source."
 echo ""
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$piplibname"
+echo "    \curl -sS get.pimoroni.com/scrollphat"
 echo ""
 echo ""
 
@@ -115,15 +105,12 @@ if confirm "Do you wish to continue?"; then
     echo ""
 
     echo ""
-    if confirm "Hardware requires I2C, enable now?"; then
+    if confirm "Scroll pHAT requires I2C, enable now?"; then
         \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
     fi
     
-    echo ""
-    echo "Checking install requirements..."
-    echo ""
-
     updatedb=false
+    pkgdeplist=( "git" "python-smbus" "python-psutil")
 
     for pkgdep in ${pkgdeplist[@]}
         do if apt_pkg_req "$pkgdep" ; then
@@ -146,15 +133,17 @@ if confirm "Do you wish to continue?"; then
     else
         success "Found!"
     fi
-
+    
     echo ""
-    echo "Checking for Python 2 library..."
-
-    if pip_pkg_req "$piplibname"; then
 
         echo ""
-        echo "Installing libraries required for Python 2..."
-        if ! sudo pip install $piplibname; then
+    echo "Checking for Python 2 library..."
+
+    if pip_pkg_req "scrollphat"; then
+
+        echo ""
+        echo "Installing Scroll pHAT library for Python 2..."
+        if ! sudo pip install scrollphat; then
             warning "Python 2 library install failed!"
             echo ""
             exit
@@ -165,7 +154,7 @@ if confirm "Do you wish to continue?"; then
         success "Found!"
         echo ""
         if confirm "Python 2 module found. Reinstall/Update?"; then
-            if ! sudo pip install $piplibname -I; then
+            if ! sudo pip install scrollphat -I; then
                 warning "Python 2 library install failed!"
                 echo ""
                 exit
@@ -173,16 +162,16 @@ if confirm "Do you wish to continue?"; then
             success "Done!"
         fi
     fi
-    
+
     echo ""
     echo "Checking for Python 3 library..."
 
-    if pip_pkg_req3 "$piplibname"; then
+    if pip_pkg_req3 "scrollphat"; then
 
         echo ""
-        echo "Installing required libraries for Python 3..."
+        echo "Installing Scroll pHAT library for Python 3..."
             pip_chk_pip3
-        if ! sudo $PIP3_BIN install $piplibname; then
+        if ! sudo $PIP3_BIN install scrollphat; then
             warning "Python 3 library install failed!"
             echo ""
             exit
@@ -195,7 +184,7 @@ if confirm "Do you wish to continue?"; then
 
         if confirm "Python 3 module found. Reinstall/Update?"; then
             pip_chk_pip3
-            if ! sudo $PIP3_BIN install $piplibname -I; then
+            if ! sudo $PIP3_BIN install scrollphat -I; then
                 warning "Python 3 library install failed!"
                 echo ""
                 exit
@@ -203,48 +192,44 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
     
-    echo ""
-
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
 
-    if ! [ -d $WORKING_DIR/$piplibname ]; then
-        echo "Downloading $productname examples..."
+    if ! [ -d $WORKING_DIR/scrollphat ]; then
+        echo "Downloading Scroll pHAT examples..."
         export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone https://github.com/pimoroni/$gitreponame
+        git clone https://github.com/pimoroni/scroll-phat
         cd $WORKING_DIR
-        mkdir $piplibname
-        cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+        mkdir scrollphat
+        cp -R $TMPDIR/scroll-phat/examples/* $WORKING_DIR/scrollphat/
         rm -rf $TMPDIR
         echo ""
-        success "Examples copied to $WORKING_DIR/$piplibname/"
+        success "Examples copied to $WORKING_DIR/scrollphat/"
 
     else
         if confirm "Examples already exist, shall I replace them?"; then
-            mv $WORKING_DIR/$piplibname $WORKING_DIR/$piplibname-backup
-            echo "Updating $productname examples..."
+            mv $WORKING_DIR/scrollphat $WORKING_DIR/scrollphat-backup
+            echo "Updating Scroll pHAT examples..."
             export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone https://github.com/pimoroni/$gitreponame
+            git clone https://github.com/pimoroni/scroll-phat
             cd $WORKING_DIR
-            mkdir $piplibname
-            cp -R $TMPDIR/$gitreponame/examples/* $WORKING_DIR/$piplibname/
+            mkdir scrollphat
+            cp -R $TMPDIR/scroll-phat/examples/* $WORKING_DIR/scrollphat/
             rm -rf $TMPDIR
             echo ""
-            warning "I backed up the examples to $piplibname-backup, just in case you've changed anything!"
-            success "Examples copied to $WORKING_DIR/$piplibname/"
+            warning "I backed up the examples to scrollphat-backup, just in case you've changed anything!"
+            success "Examples copied to $WORKING_DIR/scrollphat/"
         fi
-    fi
+fi
 
     echo ""
+    
     success "All done!"
     echo ""
-    echo "For examples"
-    echo "see https://github.com/pimoroni/$gitreponame/tree/master/examples"
-    echo "And visit forums.pimoroni.com for support"	
-    echo "Have fun!"
+    echo "Enjoy your new Scroll pHAT!"
     echo ""
 
 else
