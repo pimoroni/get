@@ -2,11 +2,11 @@
 
 #product specific variables
 
-productname="Piano HAT"
-gitreponame="piano-hat"
-piplibname="pianohat"
-pkgdeplist=( "git" "python-pip" "python-smbus" "python3-pip" "python3-smbus" )
-
+productname="Scroll pHAT"
+gitreponame="scroll-phat"
+piplibname="scrollphat"
+pkgdeplist=( "git" "python-pip" "python-smbus" "python-psutil" "python3-pip" "python3-smbus" "python3-psutil")
+    
 FORCE=$1
 
 if [ $EUID -ne 0 ]; then
@@ -91,10 +91,7 @@ if [[ "" == $IS_RASPBIAN ]]; then
 fi
 
 echo ""
-echo "This script will install $productname libraries"
-echo "and dependencies for both Python 2 and 3."
-echo ""
-echo "This process may take several minutes."
+echo "This script will install $productname examples and dependencies"
 echo ""
 warning "--- Warning ---"
 echo ""
@@ -115,14 +112,10 @@ if confirm "Do you wish to continue?"; then
     echo ""
 
     echo ""
-    if confirm "Hardware requires I2C, enable now?"; then
+    if confirm "This add-on board requires I2C, enable now?"; then
         \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
     fi
     
-    echo ""
-    echo "Checking install requirements..."
-    echo ""
-
     updatedb=false
 
     for pkgdep in ${pkgdeplist[@]}
@@ -146,14 +139,16 @@ if confirm "Do you wish to continue?"; then
     else
         success "Found!"
     fi
-
+    
     echo ""
+
+        echo ""
     echo "Checking for Python 2 library..."
 
     if pip_pkg_req "$piplibname"; then
 
         echo ""
-        echo "Installing libraries required for Python 2..."
+        echo "Installing $productname library for Python 2..."
         if ! sudo pip install $piplibname; then
             warning "Python 2 library install failed!"
             echo ""
@@ -173,14 +168,14 @@ if confirm "Do you wish to continue?"; then
             success "Done!"
         fi
     fi
-    
+
     echo ""
     echo "Checking for Python 3 library..."
 
     if pip_pkg_req3 "$piplibname"; then
 
         echo ""
-        echo "Installing required libraries for Python 3..."
+        echo "Installing $productname library for Python 3..."
             pip_chk_pip3
         if ! sudo $PIP3_BIN install $piplibname; then
             warning "Python 3 library install failed!"
@@ -203,8 +198,6 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
     
-    echo ""
-
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
@@ -236,15 +229,13 @@ if confirm "Do you wish to continue?"; then
             warning "I backed up the examples to $piplibname-backup, just in case you've changed anything!"
             success "Examples copied to $WORKING_DIR/$piplibname/"
         fi
-    fi
+fi
 
     echo ""
+    
     success "All done!"
     echo ""
-    echo "For examples"
-    echo "see https://github.com/pimoroni/$gitreponame/tree/master/examples"
-    echo "And visit forums.pimoroni.com for support"	
-    echo "Have fun!"
+    echo "Enjoy your new $productname!"
     echo ""
 
 else
