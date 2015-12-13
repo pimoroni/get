@@ -9,6 +9,14 @@ pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "pytho
 moreaptdep=( "vlc" )
 morepipdep=( "psutil" "pyusb" "wifi" )
 
+success () {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
 IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
 
 if [[ "" == $IS_RASPBIAN ]]; then
@@ -81,14 +89,6 @@ apt_pkg_req () {
 
 apt_pkg_install () {
     \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
-}
-
-success () {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
-}
-
-warning () {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 echo ""
