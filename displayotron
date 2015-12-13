@@ -145,6 +145,7 @@ if confirm "Do you wish to continue?"; then
         echo "Updating package indexes..."
     sudo apt-get update
 
+    echo ""
     echo "Installing hardware requirements..."
 
     for pkgdep in ${pkgdeplist[@]}
@@ -161,6 +162,7 @@ if confirm "Do you wish to continue?"; then
 
     if pip_pkg_req "$piplibname"; then
         echo "Installing $productname library for Python 2..."
+        echo ""
         if ! sudo pip install $piplibname; then
             warning "Python 2 library install failed!"
             echo "If problems persist, visit forums.pimoroni.com for support"    
@@ -185,6 +187,7 @@ if confirm "Do you wish to continue?"; then
         echo "Checking for Python 3 library..."
         if pip_pkg_req3 "$piplibname"; then
             echo "Installing $productname library for Python 3..."
+            echo ""
                 pip_chk_pip3
             if ! sudo $PIP3_BIN install $piplibname; then
                 warning "Python 3 library install failed!"
