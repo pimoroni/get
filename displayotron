@@ -9,7 +9,13 @@ pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "pytho
 moreaptdep=( "vlc" )
 morepipdep=( "psutil" "pyusb" "wifi" )
 
-FORCE=$1
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1;
+fi
 
 if [ $EUID -ne 0 ]; then
     USER_HOME=$(getent passwd $USER | cut -d: -f6)
@@ -18,6 +24,7 @@ else
 fi
 
 WORKING_DIR=$USER_HOME/Pimoroni
+FORCE=$1
 
 confirm () {
     if [ "$FORCE" == '-y' ]; then
@@ -84,19 +91,9 @@ warning () {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
-fi
-
 echo ""
-echo "This script will install $productname libraries"
-echo "and dependencies for both Python 2 and 3."
-echo ""
-echo "This process may take several minutes."
+echo "This script will install everything needed to use"
+echo "$productname"
 echo ""
 warning "--- Warning ---"
 echo ""
@@ -116,12 +113,20 @@ if confirm "Do you wish to continue?"; then
     echo "Checking install requirements..."
     echo ""
 
-    echo ""
-    if confirm "Hardware requires SPI and I2C, enable now?"; then
-        \curl -sS get.pimoroni.com/spi | bash -s - "-y"
-        \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+    if i2creq = "yes"; then
+        echo ""
+        if confirm "Hardware requires I2C, enable now?"; then
+            \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+        fi
     fi
-    
+
+    if spireq = "yes"; then
+        echo ""
+        if confirm "Hardware requires SPI, enable now?"; then
+            \curl -sS get.pimoroni.com/spi | bash -s - "-y"
+        fi
+    fi
+
     echo ""
     echo "Checking install requirements..."
     echo ""
@@ -156,7 +161,7 @@ if confirm "Do you wish to continue?"; then
     if pip_pkg_req "$piplibname"; then
 
         echo ""
-        echo "Installing libraries required for Python 2..."
+        echo "Installing $productname library for Python 2..."
         if ! sudo pip install $piplibname; then
             warning "Python 2 library install failed!"
             echo ""
@@ -183,7 +188,7 @@ if confirm "Do you wish to continue?"; then
     if pip_pkg_req3 "$piplibname"; then
 
         echo ""
-        echo "Installing required libraries for Python 3..."
+        echo "Installing $productname library for Python 3..."
             pip_chk_pip3
         if ! sudo $PIP3_BIN install $piplibname; then
             warning "Python 3 library install failed!"
@@ -212,88 +217,81 @@ if confirm "Do you wish to continue?"; then
                 mkdir $WORKING_DIR
         fi
 
-    if ! [ -d $WORKING_DIR/$piplibname ]; then
+    if ! [ -d $WORKING_DIR/$localdir ]; then
         echo "Downloading $productname examples..."
         export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone https://github.com/pimoroni/$gitreponame
+        git clone https://github.com/$gitreponame
         cd $WORKING_DIR
-        mkdir $piplibname
-        cp -R $TMPDIR/$gitreponame/python/examples/* $WORKING_DIR/$piplibname/
+        mkdir $localdir
+        cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
         rm -rf $TMPDIR
         echo ""
-        success "Examples copied to $WORKING_DIR/$piplibname/"
+        success "Examples copied to $WORKING_DIR/$localdir/"
 
     else
         if confirm "Examples already exist, shall I replace them?"; then
-            mv $WORKING_DIR/$piplibname $WORKING_DIR/$piplibname-backup
+            mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
             echo "Updating $productname examples..."
             export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone https://github.com/pimoroni/$gitreponame
+            git clone https://github.com/$gitreponame
             cd $WORKING_DIR
-            mkdir $piplibname
-            cp -R $TMPDIR/$gitreponame/python/examples/* $WORKING_DIR/$piplibname/
+            mkdir $localdir
+            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
             rm -rf $TMPDIR
             echo ""
-            warning "I backed up the examples to $piplibname-backup, just in case you've changed anything!"
-            success "Examples copied to $WORKING_DIR/$piplibname/"
+            warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
+            success "Examples copied to $WORKING_DIR/$localdir/"
         fi
     fi
 
     echo ""
     echo "Checking additional software requirements..."
 
-    if apt_pkg_req "vlc" || pip_pkg_req "psutil" || pip_pkg_req "pyusb" || pip_pkg_req "wifi"; then
+    for moredep in ${moreaptdep[@]}
+        do if apt_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
 
+    for moredep in ${morepipdep[@]}
+        do if pip_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+        
+    if $moredepreq ; then
         echo ""
         echo "Some $productname examples/plugins require additional software and/or modules"
-
-        if confirm "Would you like to install them now? (~11mb download)"; then
-
-            if apt_pkg_req "vlc"; then
-                sudo apt-get --force-yes --yes install vlc
-            fi
-            echo "Installing additional Python 2 modules..."
-            if pip_pkg_req "psutil"; then
-                sudo pip install psutil
-            fi
-            if pip_pkg_req "pyusb"; then
-                sudo pip install pyusb
-            fi
-            if pip_pkg_req "wifi"; then
-                sudo pip install wifi
-            fi
-            
-            echo "Installing additional Python 3 modules..."
-            pip_chk_pip3
-            
-            if pip3_pkg_req "psutil"; then
-                sudo $PIP3_BIN install psutil
-            fi
-            if pip3_pkg_req "pyusb"; then
-                sudo $PIP3_BIN install pyusb --pre
-            fi
-            if pip3_pkg_req "wifi"; then
-                sudo $PIP3_BIN install wifi
-            fi
+        if confirm "Would you like to install them now?"; then    
+            for moredep in ${moreaptdep[@]}
+                do if apt_pkg_req "$moredep" ; then
+                    apt_pkg_install "$moredep"
+                fi
+                done
+            for moredep in ${morepipdep[@]}
+                do if pip_pkg_req "$moredep" ; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+                done
         fi
     else
-        echo ""
-        success "Found!"
+    echo ""
+    success "Found!"
     fi
-    
+
     echo ""
     success "All done!"
     echo ""
-    echo "For examples"
-    echo "see https://github.com/pimoroni/$gitreponame/tree/master/examples"
-    echo "And visit forums.pimoroni.com for support"	
-    echo "Have fun!"
+    echo "Enjoy your new $productname!"
     echo ""
 
 else
     echo ""
     echo "Aborting..."
+    echo ""
+    echo "If problems persist, visit forums.pimoroni.com for support"	
     echo ""
 fi
