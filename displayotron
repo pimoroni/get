@@ -1,17 +1,17 @@
 #!/bin/bash
 
-productname="Display-o-Tron 3000/HAT"
-scriptname="displayotron"
-piplibname="dot3k" # should really be named displayotron
-localdir="displayotron"
-gitreponame="dot3k"
-examplesdir="$gitreponame/python/examples"
-pip3support="yes"
-i2creq="yes"
-spireq="yes"
-pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "python3-dev" "python3-smbus" )
-moreaptdep=( "vlc" )
-morepipdep=( "psutil" "pyusb" "wifi" )
+productname="Display-o-Tron 3000/HAT" # the name of the product to install
+scriptname="displayotron" # the name of this script
+piplibname="dot3k" # the name of the lib in pip repo
+localdir="displayotron" # the name of the dir for copy of examples
+gitreponame="dot3k" # the name of the git project repo
+examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo 
+pip3support="yes" # whether python3 is supported or not
+i2creq="yes" # whether i2c is required or not
+spireq="yes" # whether spi is required or not
+pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "python3-dev" "python3-smbus" ) # list of all the mandatory apt dependencies
+moreaptdep=( "vlc" ) # list of all the additional apt dependencies
+morepipdep=( "psutil" "pyusb" "wifi" ) # list of all the additional pip dependencies
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
@@ -296,7 +296,7 @@ if confirm "Do you wish to continue?"; then
     success "All done!"
     echo ""
     echo "Enjoy your new $productname!"
-    if [ $pip3support == "yes" ]; then
+    if [ $pip3support == "no" ]; then
         echo ""
         echo "Note: $productname currently supports Python 2 only."
         echo ""
