@@ -1,11 +1,12 @@
 #!/bin/bash
 
-scriptname="displayotron"
 productname="Display-o-Tron 3000/HAT"
+scriptname="displayotron"
 piplibname="dot3k" # should really be named displayotron
 localdir="displayotron"
 gitreponame="dot3k"
 examplesdir="$gitreponame/python/examples"
+pip3support="yes"
 i2creq="yes"
 spireq="yes"
 pkgdeplist=( "git" "python-pip" "python-dev" "python-smbus" "python3-pip" "python3-dev" "python3-smbus" )
@@ -185,33 +186,39 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
     
-    echo ""
-    echo "Checking for Python 3 library..."
-
-    if pip_pkg_req3 "$piplibname"; then
-
+    if [ $pip3support == "yes" ]; then
         echo ""
-        echo "Installing $productname library for Python 3..."
-            pip_chk_pip3
-        if ! sudo $PIP3_BIN install $piplibname; then
-            warning "Python 3 library install failed!"
+        echo "Checking for Python 3 library..."
+
+        if pip_pkg_req3 "$piplibname"; then
+
             echo ""
-            exit
-        fi
-    else
-
-        echo ""
-        success "Found!"
-        echo ""
-
-        if confirm "Python 3 module found. Reinstall/Update?"; then
-            pip_chk_pip3
-            if ! sudo $PIP3_BIN install $piplibname -I; then
+            echo "Installing $productname library for Python 3..."
+                pip_chk_pip3
+            if ! sudo $PIP3_BIN install $piplibname; then
                 warning "Python 3 library install failed!"
                 echo ""
                 exit
             fi
+        else
+
+            echo ""
+            success "Found!"
+            echo ""
+
+            if confirm "Python 3 module found. Reinstall/Update?"; then
+                pip_chk_pip3
+                if ! sudo $PIP3_BIN install $piplibname -I; then
+                    warning "Python 3 library install failed!"
+                    echo ""
+                    exit
+                fi
+            fi
         fi
+    else
+        echo ""
+        echo "Note: $productname currently supports Python 2 only."
+        echo ""
     fi
     
     echo ""
@@ -289,7 +296,10 @@ if confirm "Do you wish to continue?"; then
     success "All done!"
     echo ""
     echo "Enjoy your new $productname!"
-    echo ""
+    if [ $pip3support == "yes" ]; then
+        echo ""
+        echo "Note: $productname currently supports Python 2 only."
+        echo ""
 
 else
     echo ""
