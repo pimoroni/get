@@ -300,6 +300,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Note: $productname currently supports Python 2 only."
         echo ""
+    fi
 
 else
     echo ""
