@@ -231,7 +231,7 @@ if confirm "Do you wish to continue?"; then
         echo "Downloading $productname examples..."
         export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone https://github.com/$gitreponame
+        git clone https://github.com/pimoroni/$gitreponame
         cd $WORKING_DIR
         mkdir $localdir
         cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
@@ -245,7 +245,7 @@ if confirm "Do you wish to continue?"; then
             echo "Updating $productname examples..."
             export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone https://github.com/$gitreponame
+            git clone https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
             cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
