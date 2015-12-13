@@ -4,9 +4,10 @@ success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
-echo ""
 echo "Checking for $1..."
+
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+
 if [ "" == "$PKG_OK" ]; then
     echo "$1 required. Installing."
     echo "Running sudo apt-get install $1"
@@ -18,5 +19,5 @@ else
     success "$1 already installed."
     STATUS=0
 fi
-echo ""
+
 exit $STATUS

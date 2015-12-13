@@ -149,8 +149,8 @@ if confirm "Do you wish to continue?"; then
     echo "Installing hardware requirements..."
 
     for pkgdep in ${pkgdeplist[@]}
-        echo "Checking for dependencies..."
-        do if apt_pkg_req "$pkgdep" ; then
+        do echo "Checking for dependencies..."
+        if apt_pkg_req "$pkgdep" ; then
             apt_pkg_install "$pkgdep"
         fi
         done 
