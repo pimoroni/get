@@ -246,6 +246,8 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking additional software requirements..."
 
+    moredepreq=false
+
     for moredep in ${moreaptdep[@]}
         do if apt_pkg_req "$moredep" ; then
             moredepreq=true
@@ -284,6 +286,7 @@ if confirm "Do you wish to continue?"; then
     echo "Enjoy your new $productname!"
     if [ $pip3support == "no" ]; then
         echo "Note: $productname currently supports Python 2 only."
+        echo ""
     fi
 
 else
