@@ -10,8 +10,8 @@ pip3support="yes" # whether python3 is supported or not
 i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
 pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list of all the mandatory apt dependencies
-moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
-morepipdep=( "python-uinput" "psutil" "pyusb" "wifi" ) # list of all the additional pip dependencies
+moreaptdep=( "libudev-dev" "python-psutil" "python3-psutil" "vlc" ) # list of all the additional apt dependencies
+morepipdep=( "python-uinput" "pyusb" "wifi" ) # list of all the additional pip dependencies
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
