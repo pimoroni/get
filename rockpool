@@ -140,26 +140,26 @@ if confirm "Do you wish to continue?"; then
         do if apt_pkg_req "$pkgdep" ; then
             updatedb=true
         fi
-        done
+    done
     for morepkgdep in ${moreaptdep[@]}
         do if apt_pkg_req "$morepkgdep" ; then
             updatedb=true
         fi
-        done 
+    done
 
     if $updatedb ; then
         echo ""
         echo "Updating package indexes..."
-    sudo apt-get update
+        sudo apt-get update
+        
+        echo ""
+        echo "Installing hardware requirements..."
 
-    echo ""
-    echo "Installing hardware requirements..."
-
-    for pkgdep in ${pkgdeplist[@]}
-        do echo "Checking for dependencies..."
-        if apt_pkg_req "$pkgdep" ; then
-            apt_pkg_install "$pkgdep"
-        fi
+        for pkgdep in ${pkgdeplist[@]}
+            do echo "Checking for dependencies..."
+            if apt_pkg_req "$pkgdep" ; then
+                apt_pkg_install "$pkgdep"
+            fi
         done
     else
         success "Found!"
@@ -303,7 +303,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Finalising Install..."
         cd $WORKING_DIR/$localdir/$gitreponame
-        bash ./install
+        sudo bash ./install
     else
         echo ""
         success "All done!"
