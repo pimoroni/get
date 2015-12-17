@@ -222,7 +222,7 @@ if confirm "Do you wish to continue?"; then
     if ! [ -d $WORKING_DIR ]; then
             mkdir $WORKING_DIR
     fi
-        
+
     if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
@@ -297,10 +297,14 @@ if confirm "Do you wish to continue?"; then
         fi
         cd $WORKING_DIR/$localdir
         if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
+            echo ""
+            echo "Cloning Github repo locally..."
             git clone https://github.com/pimoroni/$gitreponame
         else
             cd $WORKING_DIR/$localdir/$gitreponame
-            git pull
+        echo ""
+        echo "Github repo already present. Updating..."
+        git pull
         fi
     fi
 
