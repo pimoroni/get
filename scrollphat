@@ -138,6 +138,11 @@ if confirm "Do you wish to continue?"; then
         do if apt_pkg_req "$pkgdep" ; then
             updatedb=true
         fi
+        done
+    for morepkgdep in ${moreaptdep[@]}
+        do if apt_pkg_req "$morepkgdep" ; then
+            updatedb=true
+        fi
         done 
 
     if $updatedb ; then
