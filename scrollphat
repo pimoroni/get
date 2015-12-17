@@ -10,8 +10,8 @@ pip3support="yes"
 i2creq="yes"
 spireq="no"
 pkgdeplist=( "git" "python-pip" "python-smbus" "python3-pip" "python3-smbus" )
-moreaptdep=( "python-psutil" "python3-psutil" )
-morepipdep=()
+moreaptdep=()
+morepipdep=( "psutil" )
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
