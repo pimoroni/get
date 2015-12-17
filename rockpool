@@ -151,7 +151,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Updating package indexes..."
         sudo apt-get update
-        
+
         echo ""
         echo "Installing hardware requirements..."
 
@@ -219,18 +219,10 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if [ $gitrepoclone == "yes" ]; then
-        if ! [ -d $WORKING_DIR ]; then
-            mkdir $WORKING_DIR
-        fi
-        cd $WORKING_DIR
-        mkdir $localdir
-        cd $localdir
-        git clone https://github.com/pimoroni/$gitreponame
-    elif ! [ -d $WORKING_DIR ]; then
+    if ! [ -d $WORKING_DIR ]; then
             mkdir $WORKING_DIR
     fi
-
+        
     if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
@@ -297,6 +289,19 @@ if confirm "Do you wish to continue?"; then
         fi
     else
         success "Found!"
+    fi
+
+    if [ $gitrepoclone == "yes" ]; then
+        if ! [ -d $WORKING_DIR/$localdir ]; then
+            mkdir $WORKING_DIR/$localdir
+        fi
+        cd $WORKING_DIR/$localdir
+        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
+            git clone https://github.com/pimoroni/$gitreponame
+        else
+            cd $WORKING_DIR/$localdir/$gitreponame
+            git pull
+        fi
     fi
 
     if [ $customcmd == "yes" ]; then
