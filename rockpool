@@ -160,7 +160,7 @@ if confirm "Do you wish to continue?"; then
         if apt_pkg_req "$pkgdep" ; then
             apt_pkg_install "$pkgdep"
         fi
-        done 
+        done
     else
         success "Found!"
     fi
@@ -302,7 +302,7 @@ if confirm "Do you wish to continue?"; then
     if [ $customcmd == "yes" ]; then
         echo ""
         echo "Finalising Install..."
-        cd $WORKING_DIR/$localdir
+        cd $WORKING_DIR/$localdir/$gitreponame
         bash ./install
     else
         echo ""
