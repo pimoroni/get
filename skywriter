@@ -11,7 +11,7 @@ i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" ) # list of all the mandatory apt dependencies
 moreaptdep=() # list of all the additional apt dependencies
-morepipdep=( "autopy" "uinput" ) # list of all the additional pip dependencies
+morepipdep=() # list of all the additional pip dependencies
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
