@@ -1,13 +1,47 @@
 #!/bin/bash
 
-if [ $EUID -ne 0 ]; then
-        USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+productname="Skywriter" # the name of the product to install
+scriptname="skywriter" # the name of this script
+piplibname="skywriter" # the name of the lib in pip repo
+localdir="skywriter" # the name of the dir for copy of examples
+gitreponame="skywriter-hat" # the name of the git project repo
+examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo 
+pip3support="no" # whether python3 is supported or not
+i2creq="yes" # whether i2c is required or not
+spireq="no" # whether spi is required or not
+pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" ) # list of all the mandatory apt dependencies
+moreaptdep=() # list of all the additional apt dependencies
+morepipdep=( "autopy" "uinput" ) # list of all the additional pip dependencies
+
+success () {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning () {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+
+if [[ "" == $IS_RASPBIAN ]]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1;
 fi
+
+if [ $EUID -ne 0 ]; then
+    USER_HOME=$(getent passwd $USER | cut -d: -f6)
+else
+    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+fi
+
 WORKING_DIR=$USER_HOME/Pimoroni
+FORCE=$1
 
 confirm () {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
         read -r -p "$1 [y/N] " response < /dev/tty
         response=${response,,}
         if [[ $response =~ ^(yes|y)$ ]]; then
@@ -15,57 +49,55 @@ confirm () {
         else
                 false
         fi
+    fi
+}
+
+pip_chk_pip3 () {
+    if [ -e /usr/bin/pip3  ]; then
+        PIP3_BIN="pip3"
+    else
+        PIP3_BIN="pip-3.2"
+    fi
 }
 
 pip_pkg_req3 () {
-        PIP_CHK=$(pip-3.2 search $1 | grep INSTALLED)
-        if [ "" == "$PIP_CHK" ]; then
-                true
-        else
-                false
-        fi
+    pip_chk_pip3
+    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
 }
 
 pip_pkg_req () {
-        PIP_CHK=$(pip search $1 | grep INSTALLED)
-        if [ "" == "$PIP_CHK" ]; then
-                true
-        else
-                false
-        fi
+    PIP_CHK=$(pip search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
 }
 
 apt_pkg_req () {
-        APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
-        if [ "" == "$APT_CHK" ]; then
-                true
-        else
-                false
-        fi
+    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
 }
 
-success () {
-        echo "$(tput setaf 2)$1$(tput sgr0)"
+apt_pkg_install () {
+    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
 }
-
-warning () {
-        echo "$(tput setaf 1)$1$(tput sgr0)"
-}
-
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-	warning "Warning!"
-	echo "Please only run this script on Raspbian on your Raspberry Pi"
-	exit 1;
-fi
-
 
 echo ""
-echo "This script will install Skywriter libraries"
-echo "and dependencies for both Python 2."
-echo ""
-echo "This process may take several minutes."
+echo "This script will install everything needed to use"
+echo "$productname"
 echo ""
 warning "--- Warning ---"
 echo ""
@@ -75,117 +107,195 @@ echo "trusted source."
 echo ""
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/skywriter"
-echo ""
+echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
 
 if confirm "Do you wish to continue?"; then
 
-	echo ""
-	if confirm "Skywriter requires I2C, enable now?"; then
+    echo ""
+    echo "Checking hardware requirements..."
 
-		\curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+    if [ $i2creq == "yes" ]; then
+        echo ""
+        if confirm "Hardware requires I2C, enable now?"; then
+            \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+        fi
+    fi
 
-	fi
+    if [ $spireq == "yes" ]; then
+        echo ""
+        if confirm "Hardware requires SPI, enable now?"; then
+            \curl -sS get.pimoroni.com/spi | bash -s - "-y"
+        fi
+    fi
 
-	echo ""
-	echo "Checking install requirements..."
-	echo ""
-	if apt_pkg_req "python-pip" || apt_pkg_req "python-dev" || apt_pkg_req "python-smbus"; then
+    echo ""
+    echo "Checking install requirements..."
 
-		echo "Updating package indexes..."
-		sudo apt-get update
-	
-		echo ""
-		echo "Installing Skywriter requirements..."
+    updatedb=false
 
-		\curl -sS get.pimoroni.com/package | bash -s - "python-pip"
-		\curl -sS get.pimoroni.com/package | bash -s - "python-dev"
-		\curl -sS get.pimoroni.com/package | bash -s - "python-smbus"
-	else
-	
-		success "Found!"
+    for pkgdep in ${pkgdeplist[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            updatedb=true
+        fi
+        done
+    for morepkgdep in ${moreaptdep[@]}
+        do if apt_pkg_req "$morepkgdep" ; then
+            updatedb=true
+        fi
+        done 
 
-	fi
+    if $updatedb ; then
+        echo ""
+        echo "Updating package indexes..."
+    sudo apt-get update
 
-	echo ""
-	echo "Checking for Python 2 library..."
+    echo ""
+    echo "Installing hardware requirements..."
 
-	if pip_pkg_req "skywriter"; then
+    for pkgdep in ${pkgdeplist[@]}
+        do echo "Checking for dependencies..."
+        if apt_pkg_req "$pkgdep" ; then
+            apt_pkg_install "$pkgdep"
+        fi
+        done 
+    else
+        success "Found!"
+    fi
 
-		echo ""
-		echo "Installing Skywriter for Python 2..."
-		if ! sudo pip install skywriter; then
-			warning "Python 2 library install failed!"
-			echo ""
-			exit
-		fi
-		success "Done!"
+    echo ""
+    echo "Checking for Python 2 library..."
 
-	else
-		
-		echo ""
-		success "Found!"
-		echo ""
-		if confirm "Python 2 module found. Reinstall/Update?"; then
-			if ! sudo pip install skywriter -I; then
-				warning "Python 2 library install failed!"
-				echo ""
-				exit
-			fi
-			success "Done!"
-		fi
+    if pip_pkg_req "$piplibname"; then
+        echo "Installing $productname library for Python 2..."
+        echo ""
+        if ! sudo pip install $piplibname; then
+            warning "Python 2 library install failed!"
+            echo "If problems persist, visit forums.pimoroni.com for support"
+            exit
+        fi
+        success "Done!"
+    else
+        success "Found!"
+        echo ""
+        if confirm "Python 2 module found. Reinstall/Update?"; then
+            if ! sudo pip install $piplibname -I; then
+                warning "Python 2 library install failed!"
+            echo "If problems persist, visit forums.pimoroni.com for support"
+            exit
+            fi
+            success "Done!"
+        fi
+    fi
 
-	fi
-
-	
-	echo ""
-
+    if [ $pip3support == "yes" ]; then
+        echo ""
+        echo "Checking for Python 3 library..."
+        if pip_pkg_req3 "$piplibname"; then
+            echo "Installing $productname library for Python 3..."
+            echo ""
+                pip_chk_pip3
+            if ! sudo $PIP3_BIN install $piplibname; then
+                warning "Python 3 library install failed!"
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
+            fi
+        else
+            success "Found!"
+            echo ""
+            if confirm "Python 3 module found. Reinstall/Update?"; then
+                pip_chk_pip3
+                if ! sudo $PIP3_BIN install $piplibname -I; then
+                    warning "Python 3 library install failed!"
+                    exit
+                fi
+            fi
+        fi
+    else
+        echo "Note: $productname currently supports Python 2 only."
+    fi
 
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
 
-	if ! [ -d $WORKING_DIR/skywriter ]; then
-		echo "Downloading Skywriter Hat examples..."
-		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-		cd $TMPDIR
-		git clone https://github.com/pimoroni/skywriter-hat
-		cd $WORKING_DIR
-		mkdir skywriter
-		cp -R $TMPDIR/skywriter-hat/python/examples/* $WORKING_DIR/skywriter/
-		rm -rf $TMPDIR
-		echo ""
-		success "Examples copied to $WORKING_DIR/skywriter/"
-	
-	else
-		if confirm "Examples already exist, shall I replace them?"; then
-			mv $WORKING_DIR/skywriter $WORKING_DIR/skywriter-backup
-			echo "Updating Skywriter Hat examples..."
-			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-			cd $TMPDIR
-			git clone https://github.com/pimoroni/skywriter-hat
-			cd $WORKING_DIR
-			mkdir skywriter
-			cp -R $TMPDIR/skywriter-hat/python/examples/* $WORKING_DIR/skywriter/
-			rm -rf $TMPDIR
-			echo ""
-			warning "I backed up the examples to skywriter-backup, just in case you've changed anything!"
-			success "Examples copied to $WORKING_DIR/skywriter/"
-		fi
-	fi
+    if ! [ -d $WORKING_DIR/$localdir ]; then
+        echo ""
+        echo "Downloading $productname examples..."
+        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $TMPDIR
+        git clone https://github.com/pimoroni/$gitreponame
+        cd $WORKING_DIR
+        mkdir $localdir
+        cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+        rm -rf $TMPDIR
+        success "Examples copied to $WORKING_DIR/$localdir/"
 
-	echo ""
-	success "All done!"
-	echo ""
-	echo "For examples"
-	echo "see https://github.com/pimoroni/skywriter-hat/tree/master/python/examples"
-	echo "And visit forums.pimoroni.com for support"	
-	echo "Have fun!"
-	echo ""
+    else
+        echo ""
+        if confirm "Examples already exist, shall I replace them?"; then
+            mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
+            echo "Updating $productname examples..."
+            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $TMPDIR
+            git clone https://github.com/pimoroni/$gitreponame
+            cd $WORKING_DIR
+            mkdir $localdir
+            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            rm -rf $TMPDIR
+            warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
+            success "Examples copied to $WORKING_DIR/$localdir/"
+        fi
+    fi
+
+    echo ""
+    echo "Checking additional software requirements..."
+
+    moredepreq=false
+
+    for moredep in ${moreaptdep[@]}
+        do if apt_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+    for moredep in ${morepipdep[@]}
+        do if pip_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+
+    if $moredepreq ; then
+        echo ""
+        echo "Some $productname examples/plugins"
+        echo "require additional software and/or modules"
+        if confirm "Would you like to install them now?"; then
+            for moredep in ${moreaptdep[@]}
+                do if apt_pkg_req "$moredep" ; then
+                    apt_pkg_install "$moredep"
+                fi
+                done
+            for moredep in ${morepipdep[@]}
+                do if pip_pkg_req "$moredep" ; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+                done
+        fi
+    else
+        success "Found!"
+    fi
+
+    echo ""
+    success "All done!"
+    echo ""
+    echo "Enjoy your new $productname!"
+    if [ $pip3support == "no" ]; then
+        echo "Note: $productname currently supports Python 2 only."
+        echo ""
+    fi
 
 else
-	echo ""
-	echo "Aborting..."
-	echo ""
+    echo ""
+    echo "Aborting..."
+    echo ""
 fi
