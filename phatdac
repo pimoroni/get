@@ -88,48 +88,31 @@ if confirm "Do you wish to continue?"; then
             DEVICE_TREE="no"
         fi
     
-        CURRENT_SETTING="off" # assume disabled
-        if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-            CURRENT_SETTING="on"
-        fi
-    
-        if  [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
-            echo ""
-            echo "No Device Tree Detected"
-            echo ""
-            echo "Commenting out Blacklist entry in "
-            echo "/etc/modprobe.d/raspi-blacklist.conf"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
-        elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ]; then
-            echo ""
-            echo "Device Tree Detected, i2c is currently disabled"
-            echo ""
+        if [ $DEVICE_TREE = "yes" ]; then
 
+            echo ""
             echo "Adding Device Tree Entry to "
+            echo ""
             echo $CONFIG
-            echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
 
-            echo "Commenting out Blacklist entry in "
-            echo "/etc/modprobe.d/raspi-blacklist.conf"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
+            if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
+                echo "dtoverlay already active"
+            else
+                echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
+            fi
+
+            if [ -e /etc/modprobe.d/raspi-blacklist.conf ]; then
+                echo "Commenting out Blacklist entry in "
+                echo "/etc/modprobe.d/raspi-blacklist.conf"
+                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
+                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
+                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
+            fi
         else
             echo ""
-            echo "Device Tree Detected, i2c is currently enabled"
+            echo "No Device Tree Detected, not supported"
             echo ""
-
-            echo "Adding Device Tree Entry to "
-            echo $CONFIG
-            echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
-
-            echo "Commenting out Blacklist entry in "
-            echo "/etc/modprobe.d/raspi-blacklist.conf"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
-            sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
+            exit 1
         fi
     
         if [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
@@ -138,7 +121,7 @@ if confirm "Do you wish to continue?"; then
             echo ""
             sudo sed -i /etc/modules -e "s/^snd_bcm2835.*/#snd_bcm2835/"
         else
-            echo "Sound driver not loaded"
+            echo "Sound driver currently not loaded"
         fi
     fi
 else
