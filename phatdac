@@ -123,17 +123,16 @@ if confirm "Do you wish to continue?"; then
             echo "Sound driver currently not loaded"
         fi
     fi
-    
+
     echo "Configuring sound output"
     sudo cp ./asound /etc/asound.conf
 
     echo "We can now test your $productname"
     echo "Set speakers at a low volume first however!"
-    if confirm "Do you wish to test your system?"; then
-        
-    echo "Testing..."
-    speaker-test -c2 -t wav
-    
+    if confirm "Do you wish to test your system?"; then    
+        echo "Testing..."
+        speaker-test -c2 -t wav
+    fi
 else
     echo ""
     echo "Aborting..."

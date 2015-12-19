@@ -45,7 +45,6 @@ echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/audio"
 echo ""
-echo ""
 
 if confirm "Do you wish to continue?"; then
     echo ""
@@ -62,10 +61,10 @@ if confirm "Do you wish to continue?"; then
         amixer cset numid=3 $choice  > /dev/tty
         echo ""
         success "Output mode changed!"
+        echo ""
     else
         warning "Invalid option..."
-
-    fi    echo ""
+    fi
 else
     echo ""
     echo "Aborting..."
