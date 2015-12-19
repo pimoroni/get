@@ -120,15 +120,15 @@ if confirm "Do you wish to continue?"; then
             echo "Disabling default sound driver"
             echo ""
             sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
-            if [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
-                sudo sed -i /etc/modules -e "s/^snd_bcm2835.*/#snd_bcm2835/"
+            if [ -e /etc/modules ] && grep -q "snd-bcm2835" /etc/modules; then
+                sudo sed -i /etc/modules -e "s/^snd-bcm2835/#snd-bcm2835/"
             fi
-        elif [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
+        elif [ -e /etc/modules ] && grep -q "snd-bcm2835" /etc/modules; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
             echo ""
-            sudo sed -i /etc/modules -e "s/^snd_bcm2835.*/#snd_bcm2835/"
+            sudo sed -i /etc/modules -e "s/^snd-bcm2835/#snd-bcm2835/"
         else
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
