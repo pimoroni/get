@@ -114,32 +114,39 @@ if confirm "Do you wish to continue?"; then
             exit 1
         fi
 
-        if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then 
+        if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
+            bcm2835off="no"
             echo ""
             echo "Disabling default sound driver"
             echo ""
-            sudo sed -i $CONFIG "s/^dtparam=audio=on$/#dtparam=audio=on/"
+            sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
             if [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
                 sudo sed -i /etc/modules -e "s/^snd_bcm2835.*/#snd_bcm2835/"
             fi
         elif [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
+            bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
             echo ""
             sudo sed -i /etc/modules -e "s/^snd_bcm2835.*/#snd_bcm2835/"
         else
             echo "Default sound driver currently not loaded"
+            bcm2835off="yes"
         fi
     fi
 
     echo "Configuring sound output"
     sudo cp ./asound /etc/asound.conf
 
-    echo "We can now test your $productname"
-    echo "Set speakers at a low volume first however!"
-    if confirm "Do you wish to test your system now?"; then    
-        echo "Testing..."
-        speaker-test -c2 -t wav
+    if [ $bcm2835off == "yes" ]; then
+        echo "We can now test your $productname"
+        echo "Set speakers at a low volume first however!"
+        if confirm "Do you wish to test your system now?"; then    
+            echo "Testing..."
+            speaker-test -c2 -t wav
+        fi
+    else
+        warning "At this point you need to reboot your Pi"
     fi
     echo ""
     success "All done!"
