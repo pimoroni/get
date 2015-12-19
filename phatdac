@@ -136,7 +136,12 @@ if confirm "Do you wish to continue?"; then
     fi
 
     echo "Configuring sound output"
-    sudo cp ./asound /etc/asound.conf
+    if [ -e /etc/asound.conf ]; then
+        sudo rm -f /etc/asound.conf.old
+        sudo mv /etc/asound.conf.old /etc/asound.conf.old
+    fi
+    sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > /etc/asound.conf
+    sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
         echo "We can now test your $productname"
