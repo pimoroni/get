@@ -74,7 +74,7 @@ if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/spi | bash -s - "-y"
         fi
     fi
-    
+
     if [ $i2creq == "yes" ]; then
         echo ""
         if confirm "Hardware requires I2C, enable now?"; then
@@ -87,12 +87,11 @@ if confirm "Do you wish to continue?"; then
         if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
             DEVICE_TREE="no"
         fi
-    
+
         if [ $DEVICE_TREE = "yes" ]; then
 
             echo ""
             echo "Adding Device Tree Entry to "
-            echo ""
             echo $CONFIG
 
             if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
@@ -114,7 +113,7 @@ if confirm "Do you wish to continue?"; then
             echo ""
             exit 1
         fi
-    
+
         if [ -e /etc/modules ] && grep -q "snd_bcm2835" /etc/modules; then
             echo ""
             echo "Disabling default sound driver"
@@ -124,6 +123,17 @@ if confirm "Do you wish to continue?"; then
             echo "Sound driver currently not loaded"
         fi
     fi
+    
+    echo "Configuring sound output"
+    sudo cp ./asound /etc/asound.conf
+
+    echo "We can now test your $productname"
+    echo "Set speakers at a low volume first however!"
+    if confirm "Do you wish to test your system?"; then
+        
+    echo "Testing..."
+    speaker-test -c2 -t wav
+    
 else
     echo ""
     echo "Aborting..."
