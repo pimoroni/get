@@ -9,9 +9,9 @@ examplesdir="$gitreponame/examples"
 pip3support="yes"
 i2creq="yes"
 spireq="no"
-pkgdeplist=( "git" "python-pip" "python-smbus" "python3-pip" "python3-smbus" )
-moreaptdep=()
-morepipdep=( "psutil" )
+pkgdeplist=( "git" "python-pip" "python-smbus" "python-pil" "python3-pip" "python3-smbus" "python3-pil" )
+moreaptdep=( "python-psutil" "python3-psutil" )
+morepipdep=()
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
