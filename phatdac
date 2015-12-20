@@ -137,8 +137,10 @@ if confirm "Do you wish to continue?"; then
 
     echo "Configuring sound output"
     if [ -e /etc/asound.conf ]; then
-        sudo rm -f /etc/asound.conf.old
-        sudo mv /etc/asound.conf.old /etc/asound.conf.old
+        if [ -e /etc/asound.conf.old ]; then
+            sudo rm -f /etc/asound.conf.old
+        fi
+        sudo mv /etc/asound.conf /etc/asound.conf.old
     fi
     sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > ~/asound.conf
     sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> ~/asound.conf
