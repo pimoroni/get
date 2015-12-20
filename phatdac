@@ -140,13 +140,14 @@ if confirm "Do you wish to continue?"; then
         sudo rm -f /etc/asound.conf.old
         sudo mv /etc/asound.conf.old /etc/asound.conf.old
     fi
-    sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > /etc/asound.conf
-    sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> /etc/asound.conf
+    sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > ~/asound.conf
+    sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> ~/asound.conf
+    sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
         echo "We can now test your $productname"
         echo "Set speakers at a low volume first however!"
-        if confirm "Do you wish to test your system now?"; then    
+        if confirm "Do you wish to test your system now?"; then
             echo "Testing..."
             speaker-test -c2 -t wav
         fi
@@ -157,7 +158,7 @@ if confirm "Do you wish to continue?"; then
     success "All done!"
     echo ""
     echo "Enjoy your new $productname!"
-    
+
 else
     echo ""
     echo "Aborting..."
