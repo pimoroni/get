@@ -1,17 +1,20 @@
 #!/bin/bash
 
-productname="Scroll pHAT"
-scriptname="scrollphat"
-piplibname="scrollphat"
-localdir="scrollphat"
-gitreponame="scroll-phat"
-examplesdir="$gitreponame/examples"
-pip3support="yes"
-i2creq="yes"
-spireq="no"
-pkgdeplist=( "git" "python-pip" "python-smbus" "python-pil" "python3-pip" "python3-smbus" "python3-pil" )
-moreaptdep=( "python-psutil" "python3-psutil" )
-morepipdep=()
+productname="Scroll pHAT" # the name of the product to install
+scriptname="scrollphat" # the name of this script
+jessiesupport="yes" # whether Jessie is supported or not
+wheezysupport="no" # whether Wheezy is supported or not
+piplibname="scrollphat" # the name of the lib in pip repo
+pip2support="yes" # whether python2 is supported or not
+pip3support="yes" # whether python3 is supported or not
+localdir="scrollphat" # the name of the dir for copy of examples
+gitreponame="scroll-phat" # the name of the git project repo
+examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
+spireq="no" # whether spi is required or not
+i2creq="yes" # whether i2c is required or not
+pkgdeplist=( "git" "python-pip" "python-smbus" "python-pil" "python3-pip" "python3-smbus" "python3-pil" ) # list of all the mandatory apt dependencies
+moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt dependencies
+morepipdep=() # list of all the additional pip dependencies
 
 success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
@@ -20,23 +23,6 @@ success () {
 warning () {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
-
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
-fi
-
-if [ $EUID -ne 0 ]; then
-    USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-fi
-
-WORKING_DIR=$USER_HOME/Pimoroni
-FORCE=$1
 
 confirm () {
     if [ "$FORCE" == '-y' ]; then
@@ -95,6 +81,46 @@ apt_pkg_install () {
     \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
 }
 
+raspbian_check () {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+raspbian_old () {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $wheezysupport == "no" ]; then
+    if raspbian_old; then
+        echo ""
+        warning "--- Warning ---"
+        echo ""
+        echo "The $productname installer"
+        echo "does not currently work on Raspbian Wheezy."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        echo ""
+        exit 1
+    fi
+fi
+
 echo ""
 echo "This script will install everything needed to use"
 echo "$productname"
@@ -109,6 +135,8 @@ echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
+
+FORCE=$1
 
 if confirm "Do you wish to continue?"; then
 
@@ -215,6 +243,17 @@ if confirm "Do you wish to continue?"; then
         echo "Note: $productname currently supports Python 2 only."
     fi
 
+<<<<<<< HEAD
+=======
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+        fi
+        
+        WORKING_DIR=$USER_HOME/Pimoroni
+
+>>>>>>> ac752341d8799b3d23f342b6b7ee7de05af3a6a7
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
@@ -299,3 +338,5 @@ else
     echo "Aborting..."
     echo ""
 fi
+
+#based on template 1512200048
