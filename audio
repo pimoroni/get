@@ -1,93 +1,72 @@
 #!/bin/bash
 
-# This boilerplate get script does nothing
-# but serves as an example for making your own.
-# Run with -y switch to skip confirmation and intro.
-
-# Core functions/helpers
-
-confirm () {
-	read -r -p "$1 [y/N] " response < /dev/tty
-	response=${response,,}
-	if [[ $response =~ ^(yes|y)$ ]]; then
-		true
-	else
-		false
-	fi
-}
-
-pip_pkg_req () {
-	PIP_CHK=$(pip search $1 | grep INSTALLED)
-	if [ "" == "$PIP_CHK" ]; then
-		true	
-	else
-		false
-	fi
-}
-
-apt_pkg_req () {
-	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
-	if [ "" == "$APT_CHK" ]; then
-		true
-	else
-		false
-	fi
-}
-
 success () {
-	echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 warning () {
-	echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-if ! [[ $1 == '-y' ]]; then
+IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
 
-	echo ""
-	echo "This script will let you configure your Pi audio output!"
-	echo ""
-	warning "--- Warning ---"
-	echo ""
-	echo "Always be careful when running scripts and commands"
-	echo "copied from the internet. Ensure they are from a"
-	echo "trusted source."
-	echo ""
-	echo "If you want to see what this script does before"
-	echo "running it, you should run:"
-	echo "    \curl -sS get.pimoroni.com/boilerplate"
-	echo ""
-	echo ""
-
-	if confirm "Do you wish to continue?"; then
-		RESP="true"
-	else
-		RESP="false"
-	fi
-
+if [[ "" == $IS_RASPBIAN ]]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1;
 fi
 
-if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
+FORCE=$1
 
-	echo ""
-	echo "Please choose an audio output mode:"
-	echo "0 : Automatic"
-	echo "1 : Output to analogue (headphone/speaker jack)"
-	echo "2 : Output to digital (HDMI port)"
-	echo ""
-	read -r -p "Enter an option [0-2]:" choice < /dev/tty
+confirm () {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+                true
+        else
+                false
+        fi
+    fi
+}
 
-	if ! [[ $choice =~ '^[0-2]$' ]]; then
+echo ""
+echo "This script will let you configure your Pi audio output!"
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/audio"
+echo ""
 
-		echo ""
-		amixer cset numid=3 $choice  > /dev/tty
-		echo ""
-		success "Output mode changed!"
+if confirm "Do you wish to continue?"; then
+    echo ""
+    echo "Please choose an audio output mode:"
+    echo "0 : Automatic"
+    echo "1 : Output to analogue (headphone/speaker jack)"
+    echo "2 : Output to digital (HDMI port)"
+    echo ""
+    read -r -p "Enter an option [0-2]:" choice < /dev/tty
 
-	else
+    if ! [[ $choice =~ '^[0-2]$' ]]; then
 
-		warning "Invalid option..."
-
-	fi
-	echo ""
+        echo ""
+        amixer cset numid=3 $choice  > /dev/tty
+        echo ""
+        success "Output mode changed!"
+        echo ""
+    else
+        warning "Invalid option..."
+    fi
+else
+    echo ""
+    echo "Aborting..."
+    echo ""
 fi
