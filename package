@@ -1,22 +1,23 @@
 #!/bin/bash
 
 success () {
-	echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
-echo ""
+
 echo "Checking for $1..."
+
 if [ "" == "$PKG_OK" ]; then
-	echo "$1 required. Installing."
-	echo "Running sudo apt-get install $1"
-	echo ""
-	sudo apt-get --force-yes --yes install $1
+    echo "$1 required. Installing."
+    echo "Running sudo apt-get install $1"
+    echo ""
+    sudo apt-get --force-yes --yes install $1
     STATUS=$?
-	echo ""
+    echo ""
 else
-	success "$1 already installed."
+    success "$1 already installed."
     STATUS=0
 fi
-echo ""
+
 exit $STATUS
