@@ -21,23 +21,6 @@ warning () {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
-fi
-
-if [ $EUID -ne 0 ]; then
-    USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-fi
-
-WORKING_DIR=$USER_HOME/Pimoroni
-FORCE=$1
-
 confirm () {
     if [ "$FORCE" == '-y' ]; then
         true
@@ -95,6 +78,46 @@ apt_pkg_install () {
     \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
 }
 
+raspbian_check () {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+raspbian_old () {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $wheezysupport == "no" ]; then
+    if raspbian_old; then
+        echo ""
+        warning "--- Warning ---"
+        echo ""
+        echo "The $productname installer"
+        echo "does not currently work on Raspbian Wheezy."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        echo ""
+        exit 1
+    fi
+fi
+
 echo ""
 echo "This script will install everything needed to use"
 echo "$productname"
@@ -109,6 +132,8 @@ echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
+
+FORCE=$1
 
 if confirm "Do you wish to continue?"; then
 
@@ -215,6 +240,14 @@ if confirm "Do you wish to continue?"; then
         echo "Note: $productname currently supports Python 2 only."
     fi
 
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+        fi
+        
+        WORKING_DIR=$USER_HOME/Pimoroni
+
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
@@ -299,3 +332,5 @@ else
     echo "Aborting..."
     echo ""
 fi
+
+#based on template 1512200048
