@@ -243,20 +243,17 @@ if confirm "Do you wish to continue?"; then
         echo "Note: $productname currently supports Python 2 only."
     fi
 
-<<<<<<< HEAD
-=======
-        if [ $EUID -ne 0 ]; then
-            USER_HOME=$(getent passwd $USER | cut -d: -f6)
-        else
-            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-        fi
-        
-        WORKING_DIR=$USER_HOME/Pimoroni
+    if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+    else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+    fi
+    
+    WORKING_DIR=$USER_HOME/Pimoroni
 
->>>>>>> ac752341d8799b3d23f342b6b7ee7de05af3a6a7
-        if ! [ -d $WORKING_DIR ]; then
-                mkdir $WORKING_DIR
-        fi
+    if ! [ -d $WORKING_DIR ]; then
+            mkdir $WORKING_DIR
+    fi
 
     if ! [ -d $WORKING_DIR/$localdir ]; then
         echo ""
