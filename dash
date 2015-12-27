@@ -6,9 +6,9 @@
 PIM_VERSION=1
 
 if [ $EUID -ne 0 ]; then
-	USER_HOME=$(getent passwd $USER | cut -d: -f6)
+    USER_HOME=$(getent passwd $USER | cut -d: -f6)
 else
-	USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
 fi
 WORKING_DIR=$USER_HOME/Pimoroni
 DESKTOP_FILE="$USER_HOME/Desktop/pimoroni-dashboard.desktop"
@@ -21,79 +21,77 @@ WT_WIDTH=$(tput cols)
 
 # Borrowed from Raspi-Config! https://github.com/asb/raspi-config/blob/master/raspi-config
 if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 60 ]; then
-	WT_WIDTH=80
+    WT_WIDTH=80
 fi
 if [ "$WT_WIDTH" -gt 178 ]; then
-	WT_WIDTH=120
+    WT_WIDTH=120
 fi
 
 WT_MENU_HEIGHT=$(($WT_HEIGHT-8))
 
 success () {
-	echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 warning () {
-	echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 pim_check_distro() {
 
-	IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+    IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
 
-	if [[ "" == $IS_RASPBIAN ]]; then
-		warning "Warning!"
-		echo "Please only run this script on Raspbian on your Raspberry Pi"
-		exit 1;
-	fi
+    if [[ "" == $IS_RASPBIAN ]]; then
+        warning "Warning!"
+        echo "Please only run this script on Raspbian on your Raspberry Pi"
+        exit 1;
+    fi
 
 }
 
 imgur_upload() {
-	# original imgur script by Bart Nagel <bart@tremby.net>
-	# modified from version 4
-	# Required: curl
-	
-	# API Key provided by Alan@imgur.com
+    # original imgur script by Bart Nagel <bart@tremby.net>
+    # modified from version 4
+    # Required: curl
 
-	file="$1"
+    # API Key provided by Alan@imgur.com
 
-	apikey="b3625162d3418ac51a9ee805b1840452"
+    file="$1"
 
-	# upload the image
-	response=$(curl -F "key=$apikey" -H "Expect: " -F "image=@$file" \
-		http://imgur.com/api/upload.xml 2>/dev/null)
-	# the "Expect: " header is to get around a problem when using this through 
-	# the Squid proxy. Not sure if it's a Squid bug or what.
-	if [ $? -ne 0 ]; then
-		echo "Upload failed" >&2
-	elif [ $(echo $response | grep -c "<error_msg>") -gt 0 ]; then
-		echo "Error message from imgur:" >&2
-		echo $response | sed -r 's/.*<error_msg>(.*)<\/error_msg>.*/\1/' >&2
-	fi
+    apikey="b3625162d3418ac51a9ee805b1840452"
 
-	# parse the response and output our stuff
-	url=$(echo $response | sed -r 's/.*<original_image>(.*)<\/original_image>.*/\1/')
-	deleteurl=$(echo $response | sed -r 's/.*<delete_page>(.*)<\/delete_page>.*/\1/')
-	echo $url
-	return 0
-	#echo $url
-	#echo "Delete page: $deleteurl" >&2
+    # upload the image
+    response=$(curl -F "key=$apikey" -H "Expect: " -F "image=@$file" \
+    http://imgur.com/api/upload.xml 2>/dev/null)
+    # the "Expect: " header is to get around a problem when using this through 
+    # the Squid proxy. Not sure if it's a Squid bug or what.
+    if [ $? -ne 0 ]; then
+        echo "Upload failed" >&2
+    elif [ $(echo $response | grep -c "<error_msg>") -gt 0 ]; then
+        echo "Error message from imgur:" >&2
+        echo $response | sed -r 's/.*<error_msg>(.*)<\/error_msg>.*/\1/' >&2
+    fi
+
+    # parse the response and output our stuff
+    url=$(echo $response | sed -r 's/.*<original_image>(.*)<\/original_image>.*/\1/')
+    deleteurl=$(echo $response | sed -r 's/.*<delete_page>(.*)<\/delete_page>.*/\1/')
+    echo $url
+    return 0
+    #echo $url
+    #echo "Delete page: $deleteurl" >&2
 
 }
 
 pim_msgbox() {
-	whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
+    whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
 }
 
 pim_yesno() {
-	whiptail --yesno "$1" $WT_HEIGHT $(($WT_WIDTH-20))
+    whiptail --yesno "$1" $WT_HEIGHT $(($WT_WIDTH-20))
 }
 
 pim_about() {
-	pim_msgbox "\
-Ahoy!
-
+    pim_msgbox "\
 This handy tool will help you get started with Pimoroni products. Simply pick the add-on board you want to install software for from the list, hit select and we'll walk you through the install process in a few easy steps.
 
 Enjoy
@@ -103,24 +101,24 @@ Enjoy
 }
 
 pim_uninstall() {
-	sudo rm $DASHBOARD_SCRIPT
-	sudo rm $DESKTOP_ICON
-	sudo rm $DESKTOP_FILE
-	sudo rm $DESKTOP_APP_FILE
-	pim_msgbox "Pimoroni Dashboard uninstalled!"
+    sudo rm $DASHBOARD_SCRIPT
+    sudo rm $DESKTOP_ICON
+    sudo rm $DESKTOP_FILE
+    sudo rm $DESKTOP_APP_FILE
+    pim_msgbox "Pimoroni Dashboard uninstalled!"
 }
 
 pim_install() {
-	if [ ! -f $DESKTOP_FILE ]; then
-		if pim_yesno "Do you want to add the Pimoroni Dashboard to your desktop?"; then
-			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-			curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
-			curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
-			sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
-			sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
-			sudo chmod +x $DASHBOARD_SCRIPT
-			sudo gtk-update-icon-cache
-			echo "\
+    if [ ! -f $DESKTOP_FILE ]; then
+        if pim_yesno "Do you want to add the Pimoroni Dashboard to your desktop?"; then
+            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
+            curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
+            sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
+            sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
+            sudo chmod +x $DASHBOARD_SCRIPT
+            sudo gtk-update-icon-cache
+            echo "\
 [Desktop Entry]
 Encoding=UTF-8
 Name=Pimoroni Dash
@@ -133,105 +131,103 @@ Type=Application
 Categories=Utility;\
 " >> $TMPDIR/pimoroni-dashboard.desktop
 
-			sudo desktop-file-install $TMPDIR/pimoroni-dashboard.desktop
-			cp $DESKTOP_APP_FILE $DESKTOP_FILE
-			rm -rf $TMPDIR
+            sudo desktop-file-install $TMPDIR/pimoroni-dashboard.desktop
+            cp $DESKTOP_APP_FILE $DESKTOP_FILE
+            rm -rf $TMPDIR
 
-			rm -rf $TMPDIR
-		fi
-	fi
+            rm -rf $TMPDIR
+        fi
+    fi
 }
 
 pim_update() {
-	if pim_check_network && [ -f $DESKTOP_FILE ]; then
-		if [[ $1 == 'noupdate' ]]; then
-			return
-		fi
-		echo "Updating..."
-		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-		curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
-		curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
-		sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
-		sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
-		rm -rf $TMPDIR
-		pimoroni-dashboard noupdate
-		exit 0
-	fi
+    if pim_check_network && [ -f $DESKTOP_FILE ]; then
+        if [[ $1 == 'noupdate' ]]; then
+            return
+        fi
+        echo "Updating..."
+        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        curl -sSL get.pimoroni.com/pimoroni-dashboard.png >> $TMPDIR/pimoroni-dashboard.png
+        curl -sSL get.pimoroni.com/dash >> $TMPDIR/dash
+        sudo cp $TMPDIR/pimoroni-dashboard.png $DESKTOP_ICON
+        sudo cp $TMPDIR/dash $DASHBOARD_SCRIPT
+        rm -rf $TMPDIR
+        pimoroni-dashboard noupdate
+        exit 0
+    fi
 }
 
 pim_menu() {
-	FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-	--cancel-button Quit \
-	--ok-button Select \
-	"1 Pibrella" "Install software & examples" \
-	"2 PiGlow" "Install software & examples" \
-	"3 Display-o-Tron 3000/HAT" "Install software & examples" \
-	"4 Unicorn Hat" "Install software & examples" \
-	"5 Skywriter Hat" "Install software & examples" \
-	"6 Piano HAT" "Install software & examples" \
-	"7 Explorer HAT" "Install software & examples" \
-	"8 Take Screenshot" "Useful to help solve a problem" \
-	3>&1 1>&2 2>&3)
+    FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
+    --cancel-button Quit \
+    --ok-button Select \
+    "1 Pibrella" "Install software & examples" \
+    "2 PiGlow" "Install software & examples" \
+    "3 Display-o-Tron 3000/HAT" "Install software & examples" \
+    "4 Unicorn Hat" "Install software & examples" \
+    "5 Skywriter Hat" "Install software & examples" \
+    "6 Piano HAT" "Install software & examples" \
+    "7 Explorer HAT" "Install software & examples" \
+    "8 Take Screenshot" "Useful to help solve a problem" \
+    3>&1 1>&2 2>&3)
 
-	
-	RETURN=$?
-	if [ $RETURN -eq 1 ]; then
-		return 0
-	elif [ $RETURN -eq 0 ]; then
-		case "$FUNCTION" in
-			1\ *) pim_net_install pibrella ;;
-			2\ *) pim_net_install piglow ;;
-			3\ *) pim_net_install dot3k ;;
-			4\ *) pim_net_install unicornhat ;;
-			5\ *) pim_net_install skywriter ;;
-			6\ *) pim_net_install pianohat ;;
-			7\ *) pim_net_install explorerhat ;;
-			8\ *) pim_screenshot ;;
-			*) pim_msgbox "Error: unrecognized option";;
-		esac ||pim_msgbox "There was an error running option $FUNCTION"
-	fi
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        return 0
+    elif [ $RETURN -eq 0 ]; then
+        case "$FUNCTION" in
+            1\ *) pim_net_install pibrella ;;
+            2\ *) pim_net_install piglow ;;
+            3\ *) pim_net_install dot3k ;;
+            4\ *) pim_net_install unicornhat ;;
+            5\ *) pim_net_install skywriter ;;
+            6\ *) pim_net_install pianohat ;;
+            7\ *) pim_net_install explorerhat ;;
+            8\ *) pim_screenshot ;;
+            *) pim_msgbox "Error: unrecognized option";;
+        esac ||pim_msgbox "There was an error running option $FUNCTION"
+    fi
 }
 
 pim_check_network() {
-	ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
+    ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
 }
 
 # Runs the relevant net install script and then returns to the menu
 pim_net_install() {
-	pim_check_network || (pim_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    pim_check_network || (pim_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
 
-	\curl -sS get.pimoroni.com/$1 | bash
+    \curl -sS get.pimoroni.com/$1 | bash
 
-	read -p "Press [Enter] key to continue..." < /dev/tty
+    read -p "Press [Enter] key to continue..." < /dev/tty
 
-	pim_menu
+    pim_menu
 }
 
 apt_pkg_req () {
-	APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
-	if [ "" == "$APT_CHK" ]; then
-		true
-	else
-		false
-	fi
+    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
 }
 
 pim_screenshot() {
 
-	if apt_pkg_req "scrot"; then
-		sudo apt-get --force-yes --yes install scrot
-	fi	
-	pim_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nWarning!\nThis screenshot will be uploaded to imgur so you can share it with us, make sure it's not showing anything sensitive!"
-	echo "Taking screenshot..."
-	echo "Draw a rectangle around your subject."
-	export PIMCWD=$(pwd)
-	cd /tmp
-	export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
-	export IMGURL=$(imgur_upload $IMGNAME)
-	#rm $IMGNAME
-	cd $PIMCWD
-	pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!\n\nYou can also find it in /tmp/$IMGNAME"
-		
+    if apt_pkg_req "scrot"; then
+        sudo apt-get --force-yes --yes install scrot
+    fi
+    pim_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nWarning!\nThis screenshot will be uploaded to imgur so you can share it with us, make sure it's not showing anything sensitive!"
+    echo "Taking screenshot..."
+    echo "Draw a rectangle around your subject."
+    export PIMCWD=$(pwd)
+    cd /tmp
+    export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
+    export IMGURL=$(imgur_upload $IMGNAME)
+    #rm $IMGNAME
+    cd $PIMCWD
+    pim_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!\n\nYou can also find it in /tmp/$IMGNAME"
 }
 
 pim_check_distro
@@ -240,14 +236,10 @@ pim_check_distro
 cd $WORKING_DIR
 
 if [[ $1 == 'uninstall' ]]; then
-
-	pim_uninstall
-
+    pim_uninstall
 else
-
-	pim_update $1
-	pim_about # Display Splash
-	pim_menu  # Display Menu
-	pim_install
-
+    pim_update $1
+    pim_about # Display Splash
+    pim_menu  # Display Menu
+    pim_install
 fi

@@ -2,11 +2,16 @@
 
 productname="Skywriter" # the name of the product to install
 scriptname="skywriter" # the name of this script
+customcmd="no" # whether to execute commands specified before exit
+jessiesupport="yes" # whether Jessie is supported or not
+wheezysupport="yes" # whether Wheezy is supported or not
 piplibname="skywriter" # the name of the lib in pip repo
+pip2support="yes" # whether python2 is supported or not
+pip3support="yes" # whether python3 is supported or not
 localdir="skywriter" # the name of the dir for copy of examples
 gitreponame="skywriter-hat" # the name of the git project repo
+gitrepoclone="no" # whether the git repo is to be cloned locally
 examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo 
-pip3support="no" # whether python3 is supported or not
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" ) # list of all the mandatory apt dependencies
@@ -20,23 +25,6 @@ success () {
 warning () {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
-
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
-fi
-
-if [ $EUID -ne 0 ]; then
-    USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-fi
-
-WORKING_DIR=$USER_HOME/Pimoroni
-FORCE=$1
 
 confirm () {
     if [ "$FORCE" == '-y' ]; then
@@ -95,6 +83,46 @@ apt_pkg_install () {
     \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
 }
 
+raspbian_check () {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+raspbian_old () {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $wheezysupport == "no" ]; then
+    if raspbian_old; then
+        echo ""
+        warning "--- Warning ---"
+        echo ""
+        echo "The $productname installer"
+        echo "does not currently work on Raspbian Wheezy."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        echo ""
+        exit 1
+    fi
+fi
+
 echo ""
 echo "This script will install everything needed to use"
 echo "$productname"
@@ -109,6 +137,8 @@ echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
+
+FORCE=$1
 
 if confirm "Do you wish to continue?"; then
 
@@ -163,29 +193,33 @@ if confirm "Do you wish to continue?"; then
         success "Found!"
     fi
 
-    echo ""
-    echo "Checking for Python 2 library..."
-
-    if pip_pkg_req "$piplibname"; then
-        echo "Installing $productname library for Python 2..."
+    if [ $pip2support == "yes" ]; then
         echo ""
-        if ! sudo pip install $piplibname; then
-            warning "Python 2 library install failed!"
-            echo "If problems persist, visit forums.pimoroni.com for support"
-            exit
-        fi
-        success "Done!"
-    else
-        success "Found!"
-        echo ""
-        if confirm "Python 2 module found. Reinstall/Update?"; then
-            if ! sudo pip install $piplibname -I; then
+        echo "Checking for Python 2 library..."
+    
+        if pip_pkg_req "$piplibname"; then
+            echo "Installing $productname library for Python 2..."
+            echo ""
+            if ! sudo pip install $piplibname; then
                 warning "Python 2 library install failed!"
-            echo "If problems persist, visit forums.pimoroni.com for support"
-            exit
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
             fi
             success "Done!"
+        else
+            success "Found!"
+            echo ""
+            if confirm "Python 2 module found. Reinstall/Update?"; then
+                if ! sudo pip install $piplibname -I; then
+                    warning "Python 2 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
+                fi
+                success "Done!"
+            fi
         fi
+    else
+        echo "Note: $productname currently supports Python 3 only."
     fi
 
     if [ $pip3support == "yes" ]; then
@@ -194,7 +228,7 @@ if confirm "Do you wish to continue?"; then
         if pip_pkg_req3 "$piplibname"; then
             echo "Installing $productname library for Python 3..."
             echo ""
-                pip_chk_pip3
+            pip_chk_pip3
             if ! sudo $PIP3_BIN install $piplibname; then
                 warning "Python 3 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
@@ -214,6 +248,14 @@ if confirm "Do you wish to continue?"; then
     else
         echo "Note: $productname currently supports Python 2 only."
     fi
+
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+        fi
+        
+        WORKING_DIR=$USER_HOME/Pimoroni
 
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
@@ -285,12 +327,39 @@ if confirm "Do you wish to continue?"; then
         success "Found!"
     fi
 
-    echo ""
-    success "All done!"
-    echo ""
-    echo "Enjoy your new $productname!"
-    if [ $pip3support == "no" ]; then
-        echo "Note: $productname currently supports Python 2 only."
+    if [ $gitrepoclone == "yes" ]; then
+        if ! [ -d $WORKING_DIR/$localdir ]; then
+            mkdir $WORKING_DIR/$localdir
+        fi
+        cd $WORKING_DIR/$localdir
+        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
+            echo ""
+            echo "Cloning Github repo locally..."
+            git clone https://github.com/pimoroni/$gitreponame
+        else
+            cd $WORKING_DIR/$localdir/$gitreponame
+            echo ""
+            echo "Github repo already present. Updating..."
+            git pull
+        fi
+    fi
+
+    if [ $customcmd == "yes" ]; then
+        echo ""
+        echo "Finalising Install..."
+        # place all custom commands in this scope
+        echo ""
+    else
+        echo ""
+        success "All done!"
+        echo ""
+        echo "Enjoy your new $productname!"
+        if [ $pip3support == "no" ]; then
+            echo "Note: $productname currently supports Python 2 only."
+        fi
+        if [ $pip2support == "no" ]; then
+            echo "Note: $productname currently supports Python 3 only."
+        fi
         echo ""
     fi
 
@@ -299,3 +368,5 @@ else
     echo "Aborting..."
     echo ""
 fi
+
+#based on template 1512281127
