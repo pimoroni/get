@@ -14,7 +14,7 @@ gitrepoclone="no" # whether the git repo is to be cloned locally
 examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo 
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
-pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" ) # list of all the mandatory apt dependencies
+pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list of all the mandatory apt dependencies
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
