@@ -15,7 +15,7 @@ examplesdir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python3-pip" "python3-rpi.gpio" "python3-smbus" ) # list of all the mandatory apt dependencies
-moreaptdep=( "python-numpy" "python3-numpy" ) # list of all the additional apt dependencies
+moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 success () {
