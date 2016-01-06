@@ -1,21 +1,21 @@
 #!/bin/bash
 
-productname="Piano HAT" # the name of the product to install
-scriptname="pianohat" # the name of this script
+productname="Drum HAT" # the name of the product to install
+scriptname="drumhat" # the name of this script
 customcmd="no" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
-piplibname="pianohat" # the name of the lib in pip repo
+piplibname="drumhat" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
-localdir="pianohat" # the name of the dir for copy of examples
-gitreponame="piano-hat" # the name of the git project repo
+localdir="drumhat" # the name of the dir for copy of examples
+gitreponame="drum-hat" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 pkgdeplist=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python3-pip" "python3-rpi.gpio" "python3-smbus" ) # list of all the mandatory apt dependencies
-moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) # list of all the additional apt dependencies
+moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 success () {
