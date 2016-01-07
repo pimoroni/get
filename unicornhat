@@ -1,89 +1,131 @@
 #!/bin/bash
 
-FORCE=$1
-
-if [ $EUID -ne 0 ]; then
-        USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-fi
-WORKING_DIR=$USER_HOME/Pimoroni
-
-confirm () {
-        if [ "$FORCE" == '-y' ]; then
-            true
-        else
-            read -r -p "$1 [y/N] " response < /dev/tty
-            response=${response,,}
-            if [[ $response =~ ^(yes|y)$ ]]; then
-                    true
-            else
-                    false
-            fi
-        fi
-}
-
-pip_chk_pip3 () {
-        if [ -e /usr/bin/pip3  ]; then
-               PIP3_BIN="pip3"
-        else
-               PIP3_BIN="pip-3.2"
-        fi
-}
-
-pip_pkg_req3 () {
-        pip_chk_pip3
-        PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
-        if [ "" == "$PIP_CHK" ]; then
-                true
-        else
-                false
-        fi
-}
-
-pip_pkg_req () {
-        PIP_CHK=$(pip search $1 | grep INSTALLED)
-        if [ "" == "$PIP_CHK" ]; then
-                true
-        else
-                false
-        fi
-}
-
-apt_pkg_req () {
-        APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
-        if [ "" == "$APT_CHK" ]; then
-                true
-        else
-                false
-        fi
-}
-
-apt_pkg_install () {
-		\curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
-}
+productname="Unicorn HAT" # the name of the product to install
+scriptname="unicornhat" # the name of this script
+customcmd="no" # whether to execute commands specified before exit
+jessiesupport="yes" # whether Jessie is supported or not
+wheezysupport="yes" # whether Wheezy is supported or not
+piplibname="unicornhat" # the name of the lib in pip repo
+pip2support="yes" # whether python2 is supported or not
+pip3support="yes" # whether python3 is supported or not
+localdir="unicornhat" # the name of the dir for copy of examples
+gitreponame="unicorn-hat" # the name of the git project repo
+gitrepoclone="no" # whether the git repo is to be cloned locally
+examplesdir="$gitreponame/python/examples/" # subdirectory of examples in repo 
+i2creq="no" # whether i2c is required or not
+spireq="no" # whether spi is required or not
+pkgdeplist=( "git" "python-pip" "python-dev" "python3-pip" "python3-dev" ) # list of all the mandatory apt dependencies
+moreaptdep=( "python-numpy" "python3-numpy" ) # list of all the additional apt dependencies
+morepipdep=( "flask" ) # list of all the additional pip dependencies
 
 success () {
-        echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 warning () {
-        echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+confirm () {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+                true
+        else
+                false
+        fi
+    fi
+}
 
-if [[ "" == $IS_RASPBIAN ]]; then
-	warning "Warning!"
-	echo "Please only run this script on Raspbian on your Raspberry Pi"
-	exit 1;
+pip_chk_pip3 () {
+    if [ -e /usr/bin/pip3  ]; then
+        PIP3_BIN="pip3"
+    else
+        PIP3_BIN="pip-3.2"
+    fi
+}
+
+pip_pkg_req3 () {
+    pip_chk_pip3
+    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip_pkg_req () {
+    PIP_CHK=$(pip search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_req () {
+    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_install () {
+    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
+}
+
+raspbian_check () {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+raspbian_old () {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $wheezysupport == "no" ]; then
+    if raspbian_old; then
+        echo ""
+        warning "--- Warning ---"
+        echo ""
+        echo "The $productname installer"
+        echo "does not currently work on Raspbian Wheezy."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        echo ""
+        exit 1
+    fi
 fi
 
 echo ""
-echo "This script will install Unicorn Hat libraries"
-echo "and dependencies for both Python 2 and 3."
-echo ""
-echo "This process may take several minutes."
+echo "This script will install everything needed to use"
+echo "$productname"
 echo ""
 warning "--- Warning ---"
 echo ""
@@ -93,155 +135,238 @@ echo "trusted source."
 echo ""
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/unicornhat"
+echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
-echo ""
+
+FORCE=$1
 
 if confirm "Do you wish to continue?"; then
 
-	echo ""
-	echo "Checking install requirements..."
-	echo ""
+    echo ""
+    echo "Checking hardware requirements..."
 
-        updatedb=false
-        pkgdeplist=( "git" "python-pip" "python-dev" "python3-pip" "python3-dev" )
+    if [ $i2creq == "yes" ]; then
+        echo ""
+        if confirm "Hardware requires I2C, enable now?"; then
+            \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+        fi
+    fi
 
-        for pkgdep in ${pkgdeplist[@]}
-            do if apt_pkg_req "$pkgdep" ; then
-                   updatedb=true
-               fi
-            done 
+    if [ $spireq == "yes" ]; then
+        echo ""
+        if confirm "Hardware requires SPI, enable now?"; then
+            \curl -sS get.pimoroni.com/spi | bash -s - "-y"
+        fi
+    fi
 
-        if $updatedb ; then
-		echo "Updating package indexes..."
-		sudo apt-get update
+    echo ""
+    echo "Checking install requirements..."
 
-		echo ""
-		echo "Installing UnicornHat requirements..."
+    updatedb=false
 
-            for pkgdep in ${pkgdeplist[@]}
-            do if apt_pkg_req "$pkgdep" ; then
-                   apt_pkg_install "$pkgdep"
-               fi
-            done 
-	else
-		success "Found!"
-	fi
+    for pkgdep in ${pkgdeplist[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            updatedb=true
+        fi
+        done
+    for morepkgdep in ${moreaptdep[@]}
+        do if apt_pkg_req "$morepkgdep" ; then
+            updatedb=true
+        fi
+        done 
 
-	echo ""
-	echo "Checking for Python 2 library..."
+    if $updatedb ; then
+        echo ""
+        echo "Updating package indexes..."
+    sudo apt-get update
 
-	if pip_pkg_req "unicornhat"; then
+    echo ""
+    echo "Installing hardware requirements..."
 
-		echo ""
-		echo "Installing UnicornHat for Python 2..."
-		if ! sudo pip install unicornhat; then
-			warning "Python 2 library install failed!"
-			echo ""
-			exit
-		fi
-		success "Done!"
-	else
-		echo ""
-		success "Found!"
-		echo ""
-		if confirm "Python 2 module found. Reinstall/Update?"; then
-			if ! sudo pip install unicornhat -I; then
-				warning "Python 2 library install failed!"
-				echo ""
-				exit
-			fi
-			success "Done!"
-		fi
-	fi
+    for pkgdep in ${pkgdeplist[@]}
+        do echo "Checking for dependencies..."
+        if apt_pkg_req "$pkgdep" ; then
+            apt_pkg_install "$pkgdep"
+        fi
+        done 
+    else
+        success "Found!"
+    fi
 
-	echo ""
-	echo "Checking for Python 3 library..."
+    if [ $pip2support == "yes" ]; then
+        echo ""
+        echo "Checking for Python 2 library..."
+    
+        if pip_pkg_req "$piplibname"; then
+            echo "Installing $productname library for Python 2..."
+            echo ""
+            if ! sudo pip install $piplibname; then
+                warning "Python 2 library install failed!"
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
+            fi
+            success "Done!"
+        else
+            success "Found!"
+            echo ""
+            if confirm "Python 2 module found. Reinstall/Update?"; then
+                if ! sudo pip install $piplibname -I; then
+                    warning "Python 2 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
+                fi
+                success "Done!"
+            fi
+        fi
+    else
+        echo "Note: $productname currently supports Python 3 only."
+    fi
 
-	if pip_pkg_req3 "unicornhat"; then
-
-		echo ""
-		echo "Installing UnicornHat for Python 3..."
+    if [ $pip3support == "yes" ]; then
+        echo ""
+        echo "Checking for Python 3 library..."
+        if pip_pkg_req3 "$piplibname"; then
+            echo "Installing $productname library for Python 3..."
+            echo ""
+            pip_chk_pip3
+            if ! sudo $PIP3_BIN install $piplibname; then
+                warning "Python 3 library install failed!"
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit
+            fi
+        else
+            success "Found!"
+            echo ""
+            if confirm "Python 3 module found. Reinstall/Update?"; then
                 pip_chk_pip3
-		if ! sudo $PIP3_BIN install unicornhat; then
-			warning "Python 3 library install failed!"
-			echo ""
-			exit
-		fi
-	else
+                if ! sudo $PIP3_BIN install $piplibname -I; then
+                    warning "Python 3 library install failed!"
+                    exit
+                fi
+            fi
+        fi
+    else
+        echo "Note: $productname currently supports Python 2 only."
+    fi
 
-		echo ""
-		success "Found!"
-		echo ""
-		if confirm "Python 3 module found. Reinstall/Update?"; then
-                        pip_chk_pip3
-			if ! sudo $PIP3_BIN install unicornhat -I; then
-				warning "Python 3 library install failed!"
-				echo ""
-				exit
-			fi
-		fi
-	fi
-
-	echo ""
-	echo "Checking for additional modules..."
-
-	if pip_pkg_req "flask"; then
-		echo ""
-		echo "Unicorn Paint requires the Flask python module ( Python 2.x only )"
-		if confirm "Would you like to install it?"; then
-			echo ""
-			sudo pip install flask
-		fi
-	else
-		echo ""
-		success "Found!"
-	fi
-
-	echo ""
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+        fi
+        
+        WORKING_DIR=$USER_HOME/Pimoroni
 
         if ! [ -d $WORKING_DIR ]; then
                 mkdir $WORKING_DIR
         fi
 
-	if ! [ -d $WORKING_DIR/unicornhat ]; then
-		echo "Downloading Unicorn Hat examples..."
-		export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-		cd $TMPDIR
-		git clone https://github.com/pimoroni/unicornhat
-		cd $WORKING_DIR
-		mkdir unicornhat
-		cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
-		rm -rf $TMPDIR
-		echo ""
-		success "Examples copied to $WORKING_DIR/unicornhat/"
-	else
-		if confirm "Examples already exist, shall I replace them?"; then
-			mv $WORKING_DIR/unicornhat $WORKING_DIR/unicornhat-backup
-			echo "Updating Unicorn Hat examples..."
-			export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-			cd $TMPDIR
-			git clone https://github.com/pimoroni/unicornhat
-			cd $WORKING_DIR
-			mkdir unicornhat
-			cp -R $TMPDIR/unicornhat/python/examples/* $WORKING_DIR/unicornhat/
-			rm -rf $TMPDIR
-			echo ""
-			warning "I backed up the examples to unicornhat-backup, just in case you've changed anything!"
-			success "Examples copied to $WORKING_DIR/unicornhat/"
-		fi
-	fi
+    if ! [ -d $WORKING_DIR/$localdir ]; then
+        echo ""
+        echo "Downloading $productname examples..."
+        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $TMPDIR
+        git clone https://github.com/pimoroni/$gitreponame
+        cd $WORKING_DIR
+        mkdir $localdir
+        cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+        rm -rf $TMPDIR
+        success "Examples copied to $WORKING_DIR/$localdir/"
 
-	echo ""
-	success "All done!"
-	echo ""
-	echo "For examples"
-	echo "see https://github.com/pimoroni/UnicornHat/tree/master/python/examples"
-	echo "And visit forums.pimoroni.com for support"
-	echo "Have fun!"
-	echo ""
+    else
+        echo ""
+        if confirm "Examples already exist, shall I replace them?"; then
+            mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
+            echo "Updating $productname examples..."
+            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $TMPDIR
+            git clone https://github.com/pimoroni/$gitreponame
+            cd $WORKING_DIR
+            mkdir $localdir
+            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            rm -rf $TMPDIR
+            warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
+            success "Examples copied to $WORKING_DIR/$localdir/"
+        fi
+    fi
+
+    echo ""
+    echo "Checking additional software requirements..."
+
+    moredepreq=false
+
+    for moredep in ${moreaptdep[@]}
+        do if apt_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+    for moredep in ${morepipdep[@]}
+        do if pip_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+
+    if $moredepreq ; then
+        echo ""
+        echo "Some $productname examples/plugins"
+        echo "require additional software and/or modules"
+        if confirm "Would you like to install them now?"; then
+            for moredep in ${moreaptdep[@]}
+                do if apt_pkg_req "$moredep" ; then
+                    apt_pkg_install "$moredep"
+                fi
+                done
+            for moredep in ${morepipdep[@]}
+                do if pip_pkg_req "$moredep" ; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+                done
+        fi
+    else
+        success "Found!"
+    fi
+
+    if [ $gitrepoclone == "yes" ]; then
+        if ! [ -d $WORKING_DIR/$localdir ]; then
+            mkdir $WORKING_DIR/$localdir
+        fi
+        cd $WORKING_DIR/$localdir
+        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
+            echo ""
+            echo "Cloning Github repo locally..."
+            git clone https://github.com/pimoroni/$gitreponame
+        else
+            cd $WORKING_DIR/$localdir/$gitreponame
+            echo ""
+            echo "Github repo already present. Updating..."
+            git pull
+        fi
+    fi
+
+    if [ $customcmd == "yes" ]; then
+        echo ""
+        echo "Finalising Install..."
+        # place all custom commands in this scope
+        echo ""
+    else
+        echo ""
+        success "All done!"
+        echo ""
+        echo "Enjoy your new $productname!"
+        if [ $pip3support == "no" ]; then
+            echo "Note: $productname currently supports Python 2 only."
+        fi
+        if [ $pip2support == "no" ]; then
+            echo "Note: $productname currently supports Python 3 only."
+        fi
+        echo ""
+    fi
+
 else
-	echo ""
-	echo "Aborting..."
-	echo ""
+    echo ""
+    echo "Aborting..."
+    echo ""
 fi
+
+#based on template 1512281127
