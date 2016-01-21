@@ -161,14 +161,16 @@ pim_menu() {
     FUNCTION=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
     --cancel-button Quit \
     --ok-button Select \
-    "1 Pibrella" "Install software & examples" \
-    "2 PiGlow" "Install software & examples" \
-    "3 Display-o-Tron 3000/HAT" "Install software & examples" \
-    "4 Unicorn Hat" "Install software & examples" \
-    "5 Skywriter Hat" "Install software & examples" \
-    "6 Piano HAT" "Install software & examples" \
-    "7 Explorer HAT" "Install software & examples" \
-    "8 Take Screenshot" "Useful to help solve a problem" \
+    "1 Display-o-Tron 3000/HAT" "Install software & examples" \
+    "2 Drum HAT" "Install software & examples" \
+    "3 Explorer HAT" "Install software & examples" \
+    "4 Piano HAT" "Install software & examples" \
+    "5 Pibrella" "Install software & examples" \
+    "6 PiGlow" "Install software & examples" \
+    "7 Scroll pHAT" "Install software & examples" \
+    "8 Skywriter HAT" "Install software & examples" \
+    "9 Unicorn HAT" "Install software & examples" \
+    "0 Take Screenshot" "Useful to help solve a problem" \
     3>&1 1>&2 2>&3)
 
     RETURN=$?
@@ -176,21 +178,23 @@ pim_menu() {
         return 0
     elif [ $RETURN -eq 0 ]; then
         case "$FUNCTION" in
-            1\ *) pim_net_install pibrella ;;
-            2\ *) pim_net_install piglow ;;
-            3\ *) pim_net_install dot3k ;;
-            4\ *) pim_net_install unicornhat ;;
-            5\ *) pim_net_install skywriter ;;
-            6\ *) pim_net_install pianohat ;;
-            7\ *) pim_net_install explorerhat ;;
-            8\ *) pim_screenshot ;;
+            1\ *) pim_net_install displayotron ;;
+            2\ *) pim_net_install drumhat ;;
+            3\ *) pim_net_install explorerhat ;;
+            4\ *) pim_net_install pianohat ;;
+            5\ *) pim_net_install pibrella ;;
+            6\ *) pim_net_install piglow ;;
+            7\ *) pim_net_install scrollphat ;;
+            8\ *) pim_net_install skywriter ;;
+            9\ *) pim_net_install unicornhat ;;
+            0\ *) pim_screenshot ;;
             *) pim_msgbox "Error: unrecognized option";;
         esac ||pim_msgbox "There was an error running option $FUNCTION"
     fi
 }
 
 pim_check_network() {
-    ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
 }
 
 # Runs the relevant net install script and then returns to the menu
