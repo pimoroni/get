@@ -1,22 +1,58 @@
 #!/bin/bash
 
-productname="product name" # the name of the product to install
-scriptname="script name" # the name of this script
+: <<'ACKNOWLEDGEMENT'
+        
+        The code for the do_expand_rootfs and get_init_sys reproduced
+        herein is lifted from the raspi-config utility script:
+        https://github.com/RPi-Distro/raspi-config
+        raspi-config is licensed under the terms of the MIT license,
+        reproduced below.
+        
+        #####################################################
+        
+        Copyright (c) 2012 Alex Bradbury <asb@asbradbury.org>
+        
+        Permission is hereby granted, free of charge, to any person
+        obtaining a copy of this software and associated documentation
+        files (the "Software"), to deal in the Software without
+        restriction, including without limitation the rights to use,
+        copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the
+        Software is furnished to do so, subject to the following
+        conditions:
+        
+        The above copyright notice and this permission notice shall be
+        included in all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+        OTHER DEALINGS IN THE SOFTWARE.
+        
+ACKNOWLEDGEMENT
+
+productname="Getting Started Documentation" # the name of the product to install
+scriptname="getstarted" # the name of this script
 sudoexec="yes" # whether the script requires to be ran with root privileges
 promptreboot="yes" # whether the script should prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
-piplibname="pip lib name" # the name of the lib in pip repo
-pip2support="yes" # whether python2 is supported or not
-pip3support="yes" # whether python3 is supported or not
-localdir="local dir" # the name of the dir for copy of examples
-gitreponame="git repo name" # the name of the git project repo
-gitrepoclone="yes" # whether the git repo is to be cloned locally
-examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
-i2creq="yes" # whether i2c is required or not
-spireq="yes" # whether spi is required or not
-pkgdeplist=( "git" ) # list of all the mandatory apt dependencies
+piplibname="na" # the name of the lib in pip repo
+pip2support="na" # whether python2 is supported or not
+pip3support="na" # whether python3 is supported or not
+localdir="getstarted" # the name of the dir for copy of examples
+gitreponame="get" # the name of the git project repo
+gitrepoclone="no" # whether the git repo is to be cloned locally
+docdir="$gitreponame/documentation" # subdirectory of examples in repo 
+examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
+i2creq="no" # whether i2c is required or not
+spireq="no" # whether spi is required or not
+pkgdeplist=( "git" "i2c-tools" "python3-rpi.gpio" "scrot" ) # list of all the mandatory apt dependencies
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -388,7 +424,104 @@ if confirm "Do you wish to continue?"; then
     if [ $customcmd == "yes" ]; then
         echo ""
         echo "Finalising Install..."
-        # place all custom commands in this scope
+
+    get_init_sys() {
+        if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+            SYSTEMD=1
+        elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+            SYSTEMD=0
+        else
+            echo "Unrecognised init system"
+            return 1
+        fi
+    }
+
+    do_expand_rootfs () {
+        get_init_sys
+        if [ $SYSTEMD -eq 1 ]; then
+            ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
+        else
+            if ! [ -h /dev/root ]; then
+                echo -e "/dev/root does not exist or is not a symlink. Don't know how to expand"
+                return 0
+            fi
+            ROOT_PART=$(readlink /dev/root)
+        fi
+        PART_NUM=${ROOT_PART#mmcblk0p}
+        if [ "$PART_NUM" = "$ROOT_PART" ]; then
+            echo -e "$ROOT_PART is not an SD card. Don't know how to expand"
+            return 0
+        fi
+        # NOTE: the NOOBS partition layout confuses parted. For now, let's only 
+        # agree to work with a sufficiently simple partition layout
+        if [ "$PART_NUM" -ne 2 ]; then
+            echo -e "Your partition layout is not currently supported by this tool. You are probably using NOOBS, in which case your root filesystem is already expanded anyway."
+            return 0
+        fi
+        LAST_PART_NUM=$(parted /dev/mmcblk0 -ms unit s p | tail -n 1 | cut -f 1 -d:)
+        if [ $LAST_PART_NUM -ne $PART_NUM ]; then
+            echo -e "$ROOT_PART is not the last partition. Don't know how to expand"
+            return 0
+        fi
+        # Get the starting offset of the root partition
+        PART_START=$(parted /dev/mmcblk0 -ms unit s p | grep "^${PART_NUM}" | cut -f 2 -d: | sed 's/[^0-9]//g')
+        [ "$PART_START" ] || return 1
+        # Return value will likely be error for fdisk as it fails to reload the
+        # partition table because the root fs is mounted
+        fdisk /dev/mmcblk0 <<EOF
+p
+d
+$PART_NUM
+n
+p
+$PART_NUM
+$PART_START
+
+p
+w
+EOF
+        ASK_TO_REBOOT=1
+        # now set up an init.d script
+        cat <<EOF > /etc/init.d/resize2fs_once &&
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          resize2fs_once
+# Required-Start:
+# Required-Stop:
+# Default-Start: 3
+# Default-Stop:
+# Short-Description: Resize the root filesystem to fill partition
+# Description:
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+case "\$1" in
+  start)
+    log_daemon_msg "Starting resize2fs_once" &&
+    resize2fs /dev/$ROOT_PART &&
+    update-rc.d resize2fs_once remove &&
+    rm /etc/init.d/resize2fs_once &&
+    log_end_msg \$?
+    ;;
+  *)
+    echo "Usage: \$0 start" >&2
+    exit 3
+    ;;
+esac
+EOF
+        chmod +x /etc/init.d/resize2fs_once &&
+        update-rc.d resize2fs_once defaults &&
+        if [ "$INTERACTIVE" = True ]; then
+            echo -e "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
+        fi
+    }
+        echo "Bringing your system up-to-date"
+        sudocheck
+        sysupdgrade
+        do_expand_rootfs
+        echo "The message above regarding failure to read the partition table is normal."
+        echo "You should now reboot your system."
         echo ""
     else
         sysclean
