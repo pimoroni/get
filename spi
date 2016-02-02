@@ -1,17 +1,80 @@
 #!/bin/bash
 
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+: <<'ACKNOWLEDGEMENT'
+
+The code for the kernelatleast reproduced herein is lifted from:
+http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
+
+ACKNOWLEDGEMENT
+
+scriptname="spi" # the name of this script
+forcesudo="yes" # whether the script requires to be ran with root privileges
+promptreboot="no" # whether the script should always prompt user to reboot
+
+FORCE=$1
+ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+DEVICE_TREE=true
+UPDATE_DB=false
 
-success () {
-        echo "$(tput setaf 2)$1$(tput sgr0)"
+confirm() {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+            true
+        else
+            false
+        fi
+    fi
 }
 
-warning () {
-        echo "$(tput setaf 1)$1$(tput sgr0)"
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
 }
 
-# Thank you: http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
-kernelatleast() { # provide number like 2639
+sysreboot() {
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+kernelatleast() {
     kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
     kver=${kver:0:3}
     if [ $1 -ge $kver ]; then
@@ -21,93 +84,101 @@ kernelatleast() { # provide number like 2639
     fi
 }
 
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+raspbian_check() {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
 
-if [[ "" == $IS_RASPBIAN ]]; then
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
+    exit 1
 fi
 
-if ! [[ $1 == '-y' ]]; then
-    echo ""
-    echo "This script will enable SPI on your Raspberry Pi"
-    echo ""
-    warning "--- Warning ---"
-    echo ""
-    echo "Always be careful when running scripts and commands"
-    echo "copied from the internet. Ensure they are from a"
-    echo "trusted source."
-    echo ""
-    echo "If you want to see what this script does before"
-    echo "running it, you should run:"
-    echo "    \curl -sS get.pimoroni.com/spi"
-    echo ""
-    echo ""
-
-    read -r -p "Do you wish to continue? [y/n]" response < /dev/tty
-    response=${response,,}
+if [ $forcesudo == "yes" ]; then
+    sudocheck
 fi
 
-if [[ $response =~ ^(yes|y)$ ]] || [[ $1 == '-y' ]]; then
+echo ""
+echo "This script will enable SPI on your Raspberry Pi"
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo ""
 
-    DEVICE_TREE="yes" # assume not disabled
+if confirm "Do you wish to continue?"; then
+
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-        DEVICE_TREE="no"
-    fi
-    if ! kernelatleast 31850; then
-        DEVICE_TREE="no"
+        DEVICE_TREE=false
     fi
 
-    CURRENT_SETTING="off" # assume disabled
+    CURRENT_SETTING=false # assume disabled
+
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        CURRENT_SETTING="on"
+        CURRENT_SETTING=true
     fi
 
-    if [ $DEVICE_TREE = "no" ] && [ -e /etc/modprobe.d/raspi-blacklist.conf ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" /etc/modprobe.d/raspi-blacklist.conf; then
+    if ! $DEVICE_TREE && [ -e $BLACKLIST ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" $BLACKLIST; then
         echo ""
         echo "No Device Tree Detected"
         echo "Enabling SPI..."
         echo ""
-
         echo "Commenting out Blacklist entry in "
-        echo "/etc/modprobe.d/raspi-blacklist.conf"
-        sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+        echo "$BLACKLIST"
+        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
         sudo modprobe spi-bcm2708
-
         echo ""
         success "SPI enabled"
-    elif [ $DEVICE_TREE = "yes" ] && [ $CURRENT_SETTING = "off" ]; then
+        echo ""
+    elif $DEVICE_TREE && ! $CURRENT_SETTING; then
         echo ""
         echo "Device Tree Detected"
         echo "Enabling SPI..."
         echo ""
-
         echo "Adding Device Tree Entry to "
         echo $CONFIG
         echo "dtparam=spi=on" | sudo tee -a $CONFIG
-
         echo "Commenting out Blacklist entry in "
-        echo "/etc/modprobe.d/raspi-blacklist.conf"
-        sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+        echo "$BLACKLIST"
+        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
         sudo modprobe spi-bcm2708
-
         echo ""
         success "SPI enabled"
+        warning "Reboot required!"
+        echo ""
+        ASK_TO_REBOOT=true
     else
         echo ""
         success "SPI Already Enabled"
+        echo ""
     fi
 
-    if ! grep -qe "spi-bcm2708" "/etc/modules"; then
+    if ! grep -qe "spi-bcm2708" $LOADMOD; then
         echo ""
         echo "Adding "
-        echo "spi-bcm2708" | sudo tee -a "/etc/modules"
-        echo " to /etc/modules"
+        echo "spi-bcm2708" | sudo tee -a $LOADMOD
+        echo " to $LOADMOD"
     fi
 
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+    fi
 else
     echo ""
     echo "Aborting..."
     echo ""
 fi
+
+exit 0
