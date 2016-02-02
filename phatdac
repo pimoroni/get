@@ -7,6 +7,7 @@ spireq="no" # whether spi is required or not
 i2creq="no" # whether i2c is required or not
 i2sreq="yes" # whether i2s is required or not
 
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 CONFIG=/boot/config.txt
 
 success () {
@@ -100,12 +101,12 @@ if confirm "Do you wish to continue?"; then
                 echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
             fi
 
-            if [ -e /etc/modprobe.d/raspi-blacklist.conf ]; then
+            if [ -e $BLACKLIST ]; then
                 echo "Commenting out Blacklist entry in "
-                echo "/etc/modprobe.d/raspi-blacklist.conf"
-                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
-                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
-                sudo sed -i /etc/modprobe.d/raspi-blacklist.conf -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
+                echo "$BLACKLIST"
+                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
+                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
+                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
             fi
         else
             echo ""
