@@ -207,14 +207,14 @@ if confirm "Do you wish to continue?"; then
     if [ $spireq == "yes" ]; then
         echo ""
         if confirm "Hardware requires SPI, enable now?"; then
-            \curl -sS get.pimoroni.com/spi | bash -s - "-y"
+            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
         echo ""
         if confirm "Hardware requires I2C, enable now?"; then
-            \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
+            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
         fi
     fi
 
@@ -435,4 +435,4 @@ else
     echo ""
 fi
 
-#based on template 1602021920
+#based on template 1602022200

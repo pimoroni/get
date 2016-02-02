@@ -27,7 +27,7 @@ http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is
 ACKNOWLEDGEMENT
 
 scriptname="spi" # the name of this script
-forcesudo="yes" # whether the script requires to be ran with root privileges
+forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 
 FORCE=$1
@@ -159,6 +159,7 @@ if confirm "Do you wish to continue?"; then
         warning "Reboot required!"
         echo ""
         ASK_TO_REBOOT=true
+        export ASK_TO_REBOOT
     else
         echo ""
         success "SPI Already Enabled"
@@ -170,10 +171,6 @@ if confirm "Do you wish to continue?"; then
         echo "Adding "
         echo "spi-bcm2708" | sudo tee -a $LOADMOD
         echo " to $LOADMOD"
-    fi
-
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
     fi
 else
     echo ""

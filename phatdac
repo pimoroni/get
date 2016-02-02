@@ -157,6 +157,8 @@ if confirm "Do you wish to continue?"; then
                 echo "dtoverlay already active"
             else
                 echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
+                ASK_TO_REBOOT=true
+                export ASK_TO_REBOOT
             fi
 
             if [ -e $BLACKLIST ]; then
