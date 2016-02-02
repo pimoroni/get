@@ -1,53 +1,112 @@
 #!/bin/bash
 
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+: <<'ACKNOWLEDGEMENT'
+
+The code for the kernelatleast reproduced herein is lifted from:
+http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
+
+ACKNOWLEDGEMENT
+
 productname="pHAT DAC" # the name of the product to install
 scriptname="phatdac" # the name of this script
-localdir="phatdac" # the name of the dir for copy of examples
+forcesudo="no" # whether the script requires to be ran with root privileges
+promptreboot="no" # whether the script should always prompt user to reboot
 spireq="no" # whether spi is required or not
 i2creq="no" # whether i2c is required or not
 i2sreq="yes" # whether i2s is required or not
 
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-CONFIG=/boot/config.txt
-
-success () {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
-}
-
-warning () {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
-}
-
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
-
-if [[ "" == $IS_RASPBIAN ]]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1;
-fi
-
-if [ $EUID -ne 0 ]; then
-    USER_HOME=$(getent passwd $USER | cut -d: -f6)
-else
-    USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-fi
-
-WORKING_DIR=$USER_HOME/Pimoroni
 FORCE=$1
+ASK_TO_REBOOT=false
+CONFIG=/boot/config.txt
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+DEVICE_TREE=true
+UPDATE_DB=false
 
-confirm () {
+confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
         response=${response,,}
         if [[ $response =~ ^(yes|y)$ ]]; then
-                true
+            true
         else
-                false
+            false
         fi
     fi
 }
+
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysreboot() {
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+kernelatleast() {
+    kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
+    kver=${kver:0:3}
+    if [ $1 -ge $kver ]; then
+        return 0;
+    else
+        return 1;
+    fi
+}
+
+raspbian_check() {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
 
 echo ""
 echo "This script will install everything needed to use"
@@ -84,12 +143,11 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $i2sreq == "yes" ]; then
-        DEVICE_TREE="yes" # assume not disabled
         if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-            DEVICE_TREE="no"
+            DEVICE_TREE=false
         fi
 
-        if [ $DEVICE_TREE = "yes" ]; then
+        if $DEVICE_TREE; then
 
             echo ""
             echo "Adding Device Tree Entry to "
@@ -121,15 +179,15 @@ if confirm "Do you wish to continue?"; then
             echo "Disabling default sound driver"
             echo ""
             sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
-            if [ -e /etc/modules ] && grep -q "^snd-bcm2835" /etc/modules; then
-                sudo sed -i /etc/modules -e "s/^snd-bcm2835/#snd-bcm2835/"
+            if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+                sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
             fi
-        elif [ -e /etc/modules ] && grep -q "^snd-bcm2835" /etc/modules; then
+        elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
             echo ""
-            sudo sed -i /etc/modules -e "s/^snd-bcm2835/#snd-bcm2835/"
+            sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
         else
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
@@ -162,8 +220,13 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Enjoy your new $productname!"
 
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+    fi
 else
     echo ""
     echo "Aborting..."
     echo ""
 fi
+
+exit 0
