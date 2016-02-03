@@ -115,8 +115,8 @@ echo "    \curl -sS get.pimoroni.com/$scriptname"
 echo ""
 
 if confirm "Do you wish to continue?"; then
-    \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
-    \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+    \curl -sS get.pimoroni.com/i2c | sudo bash . -s - "-y"
+    \curl -sS get.pimoroni.com/spi | sudo bash . -s - "-y"
     echo ""
     echo "All done!"
     echo ""
