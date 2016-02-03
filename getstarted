@@ -420,9 +420,13 @@ if confirm "Do you wish to continue?"; then
         fi
         echo ""
     else
-        echo ""
-        echo "Bringing your system up-to-date..."
-        sysupdgrade
+        if raspbian_old; then
+            echo ""
+            echo "Bringing your system up-to-date..."
+            sysupdgrade
+        else
+            sysclean
+        fi
         echo "Expanding filesystem..."
         \curl -sS get.pimoroni.com/expandfs | sudo bash
     fi
