@@ -56,7 +56,7 @@ ACKNOWLEDGEMENT
 
 scriptname="expandfs" # the name of this script
 forcesudo="yes" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -151,7 +151,7 @@ echo ""
 
 if confirm "Do you wish to continue?"; then
 
-    #get_init_sys function fron raspi-config
+get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
     elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
@@ -160,8 +160,10 @@ if confirm "Do you wish to continue?"; then
         echo "Unrecognised init system"
         return 1
     fi
+}
 
-    #do_expand_rootfs function fron raspi-config
+do_expand_rootfs() {
+    get_init_sys
     if [ $SYSTEMD -eq 1 ]; then
         ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
     else
@@ -236,15 +238,19 @@ esac
 EOF
     chmod +x /etc/init.d/resize2fs_once &&
     update-rc.d resize2fs_once defaults &&
-    if [ "$INTERACTIVE" = True ]; then
+    if [ "$INTERACTIVE" = true ]; then
         echo -e "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
     fi
+}
+    INTERACTIVE=true
+    do_expand_rootfs
 
     echo "Messages regarding failure to read the partition table can be ignored."
-    echo "You should now reboot your system."
     echo ""
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        echo "You should now reboot your system."
+        echo ""  
         sysreboot
     fi
 else
