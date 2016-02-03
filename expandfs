@@ -238,10 +238,11 @@ esac
 EOF
     chmod +x /etc/init.d/resize2fs_once &&
     update-rc.d resize2fs_once defaults &&
-    if [ "$INTERACTIVE" = True ]; then
+    if [ "$INTERACTIVE" = true ]; then
         echo -e "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
     fi
 }
+    INTERACTIVE=true
     do_expand_rootfs
 
     echo "Messages regarding failure to read the partition table can be ignored."
