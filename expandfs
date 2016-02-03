@@ -56,7 +56,7 @@ ACKNOWLEDGEMENT
 
 scriptname="expandfs" # the name of this script
 forcesudo="yes" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 
 FORCE=$1
 ASK_TO_REBOOT=false
