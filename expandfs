@@ -246,10 +246,11 @@ EOF
     do_expand_rootfs
 
     echo "Messages regarding failure to read the partition table can be ignored."
-    echo "You should now reboot your system."
     echo ""
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        echo "You should now reboot your system."
+        echo ""  
         sysreboot
     fi
 else
