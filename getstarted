@@ -423,6 +423,7 @@ if confirm "Do you wish to continue?"; then
         if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
             echo "Max USB current setting already active"
         else
+            echo "Adjusting USB current setting in $CONFIG"
             echo "max_usb_current=1" | sudo tee -a $CONFIG
             ASK_TO_REBOOT=true
         fi
