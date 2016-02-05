@@ -36,7 +36,8 @@ docdir="$gitreponame/documentation" # subdirectory of examples in repo
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
 i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
-pkgdeplist=( "git" ) # list of all the mandatory apt dependencies
+pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
+pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -221,7 +222,7 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking install requirements..."
 
-    for pkgdep in ${pkgdeplist[@]}
+    for pkgdep in ${pkgdeplist7[@]}
         do if apt_pkg_req "$pkgdep" ; then
             UPDATE_DB=true
         fi
@@ -240,7 +241,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist[@]}
+        for pkgdep in ${pkgdeplist7[@]}
             do echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
@@ -435,4 +436,4 @@ else
     echo ""
 fi
 
-#based on template 1602022200
+#based on template 1602051140
