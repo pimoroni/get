@@ -10,7 +10,7 @@ Using Get
 
 You can run a get script like so:
 
-curl -sS get.pimoroni.com/i2c | bash
+curl -sS get.pimoroni.com/getstarted | bash
 
 Note
 ====
