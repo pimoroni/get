@@ -3,14 +3,14 @@ Get
 
 Get is a collection of scripts, hosted at get.pimoroni.com, which facilitate easy installation of our products, and easy automation of common tasks on the Raspberry Pi such as setting up i2c/spi and keeping up-to-date.
 
-In the interests of transparency, and to invite contributions these scripts are reprouced here.
+In the interests of transparency, and to invite contributions these scripts are reproduced here.
 
 Using Get
 =========
 
 You can run a get script like so:
 
-curl -sS get.pimoroni.com/i2c | bash
+curl -sS get.pimoroni.com/getstarted | bash
 
 Note
 ====

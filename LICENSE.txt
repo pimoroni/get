@@ -2,7 +2,7 @@ All scripts within get are licensed under the terms of the MIT license reproduce
 
 #####################################################
 
-Copyright (c) 2014 Pimoroni <phil@pimoroni.com>
+Copyright (c) 2014-2016 Pimoroni <phil@pimoroni.com>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

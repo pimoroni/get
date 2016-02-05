@@ -36,7 +36,8 @@ docdir="$gitreponame/documentation" # subdirectory of examples in repo
 examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
 i2creq="no" # whether i2c is required or not
 spireq="no" # whether spi is required or not
-pkgdeplist=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list of all the mandatory apt dependencies
+pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "python-gpiozero" "python3-gpiozero" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
+pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -221,7 +222,7 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking install requirements..."
 
-    for pkgdep in ${pkgdeplist[@]}
+    for pkgdep in ${pkgdeplist7[@]}
         do if apt_pkg_req "$pkgdep" ; then
             UPDATE_DB=true
         fi
@@ -240,7 +241,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist[@]}
+        for pkgdep in ${pkgdeplist7[@]}
             do echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
@@ -420,6 +421,16 @@ if confirm "Do you wish to continue?"; then
         fi
         echo ""
     else
+        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+            echo ""
+            echo "Max USB current setting already active"
+        else
+            echo ""
+            echo "Adjusting USB current setting in $CONFIG"
+            echo "max_usb_current=1" | sudo tee -a $CONFIG
+            ASK_TO_REBOOT=true
+        fi
+            
         if raspbian_old; then
             echo ""
             echo "Bringing your system up-to-date..."
@@ -427,6 +438,7 @@ if confirm "Do you wish to continue?"; then
         else
             sysclean
         fi
+        echo ""
         echo "Expanding filesystem..."
         \curl -sS get.pimoroni.com/expandfs | sudo bash
     fi
@@ -440,4 +452,4 @@ else
     echo ""
 fi
 
-#based on template 1602022200
+#based on template 1602051140

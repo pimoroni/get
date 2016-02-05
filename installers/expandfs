@@ -206,7 +206,7 @@ $PART_START
 p
 w
 EOF
-    ASK_TO_REBOOT=1
+    ASK_TO_REBOOT=true
     # now set up an init.d script
     cat <<EOF > /etc/init.d/resize2fs_once &&
 #!/bin/sh
