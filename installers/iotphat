@@ -1,0 +1,503 @@
+#!/bin/bash
+
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+productname="ESP IoT pHAT" # the name of the product to install
+scriptname="iotphat" # the name of this script
+forcesudo="no" # whether the script requires to be ran with root privileges
+promptreboot="no" # whether the script should always prompt user to reboot
+customcmd="no" # whether to execute commands specified before exit
+jessiesupport="yes" # whether Jessie is supported or not
+wheezysupport="yes" # whether Wheezy is supported or not
+piplibname="na" # the name of the lib in pip repo
+pip2support="na" # whether python2 is supported or not
+pip3support="na" # whether python3 is supported or not
+localdir="iotphat" # the name of the dir for copy of examples
+gitreponame="na" # the name of the git project repo
+gitrepoclone="no" # whether the git repo is to be cloned locally
+docdir="na" # subdirectory of examples in repo 
+examplesdir="na" # subdirectory of examples in repo 
+i2creq="no" # whether i2c interface is required or not
+spireq="no" # whether spi interface is required or not
+uartreq="yes" # whether uart communication is required or not
+pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
+pkgdeplist8=() # list extra dependencies assuming Jessie
+moreaptdep=( "minicom" ) # list of all the additional apt dependencies
+morepipdep=() # list of all the additional pip dependencies
+
+FORCE=$1
+INTERACTIVE=false
+ASK_TO_REBOOT=false
+CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
+LOADMOD=/etc/modules
+DEVICE_TREE=true
+UPDATE_DB=false
+
+confirm() {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        response=${response,,}
+        if [[ $response =~ ^(yes|y)$ ]]; then
+            true
+        else
+            false
+        fi
+    fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupdgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+}
+
+sysreboot() {
+    echo "Some changes made to your system require"
+    echo "your computer to reboot to take effect."
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+raspbian_check() {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
+}
+
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
+    fi
+}
+
+usb_max_power() {
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        echo ""
+        echo "Max USB current setting already active"
+    else
+        echo ""
+        echo "Adjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG
+        echo ""
+        ASK_TO_REBOOT=true
+    fi
+}
+
+apt_pkg_req() {
+    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_install() {
+    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
+}
+
+pip_pkg_req() {
+    PIP_CHK=$(pip search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip_chk_pip3() {
+    if [ -e /usr/bin/pip3  ]; then
+        PIP3_BIN="pip3"
+    else
+        PIP3_BIN="pip-3.2"
+    fi
+}
+
+pip_pkg_req3() {
+    pip_chk_pip3
+    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+: <<'MAINSTART'
+
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit
+fi
+
+if [ $wheezysupport == "no" ]; then
+    if raspbian_old; then
+        echo ""
+        warning "--- Warning ---"
+        echo ""
+        echo "The $productname installer"
+        echo "does not work on Raspbian Wheezy."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        echo ""
+        exit
+    fi
+fi
+
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
+
+echo ""
+echo "This script will install everything needed to use"
+echo "$productname"
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo ""
+
+if confirm "Do you wish to continue?"; then
+
+    echo ""
+    echo "Checking hardware requirements..."
+
+    if [ $uartreq == "yes" ]; then
+        echo ""
+        echo "The $productname requires UART communication."
+        echo "The serial console needs to be disabled."
+        if confirm "Do you wish to continue?"; then
+            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        else
+            echo ""
+            echo "Aborting..."
+            echo ""
+            exit
+        fi
+    fi
+
+    if [ $spireq == "yes" ]; then
+        echo ""
+        if confirm "The $productname requires SPI, enable now?"; then
+            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+        fi
+    fi
+
+    if [ $i2creq == "yes" ]; then
+        echo ""
+        if confirm "The $productname requires I2C, enable now?"; then
+            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+        fi
+    fi
+
+    echo ""
+    echo "Checking install requirements..."
+
+    for pkgdep in ${pkgdeplist7[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done
+    for pkgdep in ${pkgdeplist8[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done
+    for morepkgdep in ${moreaptdep[@]}
+        do if apt_pkg_req "$morepkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done 
+
+    if $UPDATE_DB ; then
+        echo ""
+        echo "Updating package indexes..."
+        sysupdate
+
+        echo ""
+        echo "Installing hardware requirements..."
+
+        for pkgdep in ${pkgdeplist7[@]}; do
+            echo "Checking for dependencies..."
+            if apt_pkg_req "$pkgdep" ; then
+                apt_pkg_install "$pkgdep"
+            fi
+        done
+
+        if ! raspbian_old; then
+            for pkgdep in ${pkgdeplist8[@]}; do
+                echo "Checking for dependencies..."
+                if apt_pkg_req "$pkgdep" ; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
+        fi
+    else
+        success "Found!"
+    fi
+
+    if [ $piplibname != "na" ]; then
+
+        if [ $pip2support == "yes" ]; then
+            echo ""
+            echo "Checking for Python 2 library..."
+
+            if pip_pkg_req "$piplibname"; then
+                echo "Installing $productname library for Python 2..."
+                echo ""
+                if ! sudo pip install $piplibname; then
+                    warning "Python 2 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit
+                fi
+                success "Done!"
+            else
+                success "Found!"
+                echo ""
+                if confirm "Python 2 module found. Reinstall/Update?"; then
+                    if ! sudo pip install $piplibname -I; then
+                        warning "Python 2 library install failed!"
+                        echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit
+                    fi
+                    success "Done!"
+                fi
+            fi
+        else
+            echo "Note: $productname currently supports Python 3 only."
+        fi
+
+        if [ $pip3support == "yes" ]; then
+            echo ""
+            echo "Checking for Python 3 library..."
+            if pip_pkg_req3 "$piplibname"; then
+                echo "Installing $productname library for Python 3..."
+                echo ""
+                pip_chk_pip3
+                if ! sudo $PIP3_BIN install $piplibname; then
+                    warning "Python 3 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit
+                fi
+            else
+                success "Found!"
+                echo ""
+                if confirm "Python 3 module found. Reinstall/Update?"; then
+                    pip_chk_pip3
+                    if ! sudo $PIP3_BIN install $piplibname -I; then
+                        warning "Python 3 library install failed!"
+                        exit
+                    fi
+                fi
+            fi
+        else
+            echo "Note: $productname currently supports Python 2 only."
+        fi
+    fi
+
+    if [ $EUID -ne 0 ]; then
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
+    else
+        USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+    fi
+
+    WORKING_DIR=$USER_HOME/Pimoroni
+
+    if ! [ -d $WORKING_DIR ]; then
+            mkdir $WORKING_DIR
+    fi
+
+    if [ $examplesdir != "na" ]; then
+
+        if ! [ -d $WORKING_DIR/$localdir ]; then
+            echo ""
+            echo "Downloading $productname examples..."
+            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $TMPDIR
+            git clone https://github.com/pimoroni/$gitreponame
+            cd $WORKING_DIR
+            mkdir $localdir
+            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            rm -rf $TMPDIR
+            success "Examples copied to $WORKING_DIR/$localdir/"
+        else
+            echo ""
+            if confirm "Examples already exist, shall I replace them?"; then
+                mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
+                echo "Updating $productname examples..."
+                export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $TMPDIR
+                git clone https://github.com/pimoroni/$gitreponame
+                cd $WORKING_DIR
+                mkdir $localdir
+                cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+                rm -rf $TMPDIR
+                warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
+                success "Examples copied to $WORKING_DIR/$localdir/"
+            fi
+        fi
+    fi
+
+    echo ""
+    echo "Checking additional software requirements..."
+
+    moredepreq=false
+
+    for moredep in ${moreaptdep[@]}
+        do if apt_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+    for moredep in ${morepipdep[@]}
+        do if pip_pkg_req "$moredep" ; then
+            moredepreq=true
+        fi
+        done
+
+    if $moredepreq ; then
+        echo ""
+        echo "Some $productname examples/plugins"
+        echo "require additional software and/or modules"
+        if confirm "Would you like to install them now?"; then
+            for moredep in ${moreaptdep[@]}
+                do if apt_pkg_req "$moredep" ; then
+                    apt_pkg_install "$moredep"
+                fi
+                done
+            for moredep in ${morepipdep[@]}
+                do if pip_pkg_req "$moredep" ; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+                done
+        fi
+    else
+        success "Found!"
+    fi
+
+    if [ $gitrepoclone == "yes" ]; then
+        if ! [ -d $WORKING_DIR/$localdir ]; then
+            mkdir $WORKING_DIR/$localdir
+        fi
+        cd $WORKING_DIR/$localdir
+        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
+            echo ""
+            echo "Cloning Github repo locally..."
+            git clone https://github.com/pimoroni/$gitreponame
+        else
+            cd $WORKING_DIR/$localdir/$gitreponame
+            echo ""
+            echo "Github repo already present. Updating..."
+            git pull
+        fi
+    fi
+
+    if [ $customcmd == "no" ]; then
+        sysclean
+        echo ""
+        success "All done!"
+        echo ""
+        echo "Enjoy your new $productname!"
+        if [ $pip3support == "no" ]; then
+            echo "Note: $productname currently supports Python 2 only."
+        fi
+        if [ $pip2support == "no" ]; then
+            echo "Note: $productname currently supports Python 3 only."
+        fi
+        echo ""
+    else
+        echo ""
+        echo "Finalising Install..."
+        # place all custom commands in this scope
+        echo ""
+    fi
+
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+    fi
+else
+    echo ""
+    echo "Aborting..."
+    echo ""
+fi
+
+#based on template 1602071950
