@@ -238,16 +238,30 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking hardware requirements..."
 
+    if [ $uartreq == "yes" ]; then
+        echo ""
+        echo "The $productname requires UART communication."
+        echo "The serial console needs to be disabled."
+        if confirm "Do you wish to continue?"; then
+            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        else
+            echo ""
+            echo "Aborting..."
+            echo ""
+            exit
+        fi
+    fi
+
     if [ $spireq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires SPI, enable now?"; then
+        if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires I2C, enable now?"; then
+        if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
         fi
     fi
@@ -499,4 +513,4 @@ else
     echo ""
 fi
 
-#based on template 1602071930
+#based on template 1602071950
