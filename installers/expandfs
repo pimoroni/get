@@ -21,8 +21,8 @@ DISCLAIMER
 
 : <<'ACKNOWLEDGEMENT'
 
-The code for the do_expand_rootfs and get_init_sys reproduced
-herein is lifted from the raspi-config utility script:
+The code for the do_expand_rootfs reproduced herein
+is lifted from the raspi-config utility script:
 https://github.com/RPi-Distro/raspi-config
 raspi-config is licensed under the terms of the MIT license,
 reproduced below.
@@ -59,9 +59,12 @@ forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -78,6 +81,14 @@ confirm() {
             false
         fi
     fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 sudocheck() {
@@ -101,18 +112,12 @@ sysupdgrade() {
 }
 
 sysreboot() {
+    echo "Some changes made to your system require"
+    echo "your computer to reboot to take effect."
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
-}
-
-success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
-}
-
-warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 raspbian_check() {
@@ -125,31 +130,15 @@ raspbian_check() {
     fi
 }
 
-if ! raspbian_check; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
-fi
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
 
-if [ $forcesudo == "yes" ]; then
-    sudocheck
-fi
-
-echo ""
-echo "This script will expand the filesystem on your SD card"
-echo ""
-warning "--- Warning ---"
-echo ""
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-echo ""
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
-echo ""
-
-if confirm "Do you wish to continue?"; then
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
 
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
@@ -157,8 +146,7 @@ get_init_sys() {
     elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
         SYSTEMD=0
     else
-        echo "Unrecognised init system"
-        return 1
+        echo "Unrecognised init system" && exit
     fi
 }
 
@@ -242,7 +230,40 @@ EOF
         echo -e "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
     fi
 }
-    INTERACTIVE=true
+
+: <<'MAINSTART'
+
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+if ! raspbian_check; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+fi
+
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
+
+echo ""
+echo "This script will expand the filesystem on your SD card"
+echo ""
+warning "--- Warning ---"
+echo ""
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+echo ""
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo ""
+
+if confirm "Do you wish to continue?"; then
+
     do_expand_rootfs
 
     echo "Messages regarding failure to read the partition table can be ignored."
