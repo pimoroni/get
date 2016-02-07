@@ -20,7 +20,7 @@ was written for this script.
 DISCLAIMER
 
 scriptname="uarton" # the name of this script
-forcesudo="no" # whether the script requires to be ran with root privileges
+forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 
 FORCE=$1
