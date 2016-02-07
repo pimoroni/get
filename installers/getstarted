@@ -34,17 +34,21 @@ gitreponame="get" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
 docdir="$gitreponame/documentation" # subdirectory of examples in repo 
 examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
-i2creq="no" # whether i2c is required or not
-spireq="no" # whether spi is required or not
+i2creq="no" # whether i2c interface is required or not
+spireq="no" # whether spi interface is required or not
+uartreq="no" # whether uart communication is required or not
 pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "python-gpiozero" "python3-gpiozero" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -63,10 +67,18 @@ confirm() {
     fi
 }
 
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit
     fi
 }
 
@@ -90,12 +102,46 @@ sysreboot() {
     fi
 }
 
-success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
+raspbian_check() {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
 }
 
-warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
+    fi
+}
+
+usb_max_power() {
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        echo ""
+        echo "Max USB current setting already active"
+    else
+        echo ""
+        echo "Adjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG
+        ASK_TO_REBOOT=true
+    fi
 }
 
 apt_pkg_req() {
@@ -141,30 +187,17 @@ pip_pkg_req3() {
     fi
 }
 
-raspbian_check() {
-    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+: <<'MAINSTART'
 
-    if [[ "" == $IS_RASPBIAN ]]; then
-        false
-    else
-        true
-    fi
-}
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
 
-raspbian_old() {
-    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
-
-    if [ "" == "$DIST_CHK" ];then
-        false
-    else
-        true
-    fi
-}
+MAINSTART
 
 if ! raspbian_check; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    exit
 fi
 
 if [ $wheezysupport == "no" ]; then
@@ -177,7 +210,7 @@ if [ $wheezysupport == "no" ]; then
         echo "Check https://github.com/pimoroni/$gitreponame"
         echo "for additional information and support"
         echo ""
-        exit 1
+        exit
     fi
 fi
 
@@ -227,6 +260,11 @@ if confirm "Do you wish to continue?"; then
             UPDATE_DB=true
         fi
         done
+    for pkgdep in ${pkgdeplist8[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done
     for morepkgdep in ${moreaptdep[@]}
         do if apt_pkg_req "$morepkgdep" ; then
             UPDATE_DB=true
@@ -241,12 +279,21 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist7[@]}
-            do echo "Checking for dependencies..."
+        for pkgdep in ${pkgdeplist7[@]}; do
+            echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
             fi
+        done
+
+        if ! raspbian_old; then
+            for pkgdep in ${pkgdeplist8[@]}; do
+                echo "Checking for dependencies..."
+                if apt_pkg_req "$pkgdep" ; then
+                    apt_pkg_install "$pkgdep"
+                fi
             done
+        fi
     else
         success "Found!"
     fi
@@ -322,7 +369,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ examplesdir != "na" ]; then
+    if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             echo ""
@@ -452,4 +499,4 @@ else
     echo ""
 fi
 
-#based on template 1602051140
+#based on template 1602071930

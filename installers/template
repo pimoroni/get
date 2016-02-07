@@ -132,6 +132,18 @@ get_init_sys() {
     fi
 }
 
+usb_max_power() {
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        echo ""
+        echo "Max USB current setting already active"
+    else
+        echo ""
+        echo "Adjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG
+        ASK_TO_REBOOT=true
+    fi
+}
+
 apt_pkg_req() {
     APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
 
@@ -248,6 +260,11 @@ if confirm "Do you wish to continue?"; then
             UPDATE_DB=true
         fi
         done
+    for pkgdep in ${pkgdeplist8[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done
     for morepkgdep in ${moreaptdep[@]}
         do if apt_pkg_req "$morepkgdep" ; then
             UPDATE_DB=true
@@ -262,12 +279,21 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist7[@]}
-            do echo "Checking for dependencies..."
+        for pkgdep in ${pkgdeplist7[@]}; do
+            echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
             fi
+        done
+
+        if ! raspbian_old; then
+            for pkgdep in ${pkgdeplist8[@]}; do
+                echo "Checking for dependencies..."
+                if apt_pkg_req "$pkgdep" ; then
+                    apt_pkg_install "$pkgdep"
+                fi
             done
+        fi
     else
         success "Found!"
     fi
@@ -457,4 +483,4 @@ else
     echo ""
 fi
 
-#based on template 1602071740
+#based on template 1602071930
