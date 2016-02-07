@@ -146,7 +146,7 @@ if confirm "Do you wish to continue?"; then
     fi
     sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
 
-    echo "Serial interface disabled"
+    echo "Serial console disabled"
     ASK_TO_REBOOT=true
 else
     echo ""
