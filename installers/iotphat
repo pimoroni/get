@@ -356,7 +356,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ examplesdir != "na" ]; then
+    if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             echo ""
