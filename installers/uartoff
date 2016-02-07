@@ -139,10 +139,13 @@ echo ""
 
 if confirm "Do you wish to continue?"; then
 
+    get_init_sys
+
     if [ $SYSTEMD -eq 0 ]; then
         sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
     fi
     sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
+
     echo "Serial interface disabled"
     ASK_TO_REBOOT=true
 else
