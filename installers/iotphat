@@ -19,27 +19,27 @@ was written for this script.
 
 DISCLAIMER
 
-productname="product name" # the name of the product to install
-scriptname="script name" # the name of this script
+productname="ESP IoT pHAT" # the name of the product to install
+scriptname="iotphat" # the name of this script
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
-piplibname="pip lib name" # the name of the lib in pip repo
-pip2support="yes" # whether python2 is supported or not
-pip3support="yes" # whether python3 is supported or not
-localdir="local dir" # the name of the dir for copy of examples
-gitreponame="git repo name" # the name of the git project repo
+piplibname="na" # the name of the lib in pip repo
+pip2support="na" # whether python2 is supported or not
+pip3support="na" # whether python3 is supported or not
+localdir="iotphat" # the name of the dir for copy of examples
+gitreponame="na" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
 docdir="$gitreponame/documentation" # subdirectory of examples in repo 
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
-uartreq="no" # whether uart communication is required or not
+uartreq="yes" # whether uart communication is required or not
 pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
-moreaptdep=() # list of all the additional apt dependencies
+pkgdeplist8=() # list extra dependencies assuming Jessie
+moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
@@ -48,7 +48,6 @@ ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
 BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -226,16 +225,30 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking hardware requirements..."
 
+    if [ $uartreq == "yes" ]; then
+        echo ""
+        echo "The $productname requires UART communication."
+        echo "The serial console needs to be disabled."
+        if confirm "Do you wish to continue?"; then
+            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        else
+            echo ""
+            echo "Aborting..."
+            echo ""
+            exit
+        fi
+    fi
+
     if [ $spireq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires SPI, enable now?"; then
+        if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires I2C, enable now?"; then
+        if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
         fi
     fi
@@ -457,4 +470,4 @@ else
     echo ""
 fi
 
-#based on template 1602071715
+#based on template 1602071650
