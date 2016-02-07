@@ -77,6 +77,8 @@ sysupdgrade() {
 }
 
 sysreboot() {
+    echo "Some changes made to your system require"
+    echo "your computer to reboot to take effect."
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot

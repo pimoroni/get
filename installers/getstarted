@@ -96,6 +96,8 @@ sysupdgrade() {
 }
 
 sysreboot() {
+    echo "Some changes made to your system require"
+    echo "your computer to reboot to take effect."
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
@@ -140,6 +142,7 @@ usb_max_power() {
         echo ""
         echo "Adjusting USB current setting in $CONFIG"
         echo "max_usb_current=1" | sudo tee -a $CONFIG
+        echo ""
         ASK_TO_REBOOT=true
     fi
 }
