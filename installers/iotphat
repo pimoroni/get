@@ -19,27 +19,27 @@ was written for this script.
 
 DISCLAIMER
 
-productname="Raspberry Pi" # the name of the product to install
-scriptname="getstarted" # the name of this script
+productname="ESP IoT pHAT" # the name of the product to install
+scriptname="iotphat" # the name of this script
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="yes" # whether to execute commands specified before exit
+customcmd="no" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 piplibname="na" # the name of the lib in pip repo
 pip2support="na" # whether python2 is supported or not
 pip3support="na" # whether python3 is supported or not
-localdir="getstarted" # the name of the dir for copy of examples
-gitreponame="get" # the name of the git project repo
+localdir="iotphat" # the name of the dir for copy of examples
+gitreponame="na" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
-docdir="$gitreponame/documentation" # subdirectory of examples in repo 
-examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
+docdir="na" # subdirectory of examples in repo 
+examplesdir="na" # subdirectory of examples in repo 
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
-uartreq="no" # whether uart communication is required or not
-pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
-moreaptdep=() # list of all the additional apt dependencies
+uartreq="yes" # whether uart communication is required or not
+pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
+pkgdeplist8=() # list extra dependencies assuming Jessie
+moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
@@ -485,26 +485,10 @@ if confirm "Do you wish to continue?"; then
         fi
         echo ""
     else
-        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-            echo ""
-            echo "Max USB current setting already active"
-        else
-            echo ""
-            echo "Adjusting USB current setting in $CONFIG"
-            echo "max_usb_current=1" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
-        fi
-            
-        if raspbian_old; then
-            echo ""
-            echo "Bringing your system up-to-date..."
-            sysupdgrade
-        else
-            sysclean
-        fi
         echo ""
-        echo "Expanding filesystem..."
-        \curl -sS get.pimoroni.com/expandfs | sudo bash
+        echo "Finalising Install..."
+        # place all custom commands in this scope
+        echo ""
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
