@@ -88,8 +88,8 @@ sysupdgrade() {
 }
 
 sysreboot() {
-    echo "Some changes made to your system require"
-    echo "your computer to reboot to take effect."
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
@@ -191,7 +191,6 @@ if confirm "Do you wish to continue?"; then
                 echo ""
                 echo "Commenting out Blacklist entry in "
                 echo "$BLACKLIST"
-                echo ""
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
@@ -207,7 +206,6 @@ if confirm "Do you wish to continue?"; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound driver"
-            echo ""
             sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
                 sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
@@ -217,10 +215,10 @@ if confirm "Do you wish to continue?"; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
-            echo ""
             sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
             ASK_TO_REBOOT=true
         else
+            echo ""
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
