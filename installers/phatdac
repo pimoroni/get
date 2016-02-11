@@ -90,6 +90,7 @@ sysupdgrade() {
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
+    echo ""
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
