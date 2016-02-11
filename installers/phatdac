@@ -178,9 +178,8 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE; then
 
             echo ""
-            echo "Adding Device Tree Entry to "
-            echo $CONFIG
-
+            echo "Adding Device Tree Entry to $CONFIG"
+            
             if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
                 echo "dtoverlay already active"
             else
@@ -190,8 +189,10 @@ if confirm "Do you wish to continue?"; then
             fi
 
             if [ -e $BLACKLIST ]; then
+                echo ""
                 echo "Commenting out Blacklist entry in "
                 echo "$BLACKLIST"
+                echo ""
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
@@ -236,6 +237,7 @@ if confirm "Do you wish to continue?"; then
     sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
+        echo ""
         echo "We can now test your $productname"
         echo "Set speakers at a low volume first however!"
         if confirm "Do you wish to test your system now?"; then
@@ -247,6 +249,7 @@ if confirm "Do you wish to continue?"; then
     success "All done!"
     echo ""
     echo "Enjoy your new $productname!"
+    echo ""
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
