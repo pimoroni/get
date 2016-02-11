@@ -203,8 +203,8 @@ if confirm "Do you wish to continue?"; then
         fi
         sudo mv /etc/asound.conf /etc/asound.conf.old
     fi
-    sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > ~/asound.conf
-    sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> ~/asound.conf
+    sudo echo -e "pcm.\041default {\n type hw\ncard 0\n}" > ~/asound.conf
+    sudo echo -e "ctl.\041default {\n type hw\ncard 0\n}" >> ~/asound.conf
     sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
