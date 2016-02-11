@@ -35,9 +35,12 @@ i2creq="no" # whether i2c is required or not
 i2sreq="yes" # whether i2s is required or not
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -56,20 +59,6 @@ confirm() {
     fi
 }
 
-sudocheck() {
-    if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
-    fi
-}
-
-sysreboot() {
-    if confirm "Would you like to reboot now?"; then
-        sync
-        sudo reboot
-    fi
-}
-
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
@@ -78,13 +67,32 @@ warning() {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-kernelatleast() {
-    kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-    kver=${kver:0:3}
-    if [ $1 -ge $kver ]; then
-        return 0;
-    else
-        return 1;
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupdgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+}
+
+sysreboot() {
+    echo "Some changes made to your system require"
+    echo "your computer to reboot to take effect."
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
     fi
 }
 
@@ -95,6 +103,26 @@ raspbian_check() {
         false
     else
         true
+    fi
+}
+
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
     fi
 }
 
@@ -203,8 +231,8 @@ if confirm "Do you wish to continue?"; then
         fi
         sudo mv /etc/asound.conf /etc/asound.conf.old
     fi
-    sudo echo -e "pcm.\041default {\n type hw\ncard 0\n}" > ~/asound.conf
-    sudo echo -e "ctl.\041default {\n type hw\ncard 0\n}" >> ~/asound.conf
+    sudo echo -e "pcm.\041default {\ntype hw\ncard 0\n}" > ~/asound.conf
+    sudo echo -e "ctl.\041default {\ntype hw\ncard 0\n}" >> ~/asound.conf
     sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
@@ -214,8 +242,6 @@ if confirm "Do you wish to continue?"; then
             echo "Testing..."
             speaker-test -c2 -t wav
         fi
-    else
-        warning "At this point you need to reboot your Pi"
     fi
     echo ""
     success "All done!"
