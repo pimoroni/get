@@ -179,13 +179,12 @@ if confirm "Do you wish to continue?"; then
 
             echo ""
             echo "Adding Device Tree Entry to $CONFIG"
-            
+
             if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
                 echo "dtoverlay already active"
             else
                 echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
                 ASK_TO_REBOOT=true
-                export ASK_TO_REBOOT
             fi
 
             if [ -e $BLACKLIST ]; then
@@ -213,12 +212,14 @@ if confirm "Do you wish to continue?"; then
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
                 sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
             fi
+            ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
             echo ""
             sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
+            ASK_TO_REBOOT=true
         else
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
