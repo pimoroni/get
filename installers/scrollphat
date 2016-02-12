@@ -23,9 +23,9 @@ productname="Scroll pHAT" # the name of the product to install
 scriptname="scrollphat" # the name of this script
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="yes" # whether to execute commands specified before exit
+customcmd="no" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
-wheezysupport="no" # whether Wheezy is supported or not
+wheezysupport="yes" # whether Wheezy is supported or not
 piplibname="scrollphat" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
@@ -36,14 +36,19 @@ docdir="$gitreponame/documentation" # subdirectory of examples in repo
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo 
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
-pkgdeplist=( "git" "python-pip" "python-smbus" "python-pil" "python3-pip" "python3-smbus" "python3-pil" ) # list of all the mandatory apt dependencies
+uartreq="no" # whether uart communication is required or not
+pkgdeplist7=( "git" "python-pip" "python-smbus" "python3-pip" "python3-smbus" ) # list core dependencies assuming Wheezy
+pkgdeplist8=() # list extra dependencies assuming Jessie 
 moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -62,10 +67,18 @@ confirm() {
     fi
 }
 
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit
     fi
 }
 
@@ -83,18 +96,56 @@ sysupdgrade() {
 }
 
 sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    echo ""
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
 }
 
-success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
+raspbian_check() {
+    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+
+    if [[ "" == $IS_RASPBIAN ]]; then
+        false
+    else
+        true
+    fi
 }
 
-warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
+    fi
+}
+
+usb_max_power() {
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        echo ""
+        echo "Max USB current setting already active"
+    else
+        echo ""
+        echo "Adjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG
+        echo ""
+        ASK_TO_REBOOT=true
+    fi
 }
 
 apt_pkg_req() {
@@ -140,30 +191,17 @@ pip_pkg_req3() {
     fi
 }
 
-raspbian_check() {
-    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+: <<'MAINSTART'
 
-    if [[ "" == $IS_RASPBIAN ]]; then
-        false
-    else
-        true
-    fi
-}
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
 
-raspbian_old() {
-    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
-
-    if [ "" == "$DIST_CHK" ];then
-        false
-    else
-        true
-    fi
-}
+MAINSTART
 
 if ! raspbian_check; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    exit
 fi
 
 if [ $wheezysupport == "no" ]; then
@@ -176,7 +214,7 @@ if [ $wheezysupport == "no" ]; then
         echo "Check https://github.com/pimoroni/$gitreponame"
         echo "for additional information and support"
         echo ""
-        exit 1
+        exit
     fi
 fi
 
@@ -204,16 +242,30 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking hardware requirements..."
 
+    if [ $uartreq == "yes" ]; then
+        echo ""
+        echo "The $productname requires UART communication."
+        echo "The serial console needs to be disabled."
+        if confirm "Do you wish to continue?"; then
+            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        else
+            echo ""
+            echo "Aborting..."
+            echo ""
+            exit
+        fi
+    fi
+
     if [ $spireq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires SPI, enable now?"; then
+        if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
         echo ""
-        if confirm "Hardware requires I2C, enable now?"; then
+        if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
         fi
     fi
@@ -221,7 +273,12 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking install requirements..."
 
-    for pkgdep in ${pkgdeplist[@]}
+    for pkgdep in ${pkgdeplist7[@]}
+        do if apt_pkg_req "$pkgdep" ; then
+            UPDATE_DB=true
+        fi
+        done
+    for pkgdep in ${pkgdeplist8[@]}
         do if apt_pkg_req "$pkgdep" ; then
             UPDATE_DB=true
         fi
@@ -240,12 +297,21 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist[@]}
-            do echo "Checking for dependencies..."
+        for pkgdep in ${pkgdeplist7[@]}; do
+            echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
             fi
+        done
+
+        if ! raspbian_old; then
+            for pkgdep in ${pkgdeplist8[@]}; do
+                echo "Checking for dependencies..."
+                if apt_pkg_req "$pkgdep" ; then
+                    apt_pkg_install "$pkgdep"
+                fi
             done
+        fi
     else
         success "Found!"
     fi
@@ -321,7 +387,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ examplesdir != "na" ]; then
+    if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             echo ""
@@ -422,10 +488,7 @@ if confirm "Do you wish to continue?"; then
     else
         echo ""
         echo "Finalising Install..."
-        if [ -f /usr/local/font.png ]; then
-            sudo cp /usr/local/font.png /usr/local/lib/python2.7/dist-packages
-            sudo mv /usr/local/font.png /usr/local/lib/python3.4/dist-packages
-        fi
+        # place all custom commands in this scope
         echo ""
     fi
 
@@ -438,4 +501,4 @@ else
     echo ""
 fi
 
-#based on template 1602022200
+#based on template 1602120000
