@@ -35,9 +35,12 @@ i2creq="no" # whether i2c is required or not
 i2sreq="yes" # whether i2s is required or not
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -56,20 +59,6 @@ confirm() {
     fi
 }
 
-sudocheck() {
-    if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
-    fi
-}
-
-sysreboot() {
-    if confirm "Would you like to reboot now?"; then
-        sync
-        sudo reboot
-    fi
-}
-
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
@@ -78,13 +67,33 @@ warning() {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-kernelatleast() {
-    kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-    kver=${kver:0:3}
-    if [ $1 -ge $kver ]; then
-        return 0;
-    else
-        return 1;
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupdgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+}
+
+sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    echo ""
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
     fi
 }
 
@@ -95,6 +104,26 @@ raspbian_check() {
         false
     else
         true
+    fi
+}
+
+raspbian_old() {
+    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+
+    if [ "" == "$DIST_CHK" ];then
+        false
+    else
+        true
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
     fi
 }
 
@@ -150,18 +179,17 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE; then
 
             echo ""
-            echo "Adding Device Tree Entry to "
-            echo $CONFIG
+            echo "Adding Device Tree Entry to $CONFIG"
 
             if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
                 echo "dtoverlay already active"
             else
                 echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
                 ASK_TO_REBOOT=true
-                export ASK_TO_REBOOT
             fi
 
             if [ -e $BLACKLIST ]; then
+                echo ""
                 echo "Commenting out Blacklist entry in "
                 echo "$BLACKLIST"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
@@ -179,18 +207,19 @@ if confirm "Do you wish to continue?"; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound driver"
-            echo ""
             sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
                 sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
             fi
+            ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
             echo ""
             echo "Disabling default sound module"
-            echo ""
             sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
+            ASK_TO_REBOOT=true
         else
+            echo ""
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
@@ -203,24 +232,24 @@ if confirm "Do you wish to continue?"; then
         fi
         sudo mv /etc/asound.conf /etc/asound.conf.old
     fi
-    sudo echo -e "pcm.! \bdefault {\n type hw card 0\n}" > ~/asound.conf
-    sudo echo -e "ctl.! \bdefault {\n type hw card 0\n}" >> ~/asound.conf
+    sudo echo -e "pcm.\041default {\n type hw\n card 0\n}" > ~/asound.conf
+    sudo echo -e "ctl.\041default {\n type hw\n card 0\n}" >> ~/asound.conf
     sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
+        echo ""
         echo "We can now test your $productname"
-        echo "Set speakers at a low volume first however!"
+        warning "Set your speakers at a low volume!"
         if confirm "Do you wish to test your system now?"; then
             echo "Testing..."
             speaker-test -c2 -t wav
         fi
-    else
-        warning "At this point you need to reboot your Pi"
     fi
     echo ""
     success "All done!"
     echo ""
     echo "Enjoy your new $productname!"
+    echo ""
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
