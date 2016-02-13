@@ -394,7 +394,7 @@ if confirm "Do you wish to continue?"; then
             echo "Downloading $productname examples..."
             export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone https://github.com/pimoroni/$gitreponame
+            git clone --depth=1 https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
             cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
@@ -501,4 +501,4 @@ else
     echo ""
 fi
 
-#based on template 1602120000
+#based on template 1602131540
