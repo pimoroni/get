@@ -149,7 +149,7 @@ usb_max_power() {
 }
 
 apt_pkg_req() {
-    APT_CHK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
         true
@@ -295,10 +295,9 @@ if confirm "Do you wish to continue?"; then
         sysupdate
 
         echo ""
-        echo "Installing hardware requirements..."
+        echo "Checking for dependencies..."
 
         for pkgdep in ${pkgdeplist7[@]}; do
-            echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
             fi
@@ -306,7 +305,6 @@ if confirm "Do you wish to continue?"; then
 
         if ! raspbian_old; then
             for pkgdep in ${pkgdeplist8[@]}; do
-                echo "Checking for dependencies..."
                 if apt_pkg_req "$pkgdep" ; then
                     apt_pkg_install "$pkgdep"
                 fi
