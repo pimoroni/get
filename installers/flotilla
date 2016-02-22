@@ -76,6 +76,10 @@ warning() {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
+newline() {
+    echo ""
+}
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -541,4 +545,4 @@ else
     echo ""
 fi
 
-#based on template 1602221405
+#based on template 1602221440
