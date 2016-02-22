@@ -28,7 +28,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 squeezysupport="no" # whether Squeezy is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
-piplibname="pyserial" # the name of the lib in pip repo
+piplibname="na" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
 localdir="flotilla" # the name of the dir for copy of examples
@@ -103,7 +103,7 @@ sysupdgrade() {
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
-    echo ""
+    newline
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
@@ -160,13 +160,13 @@ get_init_sys() {
 usb_max_power() {
     if $IS_RASPBIAN; then
         if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-            echo ""
+            newline
             echo "Max USB current setting already active"
         else
-            echo ""
+            newline
             echo "Adjusting USB current setting in $CONFIG"
             echo "max_usb_current=1" | sudo tee -a $CONFIG
-            echo ""
+            newline
             ASK_TO_REBOOT=true
         fi
     fi
@@ -235,14 +235,14 @@ if [ $wheezysupport == "no" ] || [ $squeezysupport == "no" ]; then
     raspbian_check
 
     if $IS_WHEEZY || $IS_SQUEEZY; then
-        echo ""
+        newline
         warning "--- Warning ---"
-        echo ""
+        newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/pimoroni/$gitreponame"
         echo "for additional information and support"
-        echo ""
+        newline
         exit
     fi
 fi
@@ -251,55 +251,55 @@ if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-echo ""
+newline
 echo "This script will install everything needed to use"
 echo "$productname"
-echo ""
+newline
 warning "--- Warning ---"
-echo ""
+newline
 echo "Always be careful when running scripts and commands"
 echo "copied from the internet. Ensure they are from a"
 echo "trusted source."
-echo ""
+newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
-echo ""
+newline
 
 if confirm "Do you wish to continue?"; then
 
-    echo ""
+    newline
     echo "Checking hardware requirements..."
 
     if [ $uartreq == "yes" ]; then
-        echo ""
+        newline
         echo "The $productname requires UART communication."
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
         else
-            echo ""
+            newline
             echo "Aborting..."
-            echo ""
+            newline
             exit
         fi
     fi
 
     if [ $spireq == "yes" ]; then
-        echo ""
+        newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
-        echo ""
+        newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
         fi
     fi
 
-    echo ""
+    newline
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
@@ -320,11 +320,11 @@ if confirm "Do you wish to continue?"; then
             done 
     
         if $UPDATE_DB; then
-            echo ""
+            newline
             echo "Updating package indexes..."
             sysupdate
     
-            echo ""
+            newline
             echo "Checking for dependencies..."
     
             for pkgdep in ${pkgdeplist7[@]}; do
@@ -348,12 +348,12 @@ if confirm "Do you wish to continue?"; then
     if command -v pip > /dev/null; then
         if [ $piplibname != "na" ]; then
             if [ $pip2support == "yes" ]; then
-                echo ""
+                newline
                 echo "Checking for Python 2 library..."
     
                 if pip_pkg_req "$piplibname"; then
                     echo "Installing $productname library for Python 2..."
-                    echo ""
+                    newline
                     if ! sudo pip install $piplibname; then
                         warning "Python 2 library install failed!"
                         echo "If problems persist, visit forums.pimoroni.com for support"
@@ -362,7 +362,7 @@ if confirm "Do you wish to continue?"; then
                     success "Done!"
                 else
                     success "Found!"
-                    echo ""
+                    newline
                     if confirm "Python 2 module found. Reinstall/Update?"; then
                         if ! sudo pip install $piplibname -I; then
                             warning "Python 2 library install failed!"
@@ -379,11 +379,11 @@ if confirm "Do you wish to continue?"; then
             pip_chk_pip3
 
             if [ $pip3support == "yes" ] && [ -n "$PIP3_BIN" ]; then
-                echo ""
+                newline
                 echo "Checking for Python 3 library..."
                 if pip_pkg_req3 "$piplibname"; then
                     echo "Installing $productname library for Python 3..."
-                    echo ""
+                    newline
                     if ! sudo $PIP3_BIN install $piplibname; then
                         warning "Python 3 library install failed!"
                         echo "If problems persist, visit forums.pimoroni.com for support"
@@ -391,7 +391,7 @@ if confirm "Do you wish to continue?"; then
                     fi
                 else
                     success "Found!"
-                    echo ""
+                    newline
                     if confirm "Python 3 module found. Reinstall/Update?"; then
                         if ! sudo $PIP3_BIN install $piplibname -I; then
                             warning "Python 3 library install failed!"
@@ -432,7 +432,7 @@ if confirm "Do you wish to continue?"; then
     if [ $examplesdir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
-            echo ""
+            newline
             echo "Downloading $productname examples..."
             export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
@@ -443,7 +443,7 @@ if confirm "Do you wish to continue?"; then
             rm -rf $TMPDIR
             success "Examples copied to $WORKING_DIR/$localdir/"
         else
-            echo ""
+            newline
             if confirm "Examples already exist, shall I replace them?"; then
                 mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
                 echo "Updating $productname examples..."
@@ -460,7 +460,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    echo ""
+    newline
     echo "Checking additional software requirements..."
 
     moredepreq=false
@@ -477,7 +477,7 @@ if confirm "Do you wish to continue?"; then
         done
 
     if $moredepreq; then
-        echo ""
+        newline
         echo "Some $productname examples/plugins"
         echo "require additional software and/or modules"
         if confirm "Would you like to install them now?"; then
@@ -503,12 +503,12 @@ if confirm "Do you wish to continue?"; then
         fi
         cd $WORKING_DIR/$localdir
         if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
-            echo ""
+            newline
             echo "Cloning Github repo locally..."
             git clone https://github.com/pimoroni/$gitreponame
         else
             cd $WORKING_DIR/$localdir/$gitreponame
-            echo ""
+            newline
             echo "Github repo already present. Updating..."
             git pull
         fi
@@ -516,9 +516,9 @@ if confirm "Do you wish to continue?"; then
 
     if [ $customcmd == "no" ]; then
         sysclean
-        echo ""
+        newline
         success "All done!"
-        echo ""
+        newline
         echo "Enjoy your new $productname!"
         if [ $pip3support == "no" ]; then
             echo "Note: $productname currently supports Python 2 only."
@@ -526,7 +526,7 @@ if confirm "Do you wish to continue?"; then
         if [ $pip2support == "no" ]; then
             echo "Note: $productname currently supports Python 3 only."
         fi
-        echo ""
+        newline
     else
         echo ""
         echo "Finalising Install..."
@@ -540,9 +540,9 @@ if confirm "Do you wish to continue?"; then
         sysreboot
     fi
 else
-    echo ""
+    newline
     echo "Aborting..."
-    echo ""
+    newline
 fi
 
-#based on template 1602221440
+#based on template 1602221545

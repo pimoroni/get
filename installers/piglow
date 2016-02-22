@@ -24,8 +24,10 @@ scriptname="piglow" # the name of this script
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
-jessiesupport="yes" # whether Jessie is supported or not
+raspbianonly="yes" # whether the script is allowed to run on other OSes
+squeezysupport="no" # whether Squeezy is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
+jessiesupport="yes" # whether Jessie is supported or not
 piplibname="piglow" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
@@ -36,14 +38,19 @@ docdir="$gitreponame/documentation" # subdirectory of examples in repo
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
-pkgdeplist=( "git" "python-pip" "python-smbus" "python-dev" "python3-pip" "python3-smbus" "python3-dev") # list of all the mandatory apt dependencies
+uartreq="no" # whether uart communication is required or not
+pkgdeplist7=( "git" "python-pip" "python-smbus" "python-dev" "python3-pip" "python3-smbus" "python3-dev") # list core dependencies assuming Wheezy
+pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
+INTERACTIVE=false
 ASK_TO_REBOOT=false
 CONFIG=/boot/config.txt
+BOOTCMD=/boot/cmdline.txt
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+INITABCONF=/etc/inittab
 LOADMOD=/etc/modules
 DEVICE_TREE=true
 UPDATE_DB=false
@@ -221,7 +228,7 @@ if confirm "Do you wish to continue?"; then
     echo ""
     echo "Checking install requirements..."
 
-    for pkgdep in ${pkgdeplist[@]}
+    for pkgdep in ${pkgdeplist7[@]}
         do if apt_pkg_req "$pkgdep" ; then
             UPDATE_DB=true
         fi
@@ -240,7 +247,7 @@ if confirm "Do you wish to continue?"; then
         echo ""
         echo "Installing hardware requirements..."
 
-        for pkgdep in ${pkgdeplist[@]}
+        for pkgdep in ${pkgdeplist7[@]}
             do echo "Checking for dependencies..."
             if apt_pkg_req "$pkgdep" ; then
                 apt_pkg_install "$pkgdep"
