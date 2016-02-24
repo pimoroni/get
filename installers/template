@@ -147,6 +147,14 @@ raspbian_check() {
     fi        
 }
 
+raspbian_old() {
+    if $IS_JESSIE;then
+        false
+    else
+        true
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -225,26 +233,37 @@ MAINSTART
 
 os_check
 
+if $IS_RASPBIAN; then
+    raspbian_check
+fi
+
 if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
     exit
 fi
 
-if [ $wheezysupport == "no" ] || [ $squeezysupport == "no" ]; then
-    raspbian_check
-
-    if $IS_WHEEZY || $IS_SQUEEZY; then
-        newline
-        warning "--- Warning ---"
-        newline
-        echo "The $productname installer"
-        echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
-        echo "for additional information and support"
-        newline
-        exit
-    fi
+if [ $squeezysupport == "no" ] && $IS_SQUEEZY; then
+    newline
+    warning "--- Warning ---"
+    newline
+    echo "The $productname installer"
+    echo "does not work on this version of Raspbian."
+    echo "Check https://github.com/pimoroni/$gitreponame"
+    echo "for additional information and support"
+    newline
+    exit
+fi
+if [ $wheezysupport == "no" ] && $IS_WHEEZY; then
+    newline
+    warning "--- Warning ---"
+    newline
+    echo "The $productname installer"
+    echo "does not work on this version of Raspbian."
+    echo "Check https://github.com/pimoroni/$gitreponame"
+    echo "for additional information and support"
+    newline
+    exit
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -350,9 +369,11 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if command -v pip > /dev/null; then
-        if [ $piplibname != "na" ]; then
-            if [ $pip2support == "yes" ]; then
+    pip_chk_pip3
+
+    if [ $piplibname != "na" ]; then
+        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+            if command -v pip > /dev/null; then
                 newline
                 echo "Checking for Python 2 library..."
     
@@ -377,13 +398,13 @@ if confirm "Do you wish to continue?"; then
                         success "Done!"
                     fi
                 fi
-            else
-                echo "Note: $productname currently supports Python 3 only."
             fi
+        else
+            echo "Note: $productname currently supports Python 3 only."
+        fi
 
-            pip_chk_pip3
-
-            if [ $pip3support == "yes" ] && [ -n "$PIP3_BIN" ]; then
+        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+            if [ -n "$PIP3_BIN" ]; then
                 newline
                 echo "Checking for Python 3 library..."
                 if pip_pkg_req3 "$piplibname"; then
@@ -404,12 +425,12 @@ if confirm "Do you wish to continue?"; then
                         fi
                     fi
                 fi
+            fi
+        else
+            if [ $pip3support == "no" ]; then
+                echo "Note: $productname currently supports Python 2 only."
             else
-                if [ $pip3support == "no" ]; then
-                    echo "Note: $productname currently supports Python 2 only."
-                else
-                    echo "Python3-pip does not seem to be installed"
-                fi
+                echo "Python3-pip does not seem to be installed"
             fi
         fi
     fi
@@ -548,4 +569,4 @@ else
     newline
 fi
 
-#based on template 1602241600
+#based on template 1602241740
