@@ -39,6 +39,7 @@ examplesdir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
+pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-smbus" "python3-pip" "python3-smbus" ) # list core dependencies assuming Wheezy
 pkgdeplist8=() # list extra dependencies assuming Jessie 
 moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt dependencies

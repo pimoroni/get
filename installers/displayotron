@@ -39,6 +39,7 @@ examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
+pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies

@@ -39,6 +39,7 @@ examplesdir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
+pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
@@ -302,22 +303,27 @@ if confirm "Do you wish to continue?"; then
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
-        for pkgdep in ${pkgdeplist7[@]}
-            do if apt_pkg_req "$pkgdep"; then
+
+        for pkgrm in ${pkgaptremove[@]}; do
+            sudo apt-get remove "$pkgrm"
+        done
+
+        for pkgdep in ${pkgdeplist7[@]}; do
+            if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
             fi
-            done
-        for pkgdep in ${pkgdeplist8[@]}
-            do if apt_pkg_req "$pkgdep"; then
+        done
+        for pkgdep in ${pkgdeplist8[@]}; do
+            if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
             fi
-            done
-        for morepkgdep in ${moreaptdep[@]}
-            do if apt_pkg_req "$morepkgdep"; then
+        done
+        for morepkgdep in ${moreaptdep[@]}; do
+            if apt_pkg_req "$morepkgdep"; then
                 UPDATE_DB=true
             fi
-            done 
-    
+        done 
+
         if $UPDATE_DB; then
             newline
             echo "Updating package indexes..."
@@ -331,7 +337,7 @@ if confirm "Do you wish to continue?"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-    
+
             if ! raspbian_old; then
                 for pkgdep in ${pkgdeplist8[@]}; do
                     if apt_pkg_req "$pkgdep"; then
@@ -542,4 +548,4 @@ else
     newline
 fi
 
-#based on template 1602241515
+#based on template 1602241600

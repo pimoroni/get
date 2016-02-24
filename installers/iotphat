@@ -39,6 +39,7 @@ examplesdir="na" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="yes" # whether uart communication is required or not
+pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
 pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=( "minicom" ) # list of all the additional apt dependencies
