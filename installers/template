@@ -21,6 +21,7 @@ DISCLAIMER
 
 productname="product name" # the name of the product to install
 scriptname="script name" # the name of this script
+debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -235,13 +236,6 @@ os_check
 
 if $IS_RASPBIAN; then
     raspbian_check
-
-    if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN; then
-        warning "Warning!"
-        echo "Please only run this script on Raspbian on your Raspberry Pi"
-        exit
-    fi
-
     if [ $squeezysupport == "no" ] && $IS_SQUEEZY; then
         newline
         warning "--- Warning ---"
@@ -263,6 +257,18 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline
         exit
+    fi
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit
+else
+    if [ $debugmode == "yes" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
     fi
 fi
 
@@ -569,4 +575,4 @@ else
     newline
 fi
 
-#based on template 1602251640
+#based on template 1602252215
