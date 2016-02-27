@@ -19,30 +19,30 @@ was written for this script.
 
 DISCLAIMER
 
-productname="product name" # the name of the product to install
-scriptname="script name" # the name of this script
+productname="Flotilla Python API" # the name of the product to install
+scriptname="flotilla" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="no" # whether to execute commands specified before exit
-raspbianonly="yes" # whether the script is allowed to run on other OSes
+customcmd="yes" # whether to execute commands specified before exit
+raspbianonly="no" # whether the script is allowed to run on other OSes
 squeezysupport="no" # whether Squeezy is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
-piplibname="pip lib name" # the name of the lib in pip repo
+piplibname="na" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
-localdir="local dir" # the name of the dir for copy of examples
-gitreponame="git repo name" # the name of the git project repo
-gitrepoclone="no" # whether the git repo is to be cloned locally
-docdir="$gitreponame/documentation" # subdirectory of examples in repo
-examplesdir="$gitreponame/examples" # subdirectory of examples in repo
+localdir="flotilla" # the name of the dir for copy of examples
+gitreponame="flotilla-python" # the name of the git project repo
+gitrepoclone="yes" # whether the git repo is to be cloned locally
+docdir="na" # subdirectory of examples in repo 
+examplesdir="na" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
+pkgdeplist7=( "git" "python-pip" "python3-pip") # list core dependencies assuming Wheezy
+pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -562,7 +562,10 @@ if confirm "Do you wish to continue?"; then
     else
         newline
         echo "Finalising Install..."
-        # place all custom commands in this scope
+        usb_max_power
+        cd $WORKING_DIR/$localdir/$gitreponame
+        git checkout shipshape
+        sudo bash ./install
         newline
     fi
 

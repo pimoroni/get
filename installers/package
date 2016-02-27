@@ -4,7 +4,7 @@ success () {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
 
-PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $1|grep "install ok installed")
+PKG_OK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
 echo "Checking for $1..."
 
