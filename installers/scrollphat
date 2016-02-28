@@ -22,7 +22,7 @@ DISCLAIMER
 productname="Scroll pHAT" # the name of the product to install
 scriptname="scrollphat" # the name of this script
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
 jessiesupport="yes" # whether Jessie is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
