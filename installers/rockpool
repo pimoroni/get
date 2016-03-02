@@ -21,8 +21,8 @@ DISCLAIMER
 
 productname="Rockpool" # the name of the product to install
 scriptname="rockpool" # the name of this script
-forcesudo="no" # whether the script requires to be ran with root privileges
 debugmode="no" # whether the script outputs debug level messages
+forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="yes" # whether the script is allowed to run on other OSes
