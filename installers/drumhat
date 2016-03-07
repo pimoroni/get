@@ -26,7 +26,7 @@ forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
 raspbianonly="yes" # whether the script is allowed to run on other OSes
-squeezysupport="no" # whether Squeezy is supported or not
+squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 piplibname="drumhat" # the name of the lib in pip repo
@@ -130,7 +130,7 @@ os_check() {
 }
 
 raspbian_check() {
-    IS_SQUEEZY=false
+    IS_SQUEEZE=false
     IS_WHEEZY=false
     IS_JESSIE=false
 
@@ -139,8 +139,8 @@ raspbian_check() {
             IS_JESSIE=true
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
             IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeezy" > /dev/null; then
-            IS_SQUEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
         else
             echo "Unsupported distribution"
             exit
@@ -236,7 +236,7 @@ os_check
 
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $squeezysupport == "no" ] && $IS_SQUEEZY; then
+    if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
         newline
         warning "--- Warning ---"
         newline
