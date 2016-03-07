@@ -147,7 +147,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
                echo "Downloading Pibrella examples..."
                export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                cd $TMPDIR
-               git clone https://github.com/pimoroni/pibrella
+               git clone --depth=1 https://github.com/pimoroni/pibrella
                cd $WORKING_DIR
                mkdir pibrella
                cp -R $TMPDIR/pibrella/examples/* $WORKING_DIR/pibrella/
@@ -160,7 +160,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
                        echo "Updating Dot3k examples..."
                        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                        cd $TMPDIR
-                       git clone https://github.com/pimoroni/pibrella
+                       git clone --depth=1 https://github.com/pimoroni/pibrella
                        cd $WORKING_DIR
                        mkdir pibrella
                        cp -R $TMPDIR/pibrella/examples/* $WORKING_DIR/pibrella
@@ -178,7 +178,7 @@ if [[ $RESP == "true" ]] || [[ $1 == '-y' ]]; then
 	#		echo ""
 	#		echo "Downloading to $(pwd)/pibrella"
 	#		echo ""
-	#		git clone https://github.com/pimoroni/pibrella
+	#		git clone --depth=1 https://github.com/pimoroni/pibrella
 	#
 	#	fi
 	#fi

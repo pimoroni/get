@@ -466,7 +466,7 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
             echo "Downloading $productname examples..."
-            export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
             git clone --depth=1 https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
@@ -479,9 +479,9 @@ if confirm "Do you wish to continue?"; then
             if confirm "Examples already exist, shall I replace them?"; then
                 mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
                 echo "Updating $productname examples..."
-                export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $TMPDIR
-                git clone https://github.com/pimoroni/$gitreponame
+                git clone --depth=1 https://github.com/pimoroni/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
                 cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
@@ -537,7 +537,7 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
             newline
             echo "Cloning Github repo locally..."
-            git clone https://github.com/pimoroni/$gitreponame
+            git clone --depth=1 https://github.com/pimoroni/$gitreponame
         else
             cd $WORKING_DIR/$localdir/$gitreponame
             newline
@@ -577,4 +577,4 @@ else
     newline
 fi
 
-#based on template 1603161235
+#based on template 1603161250
