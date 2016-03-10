@@ -565,9 +565,11 @@ if confirm "Do you wish to continue?"; then
     else
         newline
         echo "Finalising Install..."
-        rm blueman_2.0.3-1%2bb1_armhf.deb 2&1> /dev/null
-        wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
-        sudo dpkg -i --ignore-depends=libpython3.5,python3 ./blueman_2.0.3-1%2bb1_armhf.deb
+        if confirm "Would you like to update Blueman to a newer version (recommended)"; then
+            rm blueman_2.0.3-1+b1_armhf.deb 2&1> /dev/null
+            wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
+            sudo dpkg -i --ignore-depends=libpython3.5,python3 ./blueman_2.0.3-1+b1_armhf.deb
+        if
         sysclean
         newline
         success "All done!"
