@@ -37,12 +37,12 @@ gitreponame="get" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
 docdir="$gitreponame/documentation" # subdirectory of examples in repo 
 examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
-i2creq="no" # whether i2c interface is required or not
+i2creq="yes" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
+pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "pi-bluetooth" "blueman" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -302,6 +302,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +315,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,6 +323,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -560,26 +563,10 @@ if confirm "Do you wish to continue?"; then
         fi
         newline
     else
-        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-            newline
-            echo "Max USB current setting already active"
-        else
-            newline
-            echo "Adjusting USB current setting in $CONFIG"
-            echo "max_usb_current=1" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
-        fi
-            
-        if raspbian_old; then
-            echo ""
-            echo "Bringing your system up-to-date..."
-            sysupdgrade
-        else
-            sysclean
-        fi
-        echo ""
-        echo "Expanding filesystem..."
-        \curl -sS get.pimoroni.com/expandfs | sudo bash
+        newline
+        echo "Finalising Install..."
+        # place all custom commands in this scope
+        newline
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
@@ -591,4 +578,4 @@ else
     newline
 fi
 
-#based on template 1603161250
+#based on template 1603101315
