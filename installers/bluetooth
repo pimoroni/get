@@ -569,10 +569,10 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         newline
         if confirm "Would you like to update Blueman to a newer version (recommended)"; then
-            rm blueman_2.0.3-1+b1_armhf.deb 2> /dev/null
+            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $DEBDIR
             wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
-            sudo dpkg -i --ignore-depends=libpython3.5,python3 ./blueman_2.0.3-1+b1_armhf.deb
-            rm blueman_2.0.3-1+b1_armhf.deb 2> /dev/null
+            sudo dpkg -i --ignore-depends=libpython3.5,python3 $DEBDIR/blueman_2.0.3-1+b1_armhf.deb
         fi
         sysclean
         newline
