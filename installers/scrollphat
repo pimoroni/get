@@ -91,7 +91,7 @@ sudocheck() {
 
 sysclean() {
     sudo apt-get clean && sudo apt-get autoclean
-    sudo apt-get autoremove &> /dev/null
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -101,7 +101,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
-    sudo apt-get autoremove &> /dev/null
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -580,4 +580,4 @@ else
     newline
 fi
 
-#based on template 1603101515
+#based on template 1603101825
