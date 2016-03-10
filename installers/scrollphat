@@ -90,7 +90,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -100,6 +101,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -302,6 +304,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +317,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,6 +325,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -559,7 +564,7 @@ if confirm "Do you wish to continue?"; then
             echo "Note: $productname currently supports Python 3 only."
         fi
         newline
-    else
+    else # custom block starts here
         newline
         echo "Finalising Install..."
         # place all custom commands in this scope
@@ -575,4 +580,4 @@ else
     newline
 fi
 
-#based on template 1603161250
+#based on template 1603101515
