@@ -302,6 +302,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +315,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,6 +323,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -575,4 +578,4 @@ else
     newline
 fi
 
-#based on template 1603161250
+#based on template 1603101315
