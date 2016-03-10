@@ -90,7 +90,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean && sudo apt-get autoclean && sudo apt-get autoremove
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -100,6 +101,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -562,9 +564,10 @@ if confirm "Do you wish to continue?"; then
             echo "Note: $productname currently supports Python 3 only."
         fi
         newline
-    else
+    else # custom block starts here
         newline
         echo "Finalising Install..."
+        newline
         if confirm "Would you like to update Blueman to a newer version (recommended)"; then
             rm blueman_2.0.3-1+b1_armhf.deb 2&1> /dev/null
             wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
@@ -585,4 +588,4 @@ else
     newline
 fi
 
-#based on template 1603101335
+#based on template 1603101515
