@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="no" # whether Wheezy is supported or not
@@ -42,20 +45,25 @@ spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=() # list core dependencies assuming Wheezy
-pkgdeplist8=( "blueman" "obexd-client" "obexd-server" "python3-dbus" "python3-gi" "python3-cairo" "python3-gi-cairo" ) # list extra dependencies assuming Jessie
+pkgdeplist8=( "gir1.2-gconf-2.0" "gir1.2-notify-0.7" "gir1.2-appindicator3-0.1" "obexd-client" "obexd-server" "python3-dbus" "python3-gi" "python3-cairo" "python3-gi-cairo" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -111,6 +119,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+    
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -568,12 +584,18 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         newline
-        if confirm "Would you like to update Blueman to a newer version (recommended)"; then
-            newline
-            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-            cd $DEBDIR
-            wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
-            sudo dpkg -i --ignore-depends=libpython3.5,python3 $DEBDIR/blueman_2.0.3-1+b1_armhf.deb
+        if ! $IS_ARMv6; then
+            if confirm "Would you like to update to the latest version of blueman (recommended)"; then
+                newline
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
+                sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
+            fi
+        else
+            if apt_pkg_req "blueman"; then
+                apt_pkg_install "blueman"
+            fi
         fi
         sysclean
         newline
@@ -590,4 +612,4 @@ else
     newline
 fi
 
-#based on template 1603101825
+#based on template 1603102145

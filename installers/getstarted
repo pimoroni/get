@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
@@ -41,21 +44,26 @@ i2creq="yes" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" "blueman" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "pi-bluetooth" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -111,6 +119,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+    
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -580,4 +596,4 @@ else
     newline
 fi
 
-#based on template 1603101825
+#based on template 1603102145
