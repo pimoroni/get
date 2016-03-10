@@ -90,7 +90,7 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean && sudo apt-get autoremove
 }
 
 sysupdate() {
@@ -578,4 +578,4 @@ else
     newline
 fi
 
-#based on template 1603101315
+#based on template 1603101335
