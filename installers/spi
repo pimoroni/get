@@ -35,15 +35,17 @@ customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 
 FORCE=$1
+DEVICE_TREE=true
 INTERACTIVE=false
 ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
-DEVICE_TREE=true
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -69,6 +71,7 @@ warning() {
 newline() {
     echo ""
 }
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -77,7 +80,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -87,6 +91,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -96,6 +101,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+    
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -117,7 +130,7 @@ os_check() {
 }
 
 raspbian_check() {
-    IS_SQUEEZY=false
+    IS_SQUEEZE=false
     IS_WHEEZY=false
     IS_JESSIE=false
 
@@ -126,12 +139,22 @@ raspbian_check() {
             IS_JESSIE=true
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
             IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeezy" > /dev/null; then
-            IS_SQUEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
         else
             echo "Unsupported distribution"
             exit
         fi
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
     fi
 }
 
@@ -232,13 +255,11 @@ if confirm "Do you wish to continue?"; then
         export ASK_TO_REBOOT
     else
         success "SPI Already Enabled"
+        newline
     fi
 
     if ! grep -qe "spi-bcm2708" $LOADMOD; then
-        newline
-        echo "Adding "
-        echo "spi-bcm2708" | sudo tee -a $LOADMOD
-        echo " to $LOADMOD"
+        echo "spi-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
     fi
 else
     newline
