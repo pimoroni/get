@@ -569,6 +569,7 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         newline
         if confirm "Would you like to update Blueman to a newer version (recommended)"; then
+            newline
             DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $DEBDIR
             wget http://archive.raspbian.org/raspbian/pool/main/b/blueman/blueman_2.0.3-1%2bb1_armhf.deb
