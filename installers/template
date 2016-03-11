@@ -568,6 +568,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        echo "Finalising Install..."
+        newline
         sysclean
         newline
         success "All done!"
@@ -596,4 +598,4 @@ else
     newline
 fi
 
-#based on template 1603111145
+#based on template 1603111215
