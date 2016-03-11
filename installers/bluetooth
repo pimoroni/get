@@ -597,7 +597,7 @@ if confirm "Do you wish to continue?"; then
                 sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
                 if ps aux | grep "blueman" &> /dev/null; then
                     newline
-                    warning "you will need to restart blueman before the new version is active"
+                    warning "You will need to restart blueman before the new version is active"
                     newline
                 fi
             fi
