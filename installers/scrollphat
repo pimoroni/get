@@ -250,6 +250,7 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+arch_check
 os_check
 
 if $IS_RASPBIAN; then
@@ -599,4 +600,4 @@ else
     newline
 fi
 
-#based on template 1603111240
+#based on template 1603111245
