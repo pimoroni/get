@@ -147,29 +147,49 @@ get_init_sys() {
     fi
 }
 
-if ! raspbian_check; then
+: <<'MAINSTART'
+
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+arch_check
+os_check
+
+if $IS_RASPBIAN; then
+    raspbian_check # insert any flavour specific routine in this scope
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    exit
+else
+    if [ $debugmode == "yes" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
+    fi
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-echo ""
+newline
 echo "This script will enable the serial console on your Raspberry Pi"
-echo ""
+newline
 warning "--- Warning ---"
-echo ""
+newline
 echo "Always be careful when running scripts and commands"
 echo "copied from the internet. Ensure they are from a"
 echo "trusted source."
-echo ""
+newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
-echo ""
+newline
 
 if confirm "Do you wish to continue?"; then
 
@@ -188,9 +208,9 @@ if confirm "Do you wish to continue?"; then
     echo "Serial console enabled"
     ASK_TO_REBOOT=true    
 else
-    echo ""
+    newline
     echo "Aborting..."
-    echo ""
+    newline
 fi
 
 exit 0

@@ -175,6 +175,7 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+arch_check
 os_check
 
 if $IS_RASPBIAN; then
