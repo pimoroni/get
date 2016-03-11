@@ -47,15 +47,20 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) #
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -90,7 +95,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -100,6 +106,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -109,6 +116,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -232,6 +247,7 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+arch_check
 os_check
 
 if $IS_RASPBIAN; then
@@ -302,6 +318,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +331,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,10 +339,12 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
-
+    success "Done!"
     newline
+
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
@@ -371,7 +391,7 @@ if confirm "Do you wish to continue?"; then
                 done
             fi
         else
-            success "Found!"
+            success "Done!"
         fi
     fi
 
@@ -493,7 +513,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     newline
-    echo "Checking additional software requirements..."
+    echo "Checking for additional software..."
 
     moredepreq=false
 
@@ -526,7 +546,7 @@ if confirm "Do you wish to continue?"; then
                 done
         fi
     else
-        success "Found!"
+        success "Done!"
     fi
 
     if [ $gitrepoclone == "yes" ]; then
@@ -547,6 +567,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        echo "Finalising Install..."
+        newline
         sysclean
         newline
         success "All done!"
@@ -559,7 +581,7 @@ if confirm "Do you wish to continue?"; then
             echo "Note: $productname currently supports Python 3 only."
         fi
         newline
-    else
+    else # custom block starts here
         newline
         echo "Finalising Install..."
         # place all custom commands in this scope
@@ -575,4 +597,4 @@ else
     newline
 fi
 
-#based on template 1603161250
+#based on template 1603111245
