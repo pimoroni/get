@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
@@ -37,25 +40,30 @@ gitreponame="get" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
 docdir="$gitreponame/documentation" # subdirectory of examples in repo 
 examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
-i2creq="no" # whether i2c interface is required or not
+i2creq="yes" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
+pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "pi-bluetooth" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -90,7 +98,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -100,6 +109,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -109,6 +119,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -232,6 +250,7 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+arch_check
 os_check
 
 if $IS_RASPBIAN; then
@@ -302,6 +321,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +334,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,10 +342,12 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
-
+    success "Done!"
     newline
+
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
@@ -371,7 +394,7 @@ if confirm "Do you wish to continue?"; then
                 done
             fi
         else
-            success "Found!"
+            success "Done!"
         fi
     fi
 
@@ -493,7 +516,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     newline
-    echo "Checking additional software requirements..."
+    echo "Checking for additional software..."
 
     moredepreq=false
 
@@ -526,7 +549,7 @@ if confirm "Do you wish to continue?"; then
                 done
         fi
     else
-        success "Found!"
+        success "Done!"
     fi
 
     if [ $gitrepoclone == "yes" ]; then
@@ -547,6 +570,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        echo "Finalising Install..."
+        newline
         sysclean
         newline
         success "All done!"
@@ -559,17 +584,10 @@ if confirm "Do you wish to continue?"; then
             echo "Note: $productname currently supports Python 3 only."
         fi
         newline
-    else
-        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-            newline
-            echo "Max USB current setting already active"
-        else
-            newline
-            echo "Adjusting USB current setting in $CONFIG"
-            echo "max_usb_current=1" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
-        fi
-            
+    else # custom block starts here
+        usb_max_power
+        echo "Finalising Install..."
+        newline
         if raspbian_old; then
             echo ""
             echo "Bringing your system up-to-date..."
@@ -591,4 +609,4 @@ else
     newline
 fi
 
-#based on template 1603161250
+#based on template 1603111245
