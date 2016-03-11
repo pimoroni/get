@@ -28,29 +28,33 @@ ACKNOWLEDGEMENT
 
 productname="pHAT DAC" # the name of the product to install
 scriptname="phatdac" # the name of this script
+debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
+customcmd="yes" # whether to execute commands specified before exit
+raspbianonly="yes" # whether the script is allowed to run on other OSes
 spireq="no" # whether spi is required or not
 i2creq="no" # whether i2c is required or not
 i2sreq="yes" # whether i2s is required or not
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
-        response=${response,,}
         if [[ $response =~ ^(yes|y)$ ]]; then
             true
         else
@@ -67,15 +71,20 @@ warning() {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
+newline() {
+    echo ""
+}
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit
     fi
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -85,35 +94,60 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
-    echo ""
+    newline
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
 }
 
-raspbian_check() {
-    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+arch_check() {
+    IS_ARMv6=false
 
-    if [[ "" == $IS_RASPBIAN ]]; then
-        false
-    else
-        true
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
-raspbian_old() {
-    DIST_CHK=$(cat /etc/os-release | grep "wheezy")
+os_check() {
+    IS_RASPBIAN=false
+    IS_MACOSX=false
+    IS_X86_64=false
+    IS_X86_32=false
 
-    if [ "" == "$DIST_CHK" ];then
-        false
+    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        IS_RASPBIAN=true
+    elif uname -s | grep "Darwin" > /dev/null; then
+        IS_MACOSX=true
+    elif uname -m | grep "x86_64" > /dev/null; then
+        IS_X86_64=true
     else
-        true
+        IS_X86_32=true
+    fi
+}
+
+raspbian_check() {
+    IS_SQUEEZE=false
+    IS_WHEEZY=false
+    IS_JESSIE=false
+
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_JESSIE=true
+        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+            IS_WHEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
+        else
+            echo "Unsupported distribution"
+            exit
+        fi
     fi
 }
 
@@ -126,46 +160,65 @@ get_init_sys() {
         echo "Unrecognised init system" && exit
     fi
 }
+: <<'MAINSTART'
 
-if ! raspbian_check; then
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+arch_check
+os_check
+
+if $IS_RASPBIAN; then
+    raspbian_check # insert any flavour specific routine in this scope
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    exit
+else
+    if [ $debugmode == "yes" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
+    fi
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-echo ""
+newline
 echo "This script will install everything needed to use"
 echo "$productname"
-echo ""
+newline
 warning "--- Warning ---"
-echo ""
+newline
 echo "Always be careful when running scripts and commands"
 echo "copied from the internet. Ensure they are from a"
 echo "trusted source."
-echo ""
+newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
-echo ""
+newline
 
 if confirm "Do you wish to continue?"; then
 
-    echo ""
+    newline
     echo "Checking hardware requirements..."
 
     if [ $spireq == "yes" ]; then
-        echo ""
+        newline
         if confirm "Hardware requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | bash -s - "-y"
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
-        echo ""
+        newline
         if confirm "Hardware requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
         fi
@@ -178,7 +231,7 @@ if confirm "Do you wish to continue?"; then
 
         if $DEVICE_TREE; then
 
-            echo ""
+            newline
             echo "Adding Device Tree Entry to $CONFIG"
 
             if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
@@ -189,7 +242,7 @@ if confirm "Do you wish to continue?"; then
             fi
 
             if [ -e $BLACKLIST ]; then
-                echo ""
+                newline
                 echo "Commenting out Blacklist entry in "
                 echo "$BLACKLIST"
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
@@ -197,15 +250,15 @@ if confirm "Do you wish to continue?"; then
                 sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
             fi
         else
-            echo ""
+            newline
             echo "No Device Tree Detected, not supported"
-            echo ""
+            newline
             exit 1
         fi
 
         if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
             bcm2835off="no"
-            echo ""
+            newline
             echo "Disabling default sound driver"
             sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
@@ -214,12 +267,12 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
-            echo ""
+            newline
             echo "Disabling default sound module"
             sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
             ASK_TO_REBOOT=true
         else
-            echo ""
+            newline
             echo "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
@@ -237,7 +290,7 @@ if confirm "Do you wish to continue?"; then
     sudo mv ~/asound.conf /etc/asound.conf
 
     if [ $bcm2835off == "yes" ]; then
-        echo ""
+        newline
         echo "We can now test your $productname"
         warning "Set your speakers at a low volume!"
         if confirm "Do you wish to test your system now?"; then
@@ -245,19 +298,19 @@ if confirm "Do you wish to continue?"; then
             speaker-test -c2 -t wav
         fi
     fi
-    echo ""
+    newline
     success "All done!"
-    echo ""
+    newline
     echo "Enjoy your new $productname!"
-    echo ""
+    newline
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
     fi
 else
-    echo ""
+    newline
     echo "Aborting..."
-    echo ""
+    newline
 fi
 
 exit 0

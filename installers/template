@@ -25,8 +25,11 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
-squeezysupport="no" # whether Squeezy is supported or not
+squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 piplibname="pip lib name" # the name of the lib in pip repo
@@ -47,15 +50,20 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
 FORCE=$1
-INTERACTIVE=false
-ASK_TO_REBOOT=false
-CONFIG=/boot/config.txt
-BOOTCMD=/boot/cmdline.txt
-BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
-INITABCONF=/etc/inittab
-LOADMOD=/etc/modules
 DEVICE_TREE=true
+ASK_TO_REBOOT=false
+INTERACTIVE=false
 UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -90,7 +98,8 @@ sudocheck() {
 }
 
 sysclean() {
-    sudo apt-get clean
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysupdate() {
@@ -100,6 +109,7 @@ sysupdate() {
 sysupdgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
 }
 
 sysreboot() {
@@ -109,6 +119,14 @@ sysreboot() {
     if confirm "Would you like to reboot now?"; then
         sync
         sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
     fi
 }
 
@@ -130,7 +148,7 @@ os_check() {
 }
 
 raspbian_check() {
-    IS_SQUEEZY=false
+    IS_SQUEEZE=false
     IS_WHEEZY=false
     IS_JESSIE=false
 
@@ -139,8 +157,8 @@ raspbian_check() {
             IS_JESSIE=true
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
             IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeezy" > /dev/null; then
-            IS_SQUEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
         else
             echo "Unsupported distribution"
             exit
@@ -232,11 +250,12 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+arch_check
 os_check
 
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $squeezysupport == "no" ] && $IS_SQUEEZY; then
+    if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
         newline
         warning "--- Warning ---"
         newline
@@ -302,6 +321,7 @@ if confirm "Do you wish to continue?"; then
         echo "The serial console needs to be disabled."
         if confirm "Do you wish to continue?"; then
             \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         else
             newline
             echo "Aborting..."
@@ -314,6 +334,7 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires SPI, enable now?"; then
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
 
@@ -321,10 +342,12 @@ if confirm "Do you wish to continue?"; then
         newline
         if confirm "The $productname requires I2C, enable now?"; then
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
-
+    success "Done!"
     newline
+
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
@@ -371,7 +394,7 @@ if confirm "Do you wish to continue?"; then
                 done
             fi
         else
-            success "Found!"
+            success "Done!"
         fi
     fi
 
@@ -493,7 +516,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     newline
-    echo "Checking additional software requirements..."
+    echo "Checking for additional software..."
 
     moredepreq=false
 
@@ -526,7 +549,7 @@ if confirm "Do you wish to continue?"; then
                 done
         fi
     else
-        success "Found!"
+        success "Done!"
     fi
 
     if [ $gitrepoclone == "yes" ]; then
@@ -537,7 +560,7 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
             newline
             echo "Cloning Github repo locally..."
-            git clone https://github.com/pimoroni/$gitreponame
+            git clone --depth=1 https://github.com/pimoroni/$gitreponame
         else
             cd $WORKING_DIR/$localdir/$gitreponame
             newline
@@ -547,6 +570,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        echo "Finalising Install..."
+        newline
         sysclean
         newline
         success "All done!"
@@ -559,7 +584,7 @@ if confirm "Do you wish to continue?"; then
             echo "Note: $productname currently supports Python 3 only."
         fi
         newline
-    else
+    else # custom block starts here
         newline
         echo "Finalising Install..."
         # place all custom commands in this scope
@@ -575,4 +600,4 @@ else
     newline
 fi
 
-#based on template 1602252215
+#based on template 1603111245

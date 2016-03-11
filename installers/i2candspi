@@ -19,56 +19,37 @@ was written for this script.
 
 DISCLAIMER
 
+productname="na" # the name of the product to install
 scriptname="i2candspi" # the name of this script
+debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
+customcmd="yes" # whether to execute commands specified before exit
+raspbianonly="yes" # whether the script is allowed to run on other OSes
 
 FORCE=$1
+DEVICE_TREE=true
 ASK_TO_REBOOT=false
+INTERACTIVE=false
+UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
-DEVICE_TREE=true
-UPDATE_DB=false
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
-        response=${response,,}
         if [[ $response =~ ^(yes|y)$ ]]; then
             true
         else
             false
         fi
-    fi
-}
-
-sudocheck() {
-    if [ $(id -u) -ne 0 ]; then
-        printf "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit 1
-    fi
-}
-
-sysclean() {
-    sudo apt-get clean
-}
-
-sysupdate() {
-    sudo apt-get update
-}
-
-sysupdgrade() {
-    sudo apt-get update && sudo apt-get upgrade
-    sudo apt-get clean && sudo apt-get autoclean
-}
-
-sysreboot() {
-    if confirm "Would you like to reboot now?"; then
-        sync
-        sudo reboot
     fi
 }
 
@@ -80,54 +61,154 @@ warning() {
     echo "$(tput setaf 1)$1$(tput sgr0)"
 }
 
-raspbian_check() {
-    IS_RASPBIAN=$(cat /etc/*-release | grep "Raspbian")
+newline() {
+    echo ""
+}
 
-    if [[ "" == $IS_RASPBIAN ]]; then
-        false
-    else
-        true
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit
     fi
 }
 
-if ! raspbian_check; then
+sysclean() {
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupdgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    newline
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
+    fi
+}
+
+os_check() {
+    IS_RASPBIAN=false
+    IS_MACOSX=false
+    IS_X86_64=false
+    IS_X86_32=false
+
+    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        IS_RASPBIAN=true
+    elif uname -s | grep "Darwin" > /dev/null; then
+        IS_MACOSX=true
+    elif uname -m | grep "x86_64" > /dev/null; then
+        IS_X86_64=true
+    else
+        IS_X86_32=true
+    fi
+}
+
+raspbian_check() {
+    IS_SQUEEZE=false
+    IS_WHEEZY=false
+    IS_JESSIE=false
+
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_JESSIE=true
+        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+            IS_WHEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
+        else
+            echo "Unsupported distribution"
+            exit
+        fi
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit
+    fi
+}
+
+: <<'MAINSTART'
+
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+arch_check
+os_check
+
+if $IS_RASPBIAN; then
+    raspbian_check # insert any flavour specific routine in this scope
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    exit
+else
+    if [ $debugmode == "yes" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
+    fi
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-echo ""
+newline
 echo "This script will enable I2C and SPI on your Raspberry Pi"
-echo ""
+newline
 warning "--- Warning ---"
-echo ""
+newline
 echo "Always be careful when running scripts and commands"
 echo "copied from the internet. Ensure they are from a"
 echo "trusted source."
-echo ""
+newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
-echo ""
+newline
 
 if confirm "Do you wish to continue?"; then
     \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
     \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
-    echo ""
+    newline
     echo "All done!"
-    echo ""
+    newline
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
     fi
 else
-    echo ""
+    newline
     echo "Aborting..."
-    echo ""
+    newline
 fi
 
 exit 0
