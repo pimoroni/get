@@ -515,7 +515,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     newline
-    echo "Checking additional software requirements..."
+    echo "Checking for additional software..."
 
     moredepreq=false
 
@@ -599,4 +599,4 @@ else
     newline
 fi
 
-#based on template 1603111235
+#based on template 1603111240
