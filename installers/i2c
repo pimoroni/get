@@ -106,7 +106,7 @@ sysreboot() {
 
 arch_check() {
     IS_ARMv6=false
-    
+
     if uname -m | grep "armv6l" > /dev/null; then
         IS_ARMv6=true
     fi

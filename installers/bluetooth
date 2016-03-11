@@ -124,7 +124,7 @@ sysreboot() {
 
 arch_check() {
     IS_ARMv6=false
-    
+
     if uname -m | grep "armv6l" > /dev/null; then
         IS_ARMv6=true
     fi
@@ -612,4 +612,4 @@ else
     newline
 fi
 
-#based on template 1603102145
+#based on template 1603111145
