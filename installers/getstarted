@@ -587,10 +587,12 @@ if confirm "Do you wish to continue?"; then
         else
             newline
             echo "Adjusting USB current setting in $CONFIG"
-            echo "max_usb_current=1" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
+            usb_max_power
         fi
-            
+
+        newline
+        echo "Finalising Install..."
+
         if raspbian_old; then
             echo ""
             echo "Bringing your system up-to-date..."
