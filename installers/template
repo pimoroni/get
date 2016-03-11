@@ -344,8 +344,9 @@ if confirm "Do you wish to continue?"; then
             read -rsp $'Press any key to continue...\n' -n1 key
         fi
     fi
-
+    success "Done!"
     newline
+
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
@@ -392,7 +393,7 @@ if confirm "Do you wish to continue?"; then
                 done
             fi
         else
-            success "Found!"
+            success "Done!"
         fi
     fi
 
@@ -547,7 +548,7 @@ if confirm "Do you wish to continue?"; then
                 done
         fi
     else
-        success "Found!"
+        success "Done!"
     fi
 
     if [ $gitrepoclone == "yes" ]; then
@@ -598,4 +599,4 @@ else
     newline
 fi
 
-#based on template 1603111215
+#based on template 1603111235
