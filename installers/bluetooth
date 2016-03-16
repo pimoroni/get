@@ -588,6 +588,8 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         newline
+        sudo adduser pi bluetooth
+        newline        
         if ! $IS_ARMv6; then
             if confirm "Would you like to update to the latest version of blueman (recommended)"; then
                 newline
