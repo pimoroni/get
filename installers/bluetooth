@@ -45,7 +45,7 @@ spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=() # list core dependencies assuming Wheezy
-pkgdeplist8=( "bluetooth" "bluez" "bluez-obexd" "gir1.2-gconf-2.0" "gir1.2-notify-0.7" "gir1.2-appindicator3-0.1" "network-manager" "notification-daemon" "libpulse-mainloop-glib0" "python3-dbus" "python3-gi" "python3-cairo" "python3-gi-cairo" "pi-bluetooth" ) # list extra dependencies assuming Jessie
+pkgdeplist8=( "pi-bluetooth" "bluez" "bluez-tools" "bluez-obexd" "gir1.2-gconf-2.0" "gir1.2-notify-0.7" "gir1.2-appindicator3-0.1" "network-manager" "notification-daemon" "libpulse-mainloop-glib0" "python3-dbus" "python3-gi" "python3-cairo" "python3-gi-cairo" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
