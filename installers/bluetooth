@@ -23,7 +23,7 @@ productname="Bluetooth" # the name of the product to install
 scriptname="bluetooth" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 armv6="yes" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
@@ -45,7 +45,7 @@ spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=() # list core dependencies assuming Wheezy
-pkgdeplist8=( "pi-bluetooth" "blueman" "bluez-tools" "network-manager" "notification-daemon" ) # list extra dependencies assuming Jessie
+pkgdeplist8=( "pi-bluetooth" "blueman" "bluez-tools" "network-manager" "notification-daemon" "python3-dbus" "python3-gi-cairo" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
@@ -595,11 +595,6 @@ if confirm "Do you wish to continue?"; then
                 cd $DEBDIR
                 wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
                 sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
-                if ps aux | grep "blueman" &> /dev/null; then
-                    newline
-                    warning "You will need to restart blueman before the new version is active"
-                    newline
-                fi
             fi
         fi
         sysclean
