@@ -49,7 +49,7 @@ pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
-#based on template 1603171440
+#based on template 1603171450
 
 FORCE=$1
 DEVICE_TREE=true
@@ -339,8 +339,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        echo "The $productname requires UART communication."
-        echo "The serial console needs to be disabled."
+        warning "UART must be Enabled for $productname to work!"
+        warning "The serial console needs to be disabled."
         \curl -sS get.pimoroni.com/uartoff | sudo bash
         ASK_TO_REBOOT=true
         newline
@@ -352,6 +352,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "SPI Already Enabled"
         else
+            warning "SPI must be Enabled for $productname to work!"
             \curl -sS get.pimoroni.com/spi | sudo bash
             ASK_TO_REBOOT=true
         fi
@@ -363,6 +364,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "I2C Already Enabled"
         else
+            warning "I2C must be Enabled for $productname to work!"
             \curl -sS get.pimoroni.com/i2c | sudo bash
             ASK_TO_REBOOT=true
         fi
