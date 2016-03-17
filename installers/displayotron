@@ -46,7 +46,7 @@ pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies a
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 
-#based on template 1603171400
+#based on template 1603171420
 
 FORCE=$1
 DEVICE_TREE=true
@@ -338,7 +338,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "The $productname requires UART communication."
         echo "The serial console needs to be disabled."
-        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/uartoff | sudo bash
         ASK_TO_REBOOT=true
         newline
         fi
@@ -350,7 +350,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "SPI Already Enabled"
         else
-            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            \curl -sS get.pimoroni.com/spi | sudo bash
             ASK_TO_REBOOT=true
         fi
     fi
@@ -361,7 +361,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "I2C Already Enabled"
         else
-            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            \curl -sS get.pimoroni.com/i2c | sudo bash
             ASK_TO_REBOOT=true
         fi
     fi
