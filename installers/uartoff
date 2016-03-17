@@ -19,14 +19,19 @@ was written for this script.
 
 DISCLAIMER
 
+productname="na" # the name of the product to install
 scriptname="uartoff" # the name of this script
+debugmode="no" # whether the script outputs debug level messages
 forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
+customcmd="yes" # whether to execute commands specified before exit
+raspbianonly="yes" # whether the script is allowed to run on other OSes
 
 FORCE=$1
 DEVICE_TREE=true
-INTERACTIVE=false
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+INTERACTIVE=false
 UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
@@ -137,6 +142,14 @@ raspbian_check() {
     fi
 }
 
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -145,6 +158,12 @@ get_init_sys() {
     else
         echo "Unrecognised init system" && exit
     fi
+}
+
+dt_check() {
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
+    fi    
 }
 
 : <<'MAINSTART'
@@ -156,6 +175,7 @@ MAINSTART
 
 arch_check
 os_check
+dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check # insert any flavour specific routine in this scope
@@ -199,7 +219,6 @@ if confirm "Do you wish to continue?"; then
         sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
     fi
     sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
-
     echo "Serial console disabled"
     ASK_TO_REBOOT=true
 else

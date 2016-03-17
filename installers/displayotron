@@ -46,9 +46,12 @@ pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies a
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 
+#based on template 1603171500
+
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
 
@@ -164,10 +167,10 @@ raspbian_check() {
 }
 
 raspbian_old() {
-    if $IS_JESSIE;then
-        false
-    else
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
         true
+    else
+        false
     fi
 }
 
@@ -178,6 +181,28 @@ get_init_sys() {
         SYSTEMD=0
     else
         echo "Unrecognised init system" && exit
+    fi
+}
+
+dt_check() {
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
+    fi    
+}
+
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
     fi
 }
 
@@ -249,6 +274,7 @@ MAINSTART
 
 arch_check
 os_check
+dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check
@@ -314,32 +340,34 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        echo "The $productname requires UART communication."
-        echo "The serial console needs to be disabled."
-        if confirm "Do you wish to continue?"; then
-            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
-        else
-            newline
-            echo "Aborting..."
-            newline
-            exit
-        fi
+        warning "UART must be Enabled for $productname to work!"
+        warning "The serial console needs to be disabled."
+        \curl -sS get.pimoroni.com/uartoff | sudo bash
+        ASK_TO_REBOOT=true
+        newline
     fi
 
     if [ $spireq == "yes" ]; then
+        spi_check
         newline
-        if confirm "The $productname requires SPI, enable now?"; then
-            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
+        if $DEVICE_TREE && $CURRENT_SETTING; then
+            success "SPI Already Enabled"
+        else
+            warning "SPI must be Enabled for $productname to work!"
+            \curl -sS get.pimoroni.com/spi | sudo bash
+            ASK_TO_REBOOT=true
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
+        i2c_check
         newline
-        if confirm "The $productname requires I2C, enable now?"; then
-            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
+        if $DEVICE_TREE && $CURRENT_SETTING; then
+            success "I2C Already Enabled"
+        else
+            warning "I2C must be Enabled for $productname to work!"
+            \curl -sS get.pimoroni.com/i2c | sudo bash
+            ASK_TO_REBOOT=true
         fi
     fi
     success "Done!"
@@ -597,4 +625,4 @@ else
     newline
 fi
 
-#based on template 1603111245
+exit 0
