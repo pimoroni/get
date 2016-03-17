@@ -45,8 +45,9 @@ pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
+spacereq=150 # estimated size required for installation in MB
 
-#based on template 1603171500
+#based on template 1603172125
 
 FORCE=$1
 DEVICE_TREE=true
@@ -221,6 +222,14 @@ usb_max_power() {
     fi
 }
 
+space_chk() {
+    echo $(($(stat -f -c "%a*%S" /)/10**6))
+    if [ $spacereq -lt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+        echo "No space left for installation"
+        exit
+    fi
+}
+
 apt_pkg_req() {
     APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
@@ -272,6 +281,7 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+space_chk
 arch_check
 os_check
 dt_check
@@ -342,7 +352,7 @@ if confirm "Do you wish to continue?"; then
         newline
         warning "UART must be Enabled for $productname to work!"
         warning "The serial console needs to be disabled."
-        \curl -sS get.pimoroni.com/uartoff | sudo bash
+        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi
@@ -354,7 +364,7 @@ if confirm "Do you wish to continue?"; then
             success "SPI Already Enabled"
         else
             warning "SPI must be Enabled for $productname to work!"
-            \curl -sS get.pimoroni.com/spi | sudo bash
+            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
     fi
@@ -366,7 +376,7 @@ if confirm "Do you wish to continue?"; then
             success "I2C Already Enabled"
         else
             warning "I2C must be Enabled for $productname to work!"
-            \curl -sS get.pimoroni.com/i2c | sudo bash
+            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
     fi
