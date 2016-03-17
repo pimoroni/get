@@ -49,6 +49,8 @@ pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies a
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
+#based on template 1603171400
+
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
@@ -621,4 +623,4 @@ else
     newline
 fi
 
-#based on template 1603171335
+exit 0
