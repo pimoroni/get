@@ -256,6 +256,9 @@ if confirm "Do you wish to continue?"; then
     if ! grep -qe "spi-bcm2708" $LOADMOD; then
         echo "spi-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
     fi
+        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+    fi
 else
     newline
     echo "Aborting..."
