@@ -169,6 +169,8 @@ dt_check() {
 i2c_check() {
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
         CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
     fi
 }
 

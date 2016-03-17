@@ -46,7 +46,7 @@ pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies a
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 
-#based on template 1603171450
+#based on template 1603171500
 
 FORCE=$1
 DEVICE_TREE=true
@@ -193,12 +193,16 @@ dt_check() {
 i2c_check() {
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
         CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
     fi
 }
 
 spi_check() {
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
         CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
     fi
 }
 
