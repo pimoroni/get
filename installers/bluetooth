@@ -50,6 +50,8 @@ pkgdeplist8=( "pi-bluetooth" "blueman" "bluez-tools" "bluez-obexd" "network-mana
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
+#based on template 1603171440
+
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
@@ -340,10 +342,9 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "The $productname requires UART communication."
         echo "The serial console needs to be disabled."
-        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/uartoff | sudo bash
         ASK_TO_REBOOT=true
         newline
-        fi
     fi
 
     if [ $spireq == "yes" ]; then
@@ -352,7 +353,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "SPI Already Enabled"
         else
-            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            \curl -sS get.pimoroni.com/spi | sudo bash
             ASK_TO_REBOOT=true
         fi
     fi
@@ -363,7 +364,7 @@ if confirm "Do you wish to continue?"; then
         if $DEVICE_TREE && $CURRENT_SETTING; then
             success "I2C Already Enabled"
         else
-            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            \curl -sS get.pimoroni.com/i2c | sudo bash
             ASK_TO_REBOOT=true
         fi
     fi
@@ -636,4 +637,4 @@ else
     newline
 fi
 
-#based on template 1603171335
+exit 0

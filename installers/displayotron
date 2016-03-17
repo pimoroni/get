@@ -46,7 +46,7 @@ pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies a
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 
-#based on template 1603171420
+#based on template 1603171440
 
 FORCE=$1
 DEVICE_TREE=true
@@ -341,7 +341,6 @@ if confirm "Do you wish to continue?"; then
         \curl -sS get.pimoroni.com/uartoff | sudo bash
         ASK_TO_REBOOT=true
         newline
-        fi
     fi
 
     if [ $spireq == "yes" ]; then
