@@ -19,25 +19,19 @@ was written for this script.
 
 DISCLAIMER
 
-: <<'ACKNOWLEDGEMENT'
-
-The code for the kernelatleast reproduced herein is lifted from:
-http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
-
-ACKNOWLEDGEMENT
-
 productname="na" # the name of the product to install
 scriptname="spi" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
-forcesudo="no" # whether the script requires to be ran with root privileges
+forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 
 FORCE=$1
 DEVICE_TREE=true
-INTERACTIVE=false
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+INTERACTIVE=false
 UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
@@ -148,6 +142,14 @@ raspbian_check() {
     fi
 }
 
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -158,13 +160,15 @@ get_init_sys() {
     fi
 }
 
-kernelatleast() {
-    kver=$(uname -r|cut -d\- -f1|tr -d '.'| tr -d '[A-Z][a-z]')
-    kver=${kver:0:3}
-    if [ $1 -ge $kver ]; then
-        return 0;
-    else
-        return 1;
+dt_check() {
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
+    fi    
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
     fi
 }
 
@@ -177,6 +181,7 @@ MAINSTART
 
 arch_check
 os_check
+dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check # insert any flavour specific routine in this scope
@@ -213,47 +218,36 @@ echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
-
-    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-        DEVICE_TREE=false
-    fi
-
-    CURRENT_SETTING=false # assume disabled
-
-    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        CURRENT_SETTING=true
-    fi
-
-    if ! $DEVICE_TREE && [ -e $BLACKLIST ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" $BLACKLIST; then
-        newline
-        echo "No Device Tree Detected"
-        echo "Enabling SPI..."
-        newline
-        echo "Commenting out Blacklist entry in "
-        echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
-        sudo modprobe spi-bcm2708
-        newline
-        success "SPI enabled"
-        newline
-    elif $DEVICE_TREE && ! $CURRENT_SETTING; then
+    spi_check
+    if $DEVICE_TREE && ! $CURRENT_SETTING; then
         newline
         echo "Device Tree Detected"
         echo "Enabling SPI..."
         newline
         echo "Adding Device Tree Entry to "
         echo $CONFIG
-        echo "dtparam=spi=on" | sudo tee -a $CONFIG
+        echo "dtparam=spi=on" | sudo tee -a $CONFIG &> /dev/null
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/"
+        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
         sudo modprobe spi-bcm2708
         newline
         success "SPI enabled"
         warning "Reboot required!"
         newline
         ASK_TO_REBOOT=true
-        export ASK_TO_REBOOT
+    elif ! $DEVICE_TREE && [ -e $BLACKLIST ] && grep -q "^blacklist[[:space:]]*spi-bcm2708" $BLACKLIST; then
+        newline
+        echo "No Device Tree Detected"
+        echo "Enabling SPI..."
+        newline
+        echo "Commenting out Blacklist entry in "
+        echo "$BLACKLIST"
+        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
+        sudo modprobe spi-bcm2708
+        newline
+        success "SPI enabled"
+        newline
     else
         success "SPI Already Enabled"
         newline
