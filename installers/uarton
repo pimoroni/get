@@ -224,13 +224,8 @@ if confirm "Do you wish to continue?"; then
     if ! grep -q "console=ttyAMA0" $BOOTCMD; then
         sed -i $BOOTCMD -e "s/root=/console=ttyAMA0,115200 root=/"
     fi
-    
     echo "Serial console enabled"
     ASK_TO_REBOOT=true
-
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
-    fi
 else
     newline
     echo "Aborting..."

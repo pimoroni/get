@@ -218,7 +218,9 @@ echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
+
     spi_check
+
     if $DEVICE_TREE && ! $CURRENT_SETTING; then
         newline
         echo "Device Tree Detected"
@@ -230,7 +232,7 @@ if confirm "Do you wish to continue?"; then
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
         sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
-        sudo modprobe spi-bcm2708
+        sudo modprobe -q spi-bcm2708
         newline
         success "SPI enabled"
         warning "Reboot required!"
@@ -244,7 +246,7 @@ if confirm "Do you wish to continue?"; then
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
         sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
-        sudo modprobe spi-bcm2708
+        sudo modprobe -q spi-bcm2708
         newline
         success "SPI enabled"
         newline
@@ -252,12 +254,8 @@ if confirm "Do you wish to continue?"; then
         success "SPI Already Enabled"
         newline
     fi
-
     if ! grep -qe "spi-bcm2708" $LOADMOD; then
         echo "spi-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
-    fi
-        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
     fi
 else
     newline

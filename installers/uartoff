@@ -219,13 +219,8 @@ if confirm "Do you wish to continue?"; then
         sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
     fi
     sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
-
     echo "Serial console disabled"
     ASK_TO_REBOOT=true
-
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
-    fi
 else
     newline
     echo "Aborting..."
