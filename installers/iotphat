@@ -50,7 +50,7 @@ moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1603181330
+#based on template 1603181335
 
 FORCE=$1
 DEVICE_TREE=true
@@ -121,7 +121,6 @@ sysreboot() {
     warning "your computer to reboot to take effect."
     newline
     if confirm "Would you like to reboot now?"; then
-        newline
         sync
         sudo reboot
     fi
@@ -649,6 +648,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
+        newline
     fi
 else
     newline
