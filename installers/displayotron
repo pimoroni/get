@@ -35,8 +35,8 @@ pip3support="yes" # whether python3 is supported or not
 localdir="displayotron" # the name of the dir for copy of examples
 gitreponame="dot3k" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
-docdir="$gitreponame/documentation" # subdirectory of examples in repo 
-examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo 
+docdir="$gitreponame/documentation" # subdirectory of examples in repo
+examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
@@ -47,7 +47,7 @@ moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=150 # estimated size required for installation in MB
 
-#based on template 1603172125
+#based on template 1603180005
 
 FORCE=$1
 DEVICE_TREE=true
@@ -188,7 +188,7 @@ get_init_sys() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 i2c_check() {
@@ -223,10 +223,15 @@ usb_max_power() {
 }
 
 space_chk() {
-    echo $(($(stat -f -c "%a*%S" /)/10**6))
-    if [ $spacereq -lt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-        echo "No space left for installation"
-        exit
+    if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+        newline
+        warning  "There is not enough space left to proceed with  installation"
+        if confirm "Would you like to attempt to expand your filesystem?"; then
+            \curl -sS get.pimoroni.com/expandfs | sudo bash
+        else
+            newline
+            exit
+        fi
     fi
 }
 

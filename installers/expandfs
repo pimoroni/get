@@ -27,8 +27,6 @@ https://github.com/RPi-Distro/raspi-config
 raspi-config is licensed under the terms of the MIT license,
 reproduced below.
 
-#####################################################
-
 Copyright (c) 2012 Alex Bradbury <asb@asbradbury.org>
 
 Permission is hereby granted, free of charge, to any person
@@ -320,13 +318,14 @@ if confirm "Do you wish to continue?"; then
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         echo "You should now reboot your system."
-        newline  
+        newline
         sysreboot
     fi
 else
     newline
     echo "Aborting..."
     newline
+    exit 1
 fi
 
 exit 0

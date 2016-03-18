@@ -38,8 +38,8 @@ pip3support="na" # whether python3 is supported or not
 localdir="getstarted" # the name of the dir for copy of examples
 gitreponame="get" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
-docdir="$gitreponame/documentation" # subdirectory of examples in repo 
-examplesdir="$gitreponame/learn" # subdirectory of examples in repo 
+docdir="$gitreponame/documentation" # subdirectory of examples in repo
+examplesdir="$gitreponame/learn" # subdirectory of examples in repo
 i2creq="yes" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
@@ -50,7 +50,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=50 # estimated size required for installation in MB
 
-#based on template 1603172125
+#based on template 1603180000
 
 FORCE=$1
 DEVICE_TREE=true
@@ -191,7 +191,7 @@ get_init_sys() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 i2c_check() {
@@ -226,8 +226,7 @@ usb_max_power() {
 }
 
 space_chk() {
-    echo $(($(stat -f -c "%a*%S" /)/10**6))
-    if [ $spacereq -lt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+    if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
         echo "No space left for installation"
         exit
     fi
