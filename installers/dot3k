@@ -41,13 +41,13 @@ i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-#based on template 1603181215
+#based on template 1603181305
 
 FORCE=$1
 DEVICE_TREE=true
@@ -348,6 +348,17 @@ echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
+if [ $i2creq == "yes" ]; then
+    echo "Note: $productname requires I2C communication"
+fi
+if [ $spireq == "yes" ]; then
+    echo "Note: $productname requires SPI communication"
+fi
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!"
+fi
+
 if confirm "Do you wish to continue?"; then
 
     newline
@@ -356,7 +367,6 @@ if confirm "Do you wish to continue?"; then
     if [ $uartreq == "yes" ]; then
         newline
         warning "UART must be Enabled for $productname to work!"
-        warning "The serial console needs to be disabled."
         \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
