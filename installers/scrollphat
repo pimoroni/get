@@ -50,7 +50,7 @@ moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1603181335
+#based on template 1603181655
 
 FORCE=$1
 DEVICE_TREE=true
@@ -185,28 +185,6 @@ get_init_sys() {
         SYSTEMD=0
     else
         echo "Unrecognised init system" && exit 1
-    fi
-}
-
-dt_check() {
-    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-        DEVICE_TREE=false
-    fi
-}
-
-i2c_check() {
-    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        CURRENT_SETTING=true
-    else
-        CURRENT_SETTING=false
-    fi
-}
-
-spi_check() {
-    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        CURRENT_SETTING=true
-    else
-        CURRENT_SETTING=false
     fi
 }
 
@@ -371,31 +349,29 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        warning "UART must be Enabled for $productname to work!"
+        echo "UART must be Enabled for $productname to work"
         \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi
 
     if [ $spireq == "yes" ]; then
-        spi_check
         newline
-        if $DEVICE_TREE && $CURRENT_SETTING; then
+        if [ -f /dev/spi* ]; then
             success "SPI Already Enabled"
         else
-            warning "SPI must be Enabled for $productname to work!"
+            echo "SPI must be Enabled for $productname to work"
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
-        i2c_check
         newline
-        if $DEVICE_TREE && $CURRENT_SETTING; then
+        if [ -f /dev/i2c* ]; then
             success "I2C Already Enabled"
         else
-            warning "I2C must be Enabled for $productname to work!"
+            echo "I2C must be Enabled for $productname to work"
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
