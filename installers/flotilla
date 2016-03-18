@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="no" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
@@ -45,6 +48,7 @@ pkgdeplist7=( "git" "python-pip" "python3-pip") # list core dependencies assumin
 pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
+spacereq=150 # minimum size required on root partition in MB
 
 FORCE=$1
 DEVICE_TREE=true
