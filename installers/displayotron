@@ -359,6 +359,8 @@ if [ $uartreq == "yes" ]; then
     warning "The serial console will be disabled if you proceed!"
 fi
 
+newline
+
 if confirm "Do you wish to continue?"; then
 
     newline
