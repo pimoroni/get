@@ -149,29 +149,7 @@ arch_check
 os_check
 
 if $IS_RASPBIAN; then
-    raspbian_check
-    if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
-        newline
-        warning "--- Warning ---"
-        newline
-        echo "The $productname installer"
-        echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
-        echo "for additional information and support"
-        newline
-        exit 1
-    fi
-    if [ $wheezysupport == "no" ] && $IS_WHEEZY; then
-        newline
-        warning "--- Warning ---"
-        newline
-        echo "The $productname installer"
-        echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
-        echo "for additional information and support"
-        newline
-        exit 1
-    fi
+    raspbian_check # insert any flavour specific routine in this scope
 elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
