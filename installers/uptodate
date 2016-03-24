@@ -189,6 +189,7 @@ newline
 if confirm "Do you wish to continue?"; then
     newline
     echo "Bringing your system up-to-date..."
+    newline
     sysupdgrade
     newline
     echo "All done!"
