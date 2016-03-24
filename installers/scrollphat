@@ -50,7 +50,7 @@ moreaptdep=( "python-psutil" "python3-psutil" ) # list of all the additional apt
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1603181825
+#based on template 1603241305
 
 FORCE=$1
 DEVICE_TREE=true
@@ -228,7 +228,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
+    \curl -sS get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
 }
 
 pip_pkg_req() {
@@ -602,6 +602,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        newline
         echo "Finalising Install..."
         newline
         sysclean

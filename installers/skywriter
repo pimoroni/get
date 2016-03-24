@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
+armv6="yes" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
@@ -41,14 +44,18 @@ i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
+spacereq=150 # minimum size required on root partition in MB
+
+#based on template 1603241305
 
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
 
@@ -90,7 +97,7 @@ newline() {
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit
+        exit 1
     fi
 }
 
@@ -158,16 +165,16 @@ raspbian_check() {
             IS_SQUEEZE=true
         else
             echo "Unsupported distribution"
-            exit
+            exit 1
         fi
     fi
 }
 
 raspbian_old() {
-    if $IS_JESSIE;then
-        false
-    else
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
         true
+    else
+        false
     fi
 }
 
@@ -177,7 +184,7 @@ get_init_sys() {
     elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
         SYSTEMD=0
     else
-        echo "Unrecognised init system" && exit
+        echo "Unrecognised init system" && exit 1
     fi
 }
 
@@ -196,6 +203,20 @@ usb_max_power() {
     fi
 }
 
+space_chk() {
+    if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+        newline
+        warning  "There is not enough space left to proceed with  installation"
+        if confirm "Would you like to attempt to expand your filesystem?"; then
+            \curl -sS get.pimoroni.com/expandfs | sudo bash
+            exit 1
+        else
+            newline
+            exit 1
+        fi
+    fi
+}
+
 apt_pkg_req() {
     APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
@@ -207,7 +228,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS get.pimoroni.com/package | bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit; }
+    \curl -sS get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
 }
 
 pip_pkg_req() {
@@ -247,8 +268,10 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+space_chk
 arch_check
 os_check
+dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check
@@ -261,7 +284,7 @@ if $IS_RASPBIAN; then
         echo "Check https://github.com/pimoroni/$gitreponame"
         echo "for additional information and support"
         newline
-        exit
+        exit 1
     fi
     if [ $wheezysupport == "no" ] && $IS_WHEEZY; then
         newline
@@ -272,12 +295,12 @@ if $IS_RASPBIAN; then
         echo "Check https://github.com/pimoroni/$gitreponame"
         echo "for additional information and support"
         newline
-        exit
+        exit 1
     fi
 elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Warning!"
     echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit
+    exit 1
 else
     if [ $debugmode == "yes" ]; then
         newline
@@ -307,6 +330,19 @@ echo "running it, you should run:"
 echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
+if [ $i2creq == "yes" ]; then
+    echo "Note: $productname requires I2C communication"
+fi
+if [ $spireq == "yes" ]; then
+    echo "Note: $productname requires SPI communication"
+fi
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!"
+fi
+
+newline
+
 if confirm "Do you wish to continue?"; then
 
     newline
@@ -314,32 +350,31 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        echo "The $productname requires UART communication."
-        echo "The serial console needs to be disabled."
-        if confirm "Do you wish to continue?"; then
-            \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
-        else
-            newline
-            echo "Aborting..."
-            newline
-            exit
-        fi
+        echo "UART must be Enabled for $productname to work"
+        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        ASK_TO_REBOOT=true
+        newline
     fi
 
     if [ $spireq == "yes" ]; then
         newline
-        if confirm "The $productname requires SPI, enable now?"; then
+        if ls /dev/spi* &> /dev/null; then
+            success "SPI Already Enabled"
+        else
+            echo "SPI must be Enabled for $productname to work"
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
+            ASK_TO_REBOOT=true
         fi
     fi
 
     if [ $i2creq == "yes" ]; then
         newline
-        if confirm "The $productname requires I2C, enable now?"; then
+        if ls /dev/i2c* &> /dev/null; then
+            success "I2C Already Enabled"
+        else
+            echo "I2C must be Enabled for $productname to work"
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
-            read -rsp $'Press any key to continue...\n' -n1 key
+            ASK_TO_REBOOT=true
         fi
     fi
     success "Done!"
@@ -409,7 +444,7 @@ if confirm "Do you wish to continue?"; then
                     if ! sudo pip install $piplibname; then
                         warning "Python 2 library install failed!"
                         echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit
+                        exit 1
                     fi
                     success "Done!"
                 else
@@ -419,7 +454,7 @@ if confirm "Do you wish to continue?"; then
                         if ! sudo pip install $piplibname -I; then
                             warning "Python 2 library install failed!"
                             echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit
+                        exit 1
                         fi
                         success "Done!"
                     fi
@@ -439,7 +474,7 @@ if confirm "Do you wish to continue?"; then
                     if ! sudo $PIP3_BIN install $piplibname; then
                         warning "Python 3 library install failed!"
                         echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit
+                        exit 1
                     fi
                 else
                     success "Found!"
@@ -447,7 +482,7 @@ if confirm "Do you wish to continue?"; then
                     if confirm "Python 3 module found. Reinstall/Update?"; then
                         if ! sudo $PIP3_BIN install $piplibname -I; then
                             warning "Python 3 library install failed!"
-                            exit
+                            exit 1
                         fi
                     fi
                 fi
@@ -567,6 +602,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        newline
         echo "Finalising Install..."
         newline
         sysclean
@@ -590,6 +626,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
+        newline
     fi
 else
     newline
@@ -597,4 +634,4 @@ else
     newline
 fi
 
-#based on template 1603111245
+exit 0

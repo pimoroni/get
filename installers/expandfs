@@ -63,6 +63,7 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
 
@@ -171,6 +172,14 @@ raspbian_check() {
             echo "Unsupported distribution"
             exit 1
         fi
+    fi
+}
+
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
     fi
 }
 
