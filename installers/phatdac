@@ -40,6 +40,7 @@ i2sreq="yes" # whether i2s is required or not
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
 
@@ -78,7 +79,7 @@ newline() {
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
-        exit
+        exit 1
     fi
 }
 
@@ -146,8 +147,16 @@ raspbian_check() {
             IS_SQUEEZE=true
         else
             echo "Unsupported distribution"
-            exit
+            exit 1
         fi
+    fi
+}
+
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
     fi
 }
 
@@ -157,9 +166,10 @@ get_init_sys() {
     elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
         SYSTEMD=0
     else
-        echo "Unrecognised init system" && exit
+        echo "Unrecognised init system" && exit 1
     fi
 }
+
 : <<'MAINSTART'
 
 Perform all global variables declarations as well as function definition

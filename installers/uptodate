@@ -1,63 +1,228 @@
 #!/bin/bash
 
-IS_RASPBIAN=`cat /etc/*-release | grep Raspbian`
+: <<'DISCLAIMER'
 
-if [[ "" == $IS_RASPBIAN ]]; then
-	warning "Warning!"
-	echo "Please only run this script on Raspbian on your Raspberry Pi"
-	exit 1;
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+productname="na" # the name of the product to install
+scriptname="uptodate" # the name of this script
+debugmode="no" # whether the script outputs debug level messages
+forcesudo="yes" # whether the script requires to be ran with root privileges
+promptreboot="yes" # whether the script should always prompt user to reboot
+customcmd="yes" # whether to execute commands specified before exit
+raspbianonly="yes" # whether the script is allowed to run on other OSes
+
+FORCE=$1
+
+confirm() {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y)$ ]]; then
+            true
+        else
+            false
+        fi
+    fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+newline() {
+    echo ""
+}
+
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupdgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    newline
+    if confirm "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
+    fi
+}
+
+os_check() {
+    IS_RASPBIAN=false
+    IS_MACOSX=false
+    IS_X86_64=false
+    IS_X86_32=false
+
+    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        IS_RASPBIAN=true
+    elif uname -s | grep "Darwin" > /dev/null; then
+        IS_MACOSX=true
+    elif uname -m | grep "x86_64" > /dev/null; then
+        IS_X86_64=true
+    else
+        IS_X86_32=true
+    fi
+}
+
+raspbian_check() {
+    IS_SQUEEZE=false
+    IS_WHEEZY=false
+    IS_JESSIE=false
+
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_JESSIE=true
+        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+            IS_WHEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
+        else
+            echo "Unsupported distribution"
+            exit 1
+        fi
+    fi
+}
+
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
+    fi
+}
+
+: <<'MAINSTART'
+
+Perform all global variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+arch_check
+os_check
+
+if $IS_RASPBIAN; then
+    raspbian_check
+    if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
+        newline
+        warning "--- Warning ---"
+        newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        newline
+        exit 1
+    fi
+    if [ $wheezysupport == "no" ] && $IS_WHEEZY; then
+        newline
+        warning "--- Warning ---"
+        newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "for additional information and support"
+        newline
+        exit 1
+    fi
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
+    warning "Warning!"
+    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    exit 1
+else
+    if [ $debugmode == "yes" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
+    fi
 fi
 
-echo ""
-echo "This script will make sure your Raspberry Pi is up to date"
-echo ""
-echo "--- Warning ---"
-echo ""
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-echo ""
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/uptodate"
-echo ""
-echo ""
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
 
+newline
+echo "This script will make sure your Raspberry Pi is up to date"
+newline
+warning "--- Warning ---"
+newline
 echo "This script will update software on your Raspberry Pi"
 echo "which might replace or change something you were previously"
 echo "relying upon. Use with care!"
-echo ""
+newline
+echo "Always be careful when running scripts and commands"
+echo "copied from the internet. Ensure they are from a"
+echo "trusted source."
+newline
+echo "If you want to see what this script does before"
+echo "running it, you should run:"
+echo "    \curl -sS get.pimoroni.com/$scriptname"
+newline
 
-read -r -p "Do you wish to continue? [Y/n]" response < /dev/tty
-response=${response,,}
-
-if [[ $response =~ ^(yes|y)$ ]]
-then
-	echo ""
-	echo "Running: sudo apt-get update"
-	echo ""
-	sudo apt-get update
-
-	echo ""
-	echo "Running: sudo apt-get upgrade"
-	sudo apt-get upgrade
-
-
-	echo ""
-	read -r -p "Reboot now? [Y/n]" response < /dev/tty
-	response=${response,,}
-
-	if [[ $response =~ ^(yes|y)$ ]]
-	then
-		sudo reboot
-	fi
-
-
-	echo ""
-	echo "All done!"
-	echo ""
+if confirm "Do you wish to continue?"; then
+    newline
+    echo "Bringing your system up-to-date..."
+    sysupdgrade
+    newline
+    echo "All done!"
+    newline
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+        newline
+    fi
 else
-	echo ""
-	echo "Aborting..."
-	echo ""
+    newline
+    echo "Aborting..."
+    newline
 fi
+
+exit 0
