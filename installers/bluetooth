@@ -50,7 +50,7 @@ pkgdeplist8=( "pi-bluetooth" "blueman" "bluez-tools" "bluez-obexd" "network-mana
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 
-#based on template 1603241255
+#based on template 1603241305
 
 FORCE=$1
 DEVICE_TREE=true
@@ -602,6 +602,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $customcmd == "no" ]; then
+        newline
         echo "Finalising Install..."
         newline
         sysclean
