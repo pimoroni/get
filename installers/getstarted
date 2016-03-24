@@ -621,13 +621,13 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         newline
         if raspbian_old; then
-            echo ""
+            newline
             echo "Bringing your system up-to-date..."
             sysupdgrade
         else
             sysclean
         fi
-        echo ""
+        newline
         echo "Expanding filesystem..."
         \curl -sS get.pimoroni.com/expandfs | sudo bash
     fi
