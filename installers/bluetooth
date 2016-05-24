@@ -644,8 +644,8 @@ if confirm "Do you wish to continue?"; then
                 newline
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $DEBDIR
-                wget $DEBPOOL/main/b/blueman/blueman_2.0.4-1_armhf.deb
-                sudo dpkg -i $DEBDIR/blueman_2.0.4-1_armhf.deb
+                wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
+                sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
             fi
         fi
         sysclean
