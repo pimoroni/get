@@ -50,7 +50,7 @@ moreaptdep=( "python-numpy" "python3-numpy" ) # list of all the additional apt d
 morepipdep=( "flask" ) # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1605241435
+#based on template 1605241445
 
 FORCE=$1
 DEVICE_TREE=true
@@ -208,7 +208,7 @@ force_hdmi() {
         if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
             \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
         else
-            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
             \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
             ASK_TO_REBOOT=true
         fi
@@ -468,7 +468,7 @@ if confirm "Do you wish to continue?"; then
                         if ! sudo pip install $piplibname -I; then
                             warning "Python 2 library install failed!"
                             echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit 1
+                            exit 1
                         fi
                         success "Done!"
                     fi
@@ -496,8 +496,10 @@ if confirm "Do you wish to continue?"; then
                     if confirm "Python 3 module found. Reinstall/Update?"; then
                         if ! sudo $PIP3_BIN install $piplibname -I; then
                             warning "Python 3 library install failed!"
+                            echo "If problems persist, visit forums.pimoroni.com for support"
                             exit 1
                         fi
+                        success "Done!"
                     fi
                 fi
             fi
