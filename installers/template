@@ -50,7 +50,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1604072355
+#based on template 1605241355
 
 FORCE=$1
 DEVICE_TREE=true
@@ -274,7 +274,6 @@ fi
 
 arch_check
 os_check
-dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check

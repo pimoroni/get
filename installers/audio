@@ -138,6 +138,36 @@ raspbian_old() {
     fi
 }
 
+route_audio() {
+    if [ "$FORCE" == '1' ] || [ "$FORCE" == '2' ]; then
+        newline
+        amixer cset numid=3 $FORCE > /dev/tty
+        newline
+        if [ "$FORCE" == '1' ]; then
+            success "Audio output mode changed to Analog!"
+        else
+            success "Audio output mode changed to HDMI!"
+        fi
+    else
+        newline
+        echo "Please choose an audio output mode:"
+        echo "0 : Automatic"
+        echo "1 : Output to analogue (headphone/speaker jack)"
+        echo "2 : Output to digital (HDMI port)"
+        newline
+        read -r -p "Enter an option [0-2]:" choice < /dev/tty
+        if ! [[ $choice =~ '^[0-2]$' ]]; then
+            newline
+            amixer cset numid=3 $choice  > /dev/tty
+            newline
+            success "Audio output mode changed!"
+            newline
+        else
+            warning "Invalid option!"
+        fi
+    fi
+}
+
 : <<'MAINSTART'
 
 Perform all global variables declarations as well as function definition
@@ -169,7 +199,7 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-echo "This script will let you configure your Pi audio output!"
+echo "This script will configure your Pi audio output!"
 newline
 warning "--- Warning ---"
 newline
@@ -183,23 +213,8 @@ echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
-    newline
-    echo "Please choose an audio output mode:"
-    echo "0 : Automatic"
-    echo "1 : Output to analogue (headphone/speaker jack)"
-    echo "2 : Output to digital (HDMI port)"
-    newline
-    read -r -p "Enter an option [0-2]:" choice < /dev/tty
+    route_audio
 
-    if ! [[ $choice =~ '^[0-2]$' ]]; then
-        newline
-        amixer cset numid=3 $choice  > /dev/tty
-        newline
-        success "Output mode changed!"
-        newline
-    else
-        warning "Invalid option!"
-    fi
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
         newline
