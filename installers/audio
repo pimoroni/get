@@ -152,16 +152,14 @@ raspbian_old() {
 
 route_audio() {
     if [ "$FORCE" == '1' ] || [ "$FORCE" == '2' ]; then
-        newline
         amixer cset numid=3 $FORCE > /dev/null
         newline
         if [ "$FORCE" == '1' ]; then
             success "Audio output mode changed to Analog!"
-            newline
         else
             success "Audio output mode changed to HDMI!"
-            newline
         fi
+        newline
     else
         newline
         echo "Please choose an audio output mode:"
@@ -171,7 +169,6 @@ route_audio() {
         newline
         read -r -p "Enter an option [0-2]:" choice < /dev/tty
         if ! [[ $choice =~ '^[0-2]$' ]]; then
-            newline
             amixer cset numid=3 $choice  > /dev/null
             newline
             success "Audio output mode changed!"

@@ -50,7 +50,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1605241355
+#based on template 1605241435
 
 FORCE=$1
 DEVICE_TREE=true
@@ -198,6 +198,18 @@ usb_max_power() {
             echo "Adjusting USB current setting in $CONFIG"
             echo "max_usb_current=1" | sudo tee -a $CONFIG
             newline
+            ASK_TO_REBOOT=true
+        fi
+    fi
+}
+
+force_hdmi() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
+        else
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG
+            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
             ASK_TO_REBOOT=true
         fi
     fi
