@@ -28,6 +28,18 @@ customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 
 FORCE=$1
+DEVICE_TREE=true
+ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+INTERACTIVE=false
+UPDATE_DB=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -145,8 +157,10 @@ route_audio() {
         newline
         if [ "$FORCE" == '1' ]; then
             success "Audio output mode changed to Analog!"
+            newline
         else
             success "Audio output mode changed to HDMI!"
+            newline
         fi
     else
         newline
