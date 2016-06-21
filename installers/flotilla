@@ -631,8 +631,11 @@ if confirm "Do you wish to continue?"; then
         else
             newline
             echo "Cloning Github repo locally..."
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame -b $gitrepobranch
-            cd $WORKING_DIR/$localdir/$gitreponame
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/pimoroni/$gitreponame -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            fi
         fi
     fi
 
