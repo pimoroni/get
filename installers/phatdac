@@ -60,7 +60,7 @@ confirm() {
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
-        if [[ $response =~ ^(yes|y)$ ]]; then
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
             true
         else
             false

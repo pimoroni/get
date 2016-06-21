@@ -50,7 +50,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1603241305
+#based on template 1606211620
 
 FORCE=$1
 DEVICE_TREE=true
@@ -74,7 +74,7 @@ confirm() {
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
-        if [[ $response =~ ^(yes|y)$ ]]; then
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
             true
         else
             false
@@ -203,6 +203,18 @@ usb_max_power() {
     fi
 }
 
+force_hdmi() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
+        else
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
+            ASK_TO_REBOOT=true
+        fi
+    fi
+}
+
 space_chk() {
     if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
         newline
@@ -268,10 +280,12 @@ above this section for clarity, thanks!
 
 MAINSTART
 
-space_chk
+if [ "$FORCE" != '-y' ]; then
+    space_chk
+fi
+
 arch_check
 os_check
-dt_check
 
 if $IS_RASPBIAN; then
     raspbian_check
@@ -454,7 +468,7 @@ if confirm "Do you wish to continue?"; then
                         if ! sudo pip install $piplibname -I; then
                             warning "Python 2 library install failed!"
                             echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit 1
+                            exit 1
                         fi
                         success "Done!"
                     fi
@@ -482,8 +496,10 @@ if confirm "Do you wish to continue?"; then
                     if confirm "Python 3 module found. Reinstall/Update?"; then
                         if ! sudo $PIP3_BIN install $piplibname -I; then
                             warning "Python 3 library install failed!"
+                            echo "If problems persist, visit forums.pimoroni.com for support"
                             exit 1
                         fi
+                        success "Done!"
                     fi
                 fi
             fi
