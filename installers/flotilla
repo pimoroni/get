@@ -39,7 +39,7 @@ localdir="flotilla" # the name of the dir for copy of examples
 gitreponame="flotilla-python" # the name of the git project repo
 gitrepobranch="shipshape" # repo branch to checkout
 gitrepoclone="yes" # whether the git repo is to be cloned locally
-repoclean="no"  # whether any git repo clone found should be cleaned up
+repoclean="yes"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="na" # subdirectory of examples in repo 
@@ -55,7 +55,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211945
+#based on template 1606211955
 
 FORCE=$1
 DEVICE_TREE=true
