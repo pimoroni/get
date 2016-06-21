@@ -38,6 +38,8 @@ pip3support="yes" # whether python3 is supported or not
 localdir="blinkt" # the name of the dir for copy of examples
 gitreponame="blinkt" # the name of the git project repo
 gitrepoclone="yes" # whether the git repo is to be cloned locally
+repoinstall="yes" # whether the library should be installed from repo
+libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="na" # subdirectory of examples in repo
 examplesdir="na" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
@@ -50,7 +52,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211620
+#based on template 1606211820
 
 FORCE=$1
 DEVICE_TREE=true
@@ -617,6 +619,14 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        cd $WORKING_DIR/$localdir/$libdir
+        sudo python ./setup.py install
+        newline
+    fi
+
     if [ $customcmd == "no" ]; then
         newline
         echo "Finalising Install..."
@@ -636,8 +646,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        cd $WORKING_DIR/$localdir/$gitreponame/library
-        sudo python ./setup.py install
+        # place all custom commands in this scope
         newline
     fi
 

@@ -38,6 +38,8 @@ pip3support="yes" # whether python3 is supported or not
 localdir="local dir" # the name of the dir for copy of examples
 gitreponame="git repo name" # the name of the git project repo
 gitrepoclone="no" # whether the git repo is to be cloned locally
+repoinstall="no" # whether the library should be installed from repo
+libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="$gitreponame/documentation" # subdirectory of examples in repo
 examplesdir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
@@ -50,7 +52,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211620
+#based on template 1606211820
 
 FORCE=$1
 DEVICE_TREE=true
@@ -615,6 +617,14 @@ if confirm "Do you wish to continue?"; then
             echo "Github repo already present. Updating..."
             git pull
         fi
+    fi
+
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        cd $WORKING_DIR/$localdir/$libdir
+        sudo python ./setup.py install
+        newline
     fi
 
     if [ $customcmd == "no" ]; then
