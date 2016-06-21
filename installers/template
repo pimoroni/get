@@ -39,6 +39,7 @@ localdir="local dir" # the name of the dir for copy of examples
 gitreponame="git repo name" # the name of the git project repo
 gitrepobranch="master" # repo branch to checkout
 gitrepoclone="no" # whether the git repo is to be cloned locally
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="$gitreponame/documentation" # subdirectory of examples in repo
