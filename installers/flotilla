@@ -55,7 +55,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606212055
+#based on template 1606220055
 
 FORCE=$1
 DEVICE_TREE=true
@@ -370,7 +370,7 @@ if confirm "Do you wish to continue?"; then
     if [ $uartreq == "yes" ]; then
         newline
         echo "UART must be Enabled for $productname to work"
-        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi

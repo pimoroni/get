@@ -20,7 +20,7 @@ was written for this script.
 DISCLAIMER
 
 productname="na" # the name of the product to install
-scriptname="uarton" # the name of this script
+scriptname="uartoff" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
 forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
@@ -198,7 +198,8 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-echo "This script will enable the serial console on your Raspberry Pi"
+echo "This script will enable UART communication on your Raspberry Pi"
+warning "Proceeding will disable the serial console login!"
 newline
 warning "--- Warning ---"
 newline
@@ -216,24 +217,12 @@ if confirm "Do you wish to continue?"; then
     get_init_sys
 
     if [ $SYSTEMD -eq 0 ]; then
-        sed -i $INITABCONF -e "s|^#\(.*:.*:respawn:.*ttyAMA0\)|\1|"
-        if ! grep -q "^T.*:.*:respawn:.*ttyAMA0" $INITABCONF; then
-            echo -e "T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100\n" >> $INITABCONF
-        fi
+        sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
     fi
-    if grep -q "console=ttyAMA0" $BOOTCMD ; then
-      if [ -e /proc/device-tree/aliases/serial0 ]; then
-        sed -i $BOOTCMD -e "s/console=ttyAMA0/console=serial0/"
-      fi
-    elif ! grep -q "console=ttyAMA0" $BOOTCMD && ! grep -q "console=serial0" $BOOTCMD ; then
-      if [ -e /proc/device-tree/aliases/serial0 ]; then
-        sed -i $BOOTCMD -e "s/root=/console=serial0,115200 root=/"
-      else
-        sed -i $BOOTCMD -e "s/root=/console=ttyAMA0,115200 root=/"
-      fi
-    fi
+    sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
+    sed -i $BOOTCMD -e "s/console=serial0,[0-9]\+ //"
     sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
-    echo "UART interface enabled"
+    echo "UART interface disabled"
     ASK_TO_REBOOT=true
 else
     newline
