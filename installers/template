@@ -43,7 +43,7 @@ repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="$gitreponame/documentation" # subdirectory of examples in repo
-examplesdir="$gitreponame/examples" # subdirectory of examples in repo
+copydir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
@@ -55,7 +55,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606212030
+#based on template 1606212040
 
 FORCE=$1
 DEVICE_TREE=true
@@ -548,7 +548,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ $examplesdir != "na" ]; then
+    if [ $copydir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
@@ -558,7 +558,7 @@ if confirm "Do you wish to continue?"; then
             git clone --depth=1 https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
-            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
             rm -rf $TMPDIR
             success "Examples copied to $WORKING_DIR/$localdir/"
         else
@@ -571,7 +571,7 @@ if confirm "Do you wish to continue?"; then
                 git clone --depth=1 https://github.com/pimoroni/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
-                cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+                cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
                 rm -rf $TMPDIR
                 warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
                 success "Examples copied to $WORKING_DIR/$localdir/"
