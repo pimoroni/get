@@ -632,8 +632,10 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Cloning Github repo locally..."
             if [ $gitrepobranch != "master" ]; then
+                echo "branch is not master"
                 git clone https://github.com/pimoroni/$gitreponame -b $gitrepobranch
             else
+                echo "branch is master"
                 git clone --depth=1 https://github.com/pimoroni/$gitreponame
             fi
         fi
