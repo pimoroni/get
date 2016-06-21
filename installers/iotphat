@@ -32,25 +32,30 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
-piplibname="esptool" # the name of the lib in pip repo
+piplibname="na" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
-localdir="iotphat" # the name of the dir for copy of examples
-gitreponame="na" # the name of the git project repo
+localdir="espiotphat" # the name of the dir for copy of examples
+gitreponame="espiot-phat" # the name of the git project repo
+gitrepobranch="master" # repo branch to checkout
 gitrepoclone="no" # whether the git repo is to be cloned locally
+repoclean="no"  # whether any git repo clone found should be cleaned up
+repoinstall="no" # whether the library should be installed from repo
+libdir="na" # subdirectory of library in repo
 docdir="na" # subdirectory of examples in repo
-examplesdir="na" # subdirectory of examples in repo
+copydir="$gitreponame/firmware" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="yes" # whether uart communication is required or not
-pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python-serial" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
+pkgaptremove=( "python-serial" ) # list of conflicting apt packages to remove
+pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" ) # list extra dependencies assuming Jessie
+pipdeplist=( "pyserial" "esptool" ) # list of dependencies to source from pip
 moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211620
+#based on template 1606212055
 
 FORCE=$1
 DEVICE_TREE=true
@@ -399,6 +404,7 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
+            warning "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
 
@@ -445,6 +451,17 @@ if confirm "Do you wish to continue?"; then
     fi
 
     pip_chk_pip3
+
+    for pipdep in ${pipdeplist[@]}
+        do if pip_pkg_req "$pipdep"; then
+            if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo pip install "$pipdep"
+            fi
+            if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+        sudo $PIP3_BIN install "$pipdep"
+            fi
+        fi
+    done
 
     if [ $piplibname != "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
@@ -532,7 +549,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ $examplesdir != "na" ]; then
+    if [ $copydir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
@@ -542,7 +559,7 @@ if confirm "Do you wish to continue?"; then
             git clone --depth=1 https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
-            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
             rm -rf $TMPDIR
             success "Examples copied to $WORKING_DIR/$localdir/"
         else
@@ -555,7 +572,7 @@ if confirm "Do you wish to continue?"; then
                 git clone --depth=1 https://github.com/pimoroni/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
-                cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+                cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
                 rm -rf $TMPDIR
                 warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
                 success "Examples copied to $WORKING_DIR/$localdir/"
@@ -604,17 +621,39 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             mkdir $WORKING_DIR/$localdir
         fi
-        cd $WORKING_DIR/$localdir
-        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
-            newline
-            echo "Cloning Github repo locally..."
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
-        else
-            cd $WORKING_DIR/$localdir/$gitreponame
+        if [ $repoclean == "yes" ]; then
+            rm -Rf $WORKING_DIR/$localdir/$gitreponame
+        fi            
+        if [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
             newline
             echo "Github repo already present. Updating..."
+            cd $WORKING_DIR/$localdir/$gitreponame
             git pull
+        else
+            newline
+            echo "Cloning Github repo locally..."
+            cd $WORKING_DIR/$localdir
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/pimoroni/$gitreponame -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            fi
         fi
+    fi
+
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        newline
+        cd $WORKING_DIR/$localdir/$libdir
+        if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo python ./setup.py install
+        fi
+        if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+            sudo python3 ./setup.py install
+        fi
+        newline
+        success "Done!"
     fi
 
     if [ $customcmd == "no" ]; then
@@ -625,7 +664,7 @@ if confirm "Do you wish to continue?"; then
         newline
         success "All done!"
         newline
-        echo "Enjoy your new $productname!"
+        echo "Enjoy your $productname!"
         if [ $pip3support == "no" ]; then
             echo "Note: $productname currently supports Python 2 only."
         fi
