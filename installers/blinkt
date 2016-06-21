@@ -54,7 +54,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211920
+#based on template 1606212020
 
 FORCE=$1
 DEVICE_TREE=true
@@ -619,19 +619,23 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             mkdir $WORKING_DIR/$localdir
         fi
-        cd $WORKING_DIR/$localdir
-        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
-            newline
-            echo "Cloning Github repo locally..."
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
-            cd $WORKING_DIR/$localdir/$gitreponame
-            git checkout $gitrepobranch
-        else
-            cd $WORKING_DIR/$localdir/$gitreponame
+        if [ $repoclean == "yes" ]; then
+            rm -Rf $WORKING_DIR/$localdir/$gitreponame
+        fi            
+        if [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
             newline
             echo "Github repo already present. Updating..."
-            git checkout $gitrepobranch            
+            cd $WORKING_DIR/$localdir/$gitreponame
             git pull
+        else
+            newline
+            echo "Cloning Github repo locally..."
+            cd $WORKING_DIR/$localdir
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/pimoroni/$gitreponame -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            fi
         fi
     fi
 
