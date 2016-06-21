@@ -55,7 +55,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606212040
+#based on template 1606212050
 
 FORCE=$1
 DEVICE_TREE=true
@@ -404,6 +404,7 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
+            echo "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
 

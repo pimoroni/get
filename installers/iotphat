@@ -35,7 +35,7 @@ jessiesupport="yes" # whether Jessie is supported or not
 piplibname="na" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
-localdir="iotphat" # the name of the dir for copy of examples
+localdir="espiotphat" # the name of the dir for copy of examples
 gitreponame="espiot-phat" # the name of the git project repo
 gitrepobranch="master" # repo branch to checkout
 gitrepoclone="no" # whether the git repo is to be cloned locally
@@ -47,15 +47,15 @@ copydir="$gitreponame/firmware" # subdirectory of examples in repo
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="yes" # whether uart communication is required or not
-pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python-serial" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
+pkgaptremove=( "python-serial" ) # list of conflicting apt packages to remove
+pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" ) # list extra dependencies assuming Jessie
-pipdeplist=( "esptool" ) # list of dependencies to source from pip
+pipdeplist=( "pyserial" "esptool" ) # list of dependencies to source from pip
 moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606212040
+#based on template 1606212050
 
 FORCE=$1
 DEVICE_TREE=true
@@ -404,6 +404,7 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
+            echo "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
 
