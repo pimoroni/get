@@ -24,7 +24,7 @@ scriptname="blinkt" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 armv6="yes" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -636,7 +636,8 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        # place all custom commands in this scope
+        cd $WORKING_DIR/$localdir/$gitreponame/library
+        sudo python ./setup.py install
         newline
     fi
 
