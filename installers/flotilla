@@ -631,6 +631,7 @@ if confirm "Do you wish to continue?"; then
         else
             newline
             echo "Cloning Github repo locally..."
+            cd $WORKING_DIR/$localdir
             if [ $gitrepobranch != "master" ]; then
                 echo "branch is not master"
                 git clone https://github.com/pimoroni/$gitreponame
