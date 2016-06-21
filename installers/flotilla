@@ -678,7 +678,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "We will now check that your dock is running the latest firmware"
         newline
-        cd ../firmware
+        cd ./firmware
         sudo ./update_firmware
         usb_max_power
         echo "All done! Time to set sail."
