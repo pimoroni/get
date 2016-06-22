@@ -233,8 +233,10 @@ if confirm "Do you wish to continue?"; then
         echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG &> /dev/null
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/" &> /dev/null
-        sudo modprobe -a i2c-bcm2708 i2c-dev
+        if ! [ -e $BLACKLIST ]; then
+            touch $BLACKLIST
+        fi
+        sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*i2c[-_]bcm2708\)/#\1/" &> /dev/null
         newline
         success "I2C Enabled"
         warning "Reboot required!"
@@ -248,21 +250,20 @@ if confirm "Do you wish to continue?"; then
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
         sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/" &> /dev/null
-        sudo modprobe -a i2c-bcm2708 i2c-dev
         newline
         success "I2C Enabled"
         newline
     else
         success "I2C Already Enabled"
         newline
-        sudo modprobe -a i2c-bcm2708 i2c-dev
     fi
-    if ! grep -qe "i2c-dev" $LOADMOD; then
+    if ! grep -q "^i2c[-_]dev" $LOADMOD; then
         echo "i2c-dev" | sudo tee -a $LOADMOD &> /dev/null
     fi
-    if ! grep -qe "i2c-bcm2708" $LOADMOD; then
+    if ! grep -qe "i2c[-_]bcm2708" $LOADMOD; then
         echo "i2c-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
     fi
+    sudo modprobe -a i2c-bcm2708 i2c-dev
 else
     newline
     echo "Aborting..."
