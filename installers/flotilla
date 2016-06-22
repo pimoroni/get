@@ -63,6 +63,7 @@ ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
+REMOVE_PKG=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -404,10 +405,10 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
-            warning "Installed package conflicts with requirements"
-            sudo apt-get remove "$pkgrm"
+            if apt_pkg_req "$pkgdep"; then
+                REMOVE_PKG=true
+            fi
         done
-
         for pkgdep in ${pkgdeplist7[@]}; do
             if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
@@ -428,16 +429,20 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Updating package indexes..."
             sysupdate
-
             newline
             echo "Checking for dependencies..."
 
+            if $REMOVE_PKG; then
+                for pkgrm in ${pkgaptremove[@]}; do
+                    warning "Installed package conflicts with requirements"
+                    sudo apt-get remove "$pkgrm"
+                done
+            fi
             for pkgdep in ${pkgdeplist7[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-
             if ! raspbian_old; then
                 for pkgdep in ${pkgdeplist8[@]}; do
                     if apt_pkg_req "$pkgdep"; then
@@ -675,13 +680,12 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        cd $WORKING_DIR/$localdir/$gitreponame
-        newline
         echo "We will now check that your dock is running the latest firmware"
+        cd $WORKING_DIR/$localdir/$gitreponame/firmware
+        echo $pwd
         newline
-        cd ./firmware
         sudo ./update_firmware
-        usb_max_power
+        usb_max_power &> /dev/null
         echo "All done! Time to set sail."
         newline
     fi
