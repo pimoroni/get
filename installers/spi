@@ -163,7 +163,7 @@ get_init_sys() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 spi_check() {
@@ -230,11 +230,20 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Adding Device Tree Entry to "
         echo $CONFIG
-        echo "dtparam=spi=on" | sudo tee -a $CONFIG &> /dev/null
+        if grep -q "^dtparam=spi=off" $CONFIG; then
+            sudo sed -i $CONFIG -e "s/^dtparam=spi=off/dtparam=spi=on/" &> /dev/null
+        elif grep -q "^#dtparam=spi=on" $CONFIG; then
+            sudo sed -i $CONFIG -e "s/^#dtparam=spi=on/dtparam=spi=on/" &> /dev/null
+        else
+            echo "dtparam=spi=on" | sudo tee -a $CONFIG &> /dev/null
+        fi
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
-        sudo modprobe -q spi-bcm2708
+        if ! [ -e $BLACKLIST ]; then
+            touch $BLACKLIST
+        fi
+        sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*spi[-_]bcm2708\)/#\1/" &> /dev/null
+        dtparam spi=on &> /dev/null
         newline
         success "SPI enabled"
         warning "Reboot required!"
@@ -248,7 +257,6 @@ if confirm "Do you wish to continue?"; then
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
         sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
-        sudo modprobe -q spi-bcm2708
         newline
         success "SPI enabled"
         newline
@@ -256,9 +264,13 @@ if confirm "Do you wish to continue?"; then
         success "SPI Already Enabled"
         newline
     fi
+    if ! [ -e $LOADMOD ]; then
+        touch $LOADMOD
+    fi
     if ! grep -qe "spi-bcm2708" $LOADMOD; then
         echo "spi-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
     fi
+    sudo modprobe -q spi-bcm2708
 else
     newline
     echo "Aborting..."
