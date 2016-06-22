@@ -218,7 +218,9 @@ if confirm "Do you wish to continue?"; then
     get_init_sys
     
     if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && ! $IS_ARMv6 ; then
-        echo "pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
+        if ! grep -q "^dtoverlay=pi3-disable-bt$" $CONFIG && ! grep -q "^dtoverlay=pi3-miniuart-bt$" $CONFIG; then
+            echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
+        fi
     fi
 
     if [ $SYSTEMD -eq 0 ]; then
