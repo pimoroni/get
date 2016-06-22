@@ -39,7 +39,7 @@ localdir="flotilla" # the name of the dir for copy of examples
 gitreponame="flotilla-python" # the name of the git project repo
 gitrepobranch="master" # repo branch to checkout
 gitrepoclone="yes" # whether the git repo is to be cloned locally
-repoclean="yes"  # whether any git repo clone found should be cleaned up
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="yes" # whether the library should be installed from repo
 libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="na" # subdirectory of examples in repo 
@@ -682,9 +682,8 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         echo "We will now check that your dock is running the latest firmware"
         cd $WORKING_DIR/$localdir/$gitreponame/firmware
-        echo $pwd
         newline
-        sudo ./update_firmware
+        sudo bash ./update_firmware
         usb_max_power &> /dev/null
         echo "All done! Time to set sail."
         newline
