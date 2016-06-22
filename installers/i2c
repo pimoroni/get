@@ -237,6 +237,7 @@ if confirm "Do you wish to continue?"; then
             touch $BLACKLIST
         fi
         sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*i2c[-_]bcm2708\)/#\1/" &> /dev/null
+        dtparam i2c_arm=on
         newline
         success "I2C Enabled"
         warning "Reboot required!"
@@ -256,6 +257,9 @@ if confirm "Do you wish to continue?"; then
     else
         success "I2C Already Enabled"
         newline
+    fi
+    if ! [ -e $LOADMOD ]; then
+        touch $LOADMOD
     fi
     if ! grep -q "^i2c[-_]dev" $LOADMOD; then
         echo "i2c-dev" | sudo tee -a $LOADMOD &> /dev/null
