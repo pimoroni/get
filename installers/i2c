@@ -230,9 +230,9 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Adding Device Tree Entry to "
         echo $CONFIG
-        if grep -q "^dtparam=i2c_arm=off" $CONFIG
+        if grep -q "^dtparam=i2c_arm=off" $CONFIG; then
             sudo sed -i $CONFIG -e "s/^dtparam=i2c_arm=off/^dtparam=i2c_arm=on/" &> /dev/null
-        elif grep -q "^#dtparam=i2c_arm=on" $CONFIG
+        elif grep -q "^#dtparam=i2c_arm=on" $CONFIG; then
             sudo sed -i $CONFIG -e "s/^#dtparam=i2c_arm=on/^dtparam=i2c_arm=on/" &> /dev/null
         else
             echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG &> /dev/null
