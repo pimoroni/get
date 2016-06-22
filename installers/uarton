@@ -40,6 +40,7 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+DTBODIR=/boot/overlays
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -215,6 +216,12 @@ newline
 if confirm "Do you wish to continue?"; then
 
     get_init_sys
+    
+    if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && ! $IS_ARMv6 ; then
+        if ! grep -q "^dtoverlay=pi3-disable-bt$" $CONFIG && ! grep -q "^dtoverlay=pi3-miniuart-bt$" $CONFIG; then
+            echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
+        fi
+    fi
 
     if [ $SYSTEMD -eq 0 ]; then
         sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
@@ -222,7 +229,9 @@ if confirm "Do you wish to continue?"; then
     sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
     sed -i $BOOTCMD -e "s/console=serial0,[0-9]\+ //"
     sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
-    echo "UART interface disabled"
+    newline
+    success "UART interface disabled"
+    newline
     ASK_TO_REBOOT=true
 else
     newline
