@@ -234,7 +234,9 @@ if confirm "Do you wish to continue?"; then
       fi
     fi
     sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
-    echo "UART interface enabled"
+    newline
+    success "UART interface enabled"
+    newline
     ASK_TO_REBOOT=true
 else
     newline
