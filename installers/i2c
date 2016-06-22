@@ -163,7 +163,7 @@ get_init_sys() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 i2c_check() {
@@ -230,11 +230,20 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Adding Device Tree Entry to "
         echo $CONFIG
-        echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG &> /dev/null
+        if grep -q "^dtparam=i2c_arm=off" $CONFIG; then
+            sudo sed -i $CONFIG -e "s/^dtparam=i2c_arm=off/dtparam=i2c_arm=on/" &> /dev/null
+        elif grep -q "^#dtparam=i2c_arm=on" $CONFIG; then
+            sudo sed -i $CONFIG -e "s/^#dtparam=i2c_arm=on/dtparam=i2c_arm=on/" &> /dev/null
+        else
+            echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG &> /dev/null
+        fi
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/" &> /dev/null
-        sudo modprobe -a i2c-bcm2708 i2c-dev
+        if ! [ -e $BLACKLIST ]; then
+            touch $BLACKLIST
+        fi
+        sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*i2c[-_]bcm2708\)/#\1/" &> /dev/null
+        dtparam i2c_arm=on &> /dev/null
         newline
         success "I2C Enabled"
         warning "Reboot required!"
@@ -248,21 +257,23 @@ if confirm "Do you wish to continue?"; then
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
         sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/" &> /dev/null
-        sudo modprobe -a i2c-bcm2708 i2c-dev
         newline
         success "I2C Enabled"
         newline
     else
         success "I2C Already Enabled"
         newline
-        sudo modprobe -a i2c-bcm2708 i2c-dev
     fi
-    if ! grep -qe "i2c-dev" $LOADMOD; then
+    if ! [ -e $LOADMOD ]; then
+        touch $LOADMOD
+    fi
+    if ! grep -q "^i2c[-_]dev" $LOADMOD; then
         echo "i2c-dev" | sudo tee -a $LOADMOD &> /dev/null
     fi
-    if ! grep -qe "i2c-bcm2708" $LOADMOD; then
+    if ! grep -qe "i2c[-_]bcm2708" $LOADMOD; then
         echo "i2c-bcm2708" | sudo tee -a $LOADMOD &> /dev/null
     fi
+    sudo modprobe -a i2c-bcm2708 i2c-dev
 else
     newline
     echo "Aborting..."
