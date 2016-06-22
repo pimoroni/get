@@ -44,18 +44,13 @@ i2creq="yes" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
 pkgaptremove=() # list of conflicting apt packages to remove
-<<<<<<< HEAD
-pkgdeplist7=( "git" ) # list core dependencies assuming Wheezy
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "python-smbus" "python3-smbus" ) # list extra dependencies assuming Jessie
-=======
-pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-smbus" "python3-pip" "python3-smbus" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-smbus" "python-rpi.gpio" "python3-pip" "python3-smbus" "python3-rpi.gpio" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
->>>>>>> pimoroni/master
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606211620
+#based on template 1606220055
 
 FORCE=$1
 DEVICE_TREE=true
@@ -370,7 +365,7 @@ if confirm "Do you wish to continue?"; then
     if [ $uartreq == "yes" ]; then
         newline
         echo "UART must be Enabled for $productname to work"
-        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi
@@ -404,6 +399,7 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
+            warning "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
 
@@ -450,6 +446,17 @@ if confirm "Do you wish to continue?"; then
     fi
 
     pip_chk_pip3
+
+    for pipdep in ${pipdeplist[@]}
+        do if pip_pkg_req "$pipdep"; then
+            if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo pip install "$pipdep"
+            fi
+            if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+        sudo $PIP3_BIN install "$pipdep"
+            fi
+        fi
+    done
 
     if [ $piplibname != "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
@@ -537,7 +544,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ $examplesdir != "na" ]; then
+    if [ $copydir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
@@ -547,7 +554,7 @@ if confirm "Do you wish to continue?"; then
             git clone --depth=1 https://github.com/pimoroni/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
-            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
             rm -rf $TMPDIR
             success "Examples copied to $WORKING_DIR/$localdir/"
         else
@@ -560,7 +567,7 @@ if confirm "Do you wish to continue?"; then
                 git clone --depth=1 https://github.com/pimoroni/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
-                cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+                cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
                 rm -rf $TMPDIR
                 warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
                 success "Examples copied to $WORKING_DIR/$localdir/"
@@ -609,17 +616,39 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             mkdir $WORKING_DIR/$localdir
         fi
-        cd $WORKING_DIR/$localdir
-        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
-            newline
-            echo "Cloning Github repo locally..."
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
-        else
-            cd $WORKING_DIR/$localdir/$gitreponame
+        if [ $repoclean == "yes" ]; then
+            rm -Rf $WORKING_DIR/$localdir/$gitreponame
+        fi            
+        if [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
             newline
             echo "Github repo already present. Updating..."
+            cd $WORKING_DIR/$localdir/$gitreponame
             git pull
+        else
+            newline
+            echo "Cloning Github repo locally..."
+            cd $WORKING_DIR/$localdir
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/pimoroni/$gitreponame -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            fi
         fi
+    fi
+
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        newline
+        cd $WORKING_DIR/$localdir/$libdir
+        if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo python ./setup.py install
+        fi
+        if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+            sudo python3 ./setup.py install
+        fi
+        newline
+        success "Done!"
     fi
 
     if [ $customcmd == "no" ]; then
@@ -630,7 +659,7 @@ if confirm "Do you wish to continue?"; then
         newline
         success "All done!"
         newline
-        echo "Enjoy your new $productname!"
+        echo "Enjoy your $productname!"
         if [ $pip3support == "no" ]; then
             echo "Note: $productname currently supports Python 2 only."
         fi
