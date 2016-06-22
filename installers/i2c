@@ -163,7 +163,7 @@ get_init_sys() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 i2c_check() {
