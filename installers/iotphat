@@ -55,7 +55,7 @@ moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1606220055
+#based on template 1606221515
 
 FORCE=$1
 DEVICE_TREE=true
@@ -63,6 +63,7 @@ ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
+REMOVE_PKG=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -404,10 +405,10 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
-            warning "Installed package conflicts with requirements"
-            sudo apt-get remove "$pkgrm"
+            if apt_pkg_req "$pkgdep"; then
+                REMOVE_PKG=true
+            fi
         done
-
         for pkgdep in ${pkgdeplist7[@]}; do
             if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
@@ -428,16 +429,20 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Updating package indexes..."
             sysupdate
-
             newline
             echo "Checking for dependencies..."
 
+            if $REMOVE_PKG; then
+                for pkgrm in ${pkgaptremove[@]}; do
+                    warning "Installed package conflicts with requirements"
+                    sudo apt-get remove "$pkgrm"
+                done
+            fi
             for pkgdep in ${pkgdeplist7[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-
             if ! raspbian_old; then
                 for pkgdep in ${pkgdeplist8[@]}; do
                     if apt_pkg_req "$pkgdep"; then
