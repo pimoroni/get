@@ -243,7 +243,7 @@ if confirm "Do you wish to continue?"; then
             touch $BLACKLIST
         fi
         sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*i2c[-_]bcm2708\)/#\1/" &> /dev/null
-        dtparam i2c_arm=on
+        dtparam i2c_arm=on &> /dev/null
         newline
         success "I2C Enabled"
         warning "Reboot required!"
