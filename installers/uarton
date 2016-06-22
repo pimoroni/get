@@ -40,6 +40,7 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+DTBODIR=/boot/overlays
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -215,6 +216,10 @@ newline
 if confirm "Do you wish to continue?"; then
 
     get_init_sys
+    
+    if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && ! $IS_ARMv6 ; then
+        echo "pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
+    fi
 
     if [ $SYSTEMD -eq 0 ]; then
         sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
