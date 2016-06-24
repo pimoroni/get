@@ -628,7 +628,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR/$localdir
         fi
         if [ $gitclonedir == "source" ]; then
-            $gitclonedir == $gitreponame
+            "$gitclonedir"="$gitreponame"
         fi
         if [ $repoclean == "yes" ]; then
             rm -Rf $WORKING_DIR/$localdir/$gitclonedir
