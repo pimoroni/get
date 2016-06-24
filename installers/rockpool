@@ -686,7 +686,7 @@ if confirm "Do you wish to continue?"; then
         cd $WORKING_DIR/$localdir/$gitclonedir
         sudo bash ./install
         newline
-        echo "Install Flotilla Python API..."
+        echo "Installing Flotilla Python API..."
         \curl -sS get.pimoroni.com/flotilla | sudo bash -s - "-y"
     fi
 
