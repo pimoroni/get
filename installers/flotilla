@@ -57,7 +57,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 16062241810
+#based on template 16062242025
 
 FORCE=$1
 DEVICE_TREE=true
@@ -230,15 +230,17 @@ force_hdmi() {
 }
 
 space_chk() {
-    if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-        newline
-        warning  "There is not enough space left to proceed with  installation"
-        if confirm "Would you like to attempt to expand your filesystem?"; then
-            \curl -sS get.pimoroni.com/expandfs | sudo bash
-            exit 1
-        else
+    if command -v stat > /dev/null && ! $IS_MACOSX; then
+        if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
             newline
-            exit 1
+            warning  "There is not enough space left to proceed with  installation"
+            if confirm "Would you like to attempt to expand your filesystem?"; then
+                \curl -sS get.pimoroni.com/expandfs | sudo bash
+                exit 1
+            else
+                newline
+                exit 1
+            fi
         fi
     fi
 }
