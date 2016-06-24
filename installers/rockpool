@@ -36,6 +36,7 @@ piplibname="na" # the name of the lib in pip repo
 pip2support="na" # whether python2 is supported or not
 pip3support="na" # whether python3 is supported or not
 localdir="flotilla" # the name of the dir for copy of examples
+gitusername="pimoroni" # the name of the git user to fetch repo from
 gitreponame="flotilla" # the name of the git project repo
 gitrepobranch="master" # repo branch to checkout
 gitrepoclone="yes" # whether the git repo is to be cloned locally
@@ -56,7 +57,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 16062241145
+#based on template 16062241810
 
 FORCE=$1
 DEVICE_TREE=true
@@ -185,6 +186,12 @@ raspbian_old() {
     fi
 }
 
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -302,7 +309,7 @@ if $IS_RASPBIAN; then
         newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "Check https://github.com/$gitusername/$gitreponame"
         echo "for additional information and support"
         newline
         exit 1
@@ -313,7 +320,7 @@ if $IS_RASPBIAN; then
         newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "Check https://github.com/$gitusername/$gitreponame"
         echo "for additional information and support"
         newline
         exit 1
@@ -562,7 +569,7 @@ if confirm "Do you wish to continue?"; then
             echo "Downloading $productname examples..."
             TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            git clone --depth=1 https://github.com/$gitusername/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
             cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
@@ -575,7 +582,7 @@ if confirm "Do you wish to continue?"; then
                 echo "Updating $productname examples..."
                 TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $TMPDIR
-                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+                git clone --depth=1 https://github.com/$gitusername/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
                 cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
@@ -643,9 +650,9 @@ if confirm "Do you wish to continue?"; then
             echo "Cloning Github repo locally..."
             cd $WORKING_DIR/$localdir
             if [ $gitrepobranch != "master" ]; then
-                git clone https://github.com/pimoroni/$gitreponame $gitclonedir -b $gitrepobranch
+                git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
-                git clone --depth=1 https://github.com/pimoroni/$gitreponame $gitclonedir
+                git clone --depth=1 https://github.com/$gitusername/$gitreponame $gitclonedir
             fi
         fi
     fi
