@@ -39,7 +39,7 @@ localdir="local dir" # the name of the dir for copy of examples
 gitreponame="git repo name" # the name of the git project repo
 gitrepobranch="master" # repo branch to checkout
 gitrepoclone="no" # whether the git repo is to be cloned locally
-gitclonedir="" # the name of the local dir for repo
+gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="$gitreponame/library" # subdirectory of library in repo
@@ -56,7 +56,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 16062241110
+#based on template 16062241125
 
 FORCE=$1
 DEVICE_TREE=true
@@ -626,6 +626,9 @@ if confirm "Do you wish to continue?"; then
     if [ $gitrepoclone == "yes" ]; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             mkdir $WORKING_DIR/$localdir
+        fi
+        if [ $gitclonedir == "source" ]; then
+            $gitclonedir = $gitreponame
         fi
         if [ $repoclean == "yes" ]; then
             rm -Rf $WORKING_DIR/$localdir/$gitclonedir
