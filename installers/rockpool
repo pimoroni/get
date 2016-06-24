@@ -687,7 +687,7 @@ if confirm "Do you wish to continue?"; then
         sudo bash ./install
         newline
         echo "Installing Flotilla Python API..."
-        \curl -sS get.pimoroni.com/flotilla | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/flotilla | bash -s - "-y"
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
