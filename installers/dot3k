@@ -53,8 +53,8 @@ pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-rpi.gpio" "python-dev" "python-smbus" "python3-pip" "python3-rpi.gpio" "python3-dev" "python3-smbus" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
-moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
-morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
+moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of all the additional apt dependencies
+morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
 #based on template 16062271935
