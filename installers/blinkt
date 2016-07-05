@@ -57,7 +57,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "python-requests" "python3-request
 morepipdep=( "tweepy" ) # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607052030
+#based on template 1607052340
 
 FORCE=$1
 DEVICE_TREE=true
@@ -571,10 +571,9 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $copydir != "" ]; then
-
+        echo "Downloading examples and documentation..."
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
-            echo "Downloading examples and documentation..."
             TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
             git clone --depth=1 https://github.com/$gitusername/$gitreponame
