@@ -237,9 +237,7 @@ if confirm "Do you wish to continue?"; then
         route_audio
         if confirm "Do you wish to test your system now?"; then
             echo "Testing..."
-            speaker-test -c2 -t wav &
-            sleep 10
-            exit 1
+            speaker-test -l5 -c2 -t wav
         fi
     else
         warning "Default sound driver currently not loaded"
