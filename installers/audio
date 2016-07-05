@@ -240,6 +240,7 @@ if confirm "Do you wish to continue?"; then
             speaker-test -l5 -c2 -t wav
         fi
     else
+        newline
         warning "Default sound driver currently not loaded"
         warning "This script must now exit."
         exit 1
