@@ -331,7 +331,7 @@ if confirm "Do you wish to continue?"; then
         warning "Set your speakers at a low volume!"
         if confirm "Do you wish to test your system now?"; then
             echo "Testing..."
-            speaker-test -c2 -t wav
+            speaker-test -l5 -c2 -t wav
         fi
     fi
     newline
