@@ -224,7 +224,27 @@ echo "    \curl -sS get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
-    route_audio
+
+    if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
+        bcm2835off="no"
+    elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+        bcm2835off="no"
+    else
+        bcm2835off="yes"
+    fi
+
+    if [ $bcm2835off == "no" ]; then
+        route_audio
+        newline
+        if confirm "Do you wish to test your system now?"; then
+            echo "Testing..."
+            speaker-test -c2 -t wav
+        fi
+    else
+        warning "Default sound driver currently not loaded"
+        warning "This script must now exit."
+        exit 1
+    fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
