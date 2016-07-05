@@ -25,6 +25,9 @@ debugmode="no" # whether the script outputs debug level messages
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
+i2creq="no" # whether i2c interface is required or not
+spireq="no" # whether spi interface is required or not
+uartreq="yes" # whether uart communication is required or not
 armv6="yes" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -32,6 +35,7 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
+debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
@@ -44,11 +48,7 @@ gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
-docdir="na" # subdirectory of examples in repo
-copydir="$gitreponame/firmware" # subdirectory of examples in repo
-i2creq="no" # whether i2c interface is required or not
-spireq="no" # whether spi interface is required or not
-uartreq="yes" # whether uart communication is required or not
+copydir=( "firmware" ) # subdirectories to copy from repo
 pipdeplist=( "pyserial" "esptool" ) # list of dependencies to source from pip
 pkgaptremove=( "python-serial" ) # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
@@ -57,7 +57,7 @@ moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 16062271935
+#based on template 1607051945
 
 FORCE=$1
 DEVICE_TREE=true
@@ -415,7 +415,7 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
-            if apt_pkg_req "$pkgdep"; then
+            if apt_pkg_req "$pkgrm"; then
                 REMOVE_PKG=true
             fi
         done
