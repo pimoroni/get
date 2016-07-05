@@ -37,20 +37,27 @@ pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
 localdir="displayotron" # the name of the dir for copy of examples
 gitreponame="dot3k" # the name of the git project repo
+gitusername="pimoroni" # the name of the git user to fetch repo from
+gitrepobranch="master" # repo branch to checkout
 gitrepoclone="no" # whether the git repo is to be cloned locally
+gitclonedir="source" # the name of the local dir for repo
+repoclean="no"  # whether any git repo clone found should be cleaned up
+repoinstall="no" # whether the library should be installed from repo
+libdir="$gitreponame/library" # subdirectory of library in repo
 docdir="$gitreponame/documentation" # subdirectory of examples in repo
-examplesdir="$gitreponame/python/examples" # subdirectory of examples in repo
+copydir="$gitreponame/examples" # subdirectory of examples in repo
 i2creq="yes" # whether i2c is required or not
 spireq="yes" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
+pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-rpi.gpio" "python-dev" "python-smbus" "python3-pip" "python3-rpi.gpio" "python3-dev" "python3-smbus" ) # list core dependencies assuming Wheezy
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
-moreaptdep=( "libudev-dev" "vlc" ) # list of all the additional apt dependencies
-morepipdep=( "psutil" "python-uinput" "wifi" ) # list of all the additional pip dependencies
+moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of all the additional apt dependencies
+morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-#based on template 1606211620
+#based on template 16062271935
 
 FORCE=$1
 DEVICE_TREE=true
@@ -58,6 +65,7 @@ ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 INTERACTIVE=false
 UPDATE_DB=false
+REMOVE_PKG=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -178,6 +186,12 @@ raspbian_old() {
     fi
 }
 
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -216,15 +230,17 @@ force_hdmi() {
 }
 
 space_chk() {
-    if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-        newline
-        warning  "There is not enough space left to proceed with  installation"
-        if confirm "Would you like to attempt to expand your filesystem?"; then
-            \curl -sS get.pimoroni.com/expandfs | sudo bash
-            exit 1
-        else
+    if command -v stat > /dev/null && ! $IS_MACOSX; then
+        if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
             newline
-            exit 1
+            warning  "There is not enough space left to proceed with  installation"
+            if confirm "Would you like to attempt to expand your filesystem?"; then
+                \curl -sS get.pimoroni.com/expandfs | sudo bash
+                exit 1
+            else
+                newline
+                exit 1
+            fi
         fi
     fi
 }
@@ -295,7 +311,7 @@ if $IS_RASPBIAN; then
         newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "Check https://github.com/$gitusername/$gitreponame"
         echo "for additional information and support"
         newline
         exit 1
@@ -306,7 +322,7 @@ if $IS_RASPBIAN; then
         newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/pimoroni/$gitreponame"
+        echo "Check https://github.com/$gitusername/$gitreponame"
         echo "for additional information and support"
         newline
         exit 1
@@ -365,7 +381,7 @@ if confirm "Do you wish to continue?"; then
     if [ $uartreq == "yes" ]; then
         newline
         echo "UART must be Enabled for $productname to work"
-        \curl -sS get.pimoroni.com/uartoff | sudo bash -s - "-y"
+        \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi
@@ -399,9 +415,10 @@ if confirm "Do you wish to continue?"; then
     if command -v apt-get > /dev/null; then
 
         for pkgrm in ${pkgaptremove[@]}; do
-            sudo apt-get remove "$pkgrm"
+            if apt_pkg_req "$pkgdep"; then
+                REMOVE_PKG=true
+            fi
         done
-
         for pkgdep in ${pkgdeplist7[@]}; do
             if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
@@ -422,16 +439,20 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Updating package indexes..."
             sysupdate
-
             newline
             echo "Checking for dependencies..."
 
+            if $REMOVE_PKG; then
+                for pkgrm in ${pkgaptremove[@]}; do
+                    warning "Installed package conflicts with requirements"
+                    sudo apt-get remove "$pkgrm"
+                done
+            fi
             for pkgdep in ${pkgdeplist7[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-
             if ! raspbian_old; then
                 for pkgdep in ${pkgdeplist8[@]}; do
                     if apt_pkg_req "$pkgdep"; then
@@ -445,6 +466,17 @@ if confirm "Do you wish to continue?"; then
     fi
 
     pip_chk_pip3
+
+    for pipdep in ${pipdeplist[@]}
+        do if pip_pkg_req "$pipdep"; then
+            if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo pip install "$pipdep"
+            fi
+            if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+        sudo $PIP3_BIN install "$pipdep"
+            fi
+        fi
+    done
 
     if [ $piplibname != "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
@@ -532,17 +564,17 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ $examplesdir != "na" ]; then
+    if [ $copydir != "na" ]; then
 
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
             echo "Downloading $productname examples..."
             TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
+            git clone --depth=1 https://github.com/$gitusername/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
-            cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+            cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
             rm -rf $TMPDIR
             success "Examples copied to $WORKING_DIR/$localdir/"
         else
@@ -552,10 +584,10 @@ if confirm "Do you wish to continue?"; then
                 echo "Updating $productname examples..."
                 TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $TMPDIR
-                git clone --depth=1 https://github.com/pimoroni/$gitreponame
+                git clone --depth=1 https://github.com/$gitusername/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
-                cp -R $TMPDIR/$examplesdir/* $WORKING_DIR/$localdir/
+                cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
                 rm -rf $TMPDIR
                 warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
                 success "Examples copied to $WORKING_DIR/$localdir/"
@@ -604,17 +636,42 @@ if confirm "Do you wish to continue?"; then
         if ! [ -d $WORKING_DIR/$localdir ]; then
             mkdir $WORKING_DIR/$localdir
         fi
-        cd $WORKING_DIR/$localdir
-        if ! [ -d $WORKING_DIR/$localdir/$gitreponame ]; then
-            newline
-            echo "Cloning Github repo locally..."
-            git clone --depth=1 https://github.com/pimoroni/$gitreponame
-        else
-            cd $WORKING_DIR/$localdir/$gitreponame
+        if [ $gitclonedir == "source" ]; then
+            gitclonedir=$gitreponame
+        fi
+        if [ $repoclean == "yes" ]; then
+            rm -Rf $WORKING_DIR/$localdir/$gitclonedir
+        fi
+        if [ -d $WORKING_DIR/$localdir/$gitclonedir ]; then
             newline
             echo "Github repo already present. Updating..."
+            cd $WORKING_DIR/$localdir/$gitclonedir
             git pull
+        else
+            newline
+            echo "Cloning Github repo locally..."
+            cd $WORKING_DIR/$localdir
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/$gitusername/$gitreponame $gitclonedir
+            fi
         fi
+    fi
+
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        newline
+        cd $WORKING_DIR/$localdir/$libdir
+        if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo python ./setup.py install
+        fi
+        if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+            sudo python3 ./setup.py install
+        fi
+        newline
+        success "Done!"
     fi
 
     if [ $customcmd == "no" ]; then
@@ -625,7 +682,7 @@ if confirm "Do you wish to continue?"; then
         newline
         success "All done!"
         newline
-        echo "Enjoy your new $productname!"
+        echo "Enjoy your $productname!"
         if [ $pip3support == "no" ]; then
             echo "Note: $productname currently supports Python 2 only."
         fi
