@@ -306,6 +306,7 @@ os_check
 if [ $debugmode != "no" ]; then    
     gitusername="$debugmode"
     gitrepobranch="testing"
+    echo "Using $gitusername $gitrepobranch branch"
 fi
 
 if $IS_RASPBIAN; then
