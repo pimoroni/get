@@ -57,7 +57,7 @@ moreaptdep=( "python-numpy" "python3-numpy" ) # list of all the additional apt d
 morepipdep=( "flask" ) # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607052340
+#based on template 1607081300
 
 FORCE=$1
 DEVICE_TREE=true
@@ -303,6 +303,13 @@ fi
 arch_check
 os_check
 
+if [ $debugmode != "no" ]; then    
+    gitusername="$debugmode"
+    gitrepobranch="testing"
+    newline
+    warning "debug mode: $gitusername user and $gitrepobranch branch"
+fi
+
 if $IS_RASPBIAN; then
     raspbian_check
     if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
@@ -332,7 +339,7 @@ elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     echo "Please only run this script on Raspbian on your Raspberry Pi"
     exit 1
 else
-    if [ $debugmode == "yes" ]; then
+    if [ $debugmode != "no" ]; then
         newline
         echo "IS_RASPBIAN is $IS_RASPBIAN"
         echo "IS_MACOSX is $IS_MACOSX"
@@ -484,7 +491,7 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $piplibname != "na" ] && [ $debpackage != "na" ]; then
+    if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
             if command -v pip > /dev/null; then
                 newline
