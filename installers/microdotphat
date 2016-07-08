@@ -21,6 +21,7 @@ DISCLAIMER
 
 productname="Micro Dot pHAT" # the name of the product to install
 scriptname="microdotphat" # the name of this script
+piphotfix="no" # whether the script should ignore debian package availability
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot

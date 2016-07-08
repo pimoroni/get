@@ -21,7 +21,8 @@ DISCLAIMER
 
 productname="Flotilla Python API" # the name of the product to install
 scriptname="flotilla" # the name of this script
-debugmode="no" # whether the script outputs debug level messages
+piphotfix="no" # whether the script should ignore debian package availability
+debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
@@ -51,7 +52,7 @@ libdir="library" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 pipdeplist=( "pyserial" ) # list of dependencies to source from pip
 pkgaptremove=( "python-serial" "python3-serial" ) # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python3-pip" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "python-pip" "python3-pip" ) # list core dependencies
 pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies

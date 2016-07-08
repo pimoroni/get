@@ -21,7 +21,8 @@ DISCLAIMER
 
 productname="Raspberry Pi" # the name of the product to install
 scriptname="getstarted" # the name of this script
-debugmode="no" # whether the script outputs debug level messages
+piphotfix="no" # whether the script should ignore debian package availability
+debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
@@ -51,7 +52,7 @@ libdir="na" # subdirectory of library in repo
 copydir=( "documentation" "learn" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "python-rpi.gpio" "python3-rpi.gpio" "alsa-utils" "scrot" ) # list core dependencies
 pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "pi-bluetooth" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
