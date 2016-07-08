@@ -21,7 +21,7 @@ DISCLAIMER
 
 productname="Micro Dot pHAT" # the name of the product to install
 scriptname="microdotphat" # the name of this script
-debugmode="RogueM" # whether the script should use test Git user and branch
+debugmode="RogueM" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -57,7 +57,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607081220
+#based on template 1607081240
 
 FORCE=$1
 DEVICE_TREE=true
@@ -306,7 +306,7 @@ os_check
 if [ $debugmode != "no" ]; then    
     gitusername="$debugmode"
     gitrepobranch="testing"
-if
+fi
 
 if $IS_RASPBIAN; then
     raspbian_check
@@ -337,7 +337,7 @@ elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     echo "Please only run this script on Raspbian on your Raspberry Pi"
     exit 1
 else
-    if [ $debugmode == "yes" ]; then
+    if [ $debugmode != "no" ]; then
         newline
         echo "IS_RASPBIAN is $IS_RASPBIAN"
         echo "IS_MACOSX is $IS_MACOSX"
