@@ -21,7 +21,8 @@ DISCLAIMER
 
 productname="product name" # the name of the product to install
 scriptname="script name" # the name of this script
-debugmode="RogueM" # whether the script should use test Git user, branch and routines
+piphotfix="no" # whether the script should ignore debian package availability
+debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -57,7 +58,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607081300
+#based on template 1607081315
 
 FORCE=$1
 DEVICE_TREE=true
@@ -303,13 +304,6 @@ fi
 arch_check
 os_check
 
-if [ $debugmode != "no" ]; then    
-    gitusername="$debugmode"
-    gitrepobranch="testing"
-    newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
-fi
-
 if $IS_RASPBIAN; then
     raspbian_check
     if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
@@ -350,6 +344,17 @@ fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
+fi
+
+if [ $debugmode != "no" ]; then    
+    gitusername="$debugmode"
+    gitrepobranch="testing"
+    newline
+    warning "debug mode: $gitusername user and $gitrepobranch branch"
+fi
+
+if [ $piphotfix == "yes" ]; then    
+    debpackage="na"
 fi
 
 newline
