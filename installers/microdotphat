@@ -489,7 +489,7 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $piplibname != "na" ] && [ $debpackage != "na" ]; then
+    if [ $piplibname != "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
             if command -v pip > /dev/null; then
                 newline
