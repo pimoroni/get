@@ -44,8 +44,8 @@ localdir="flotilla" # the name of the dir for copy of examples
 gitreponame="flotilla" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
-gitrepoclone="no" # whether the git repo is to be cloned locally
-gitclonedir="source" # the name of the local dir for repo
+gitrepoclone="yes" # whether the git repo is to be cloned locally
+gitclonedir="flotilla-rockpool" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
@@ -58,7 +58,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607082005
+#based on template 1607082020
 
 FORCE=$1
 DEVICE_TREE=true
@@ -584,7 +584,7 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ -n $copydir ]; then
+    if [ -n "$copydir" ]; then
         echo "Downloading examples and documentation..."
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
