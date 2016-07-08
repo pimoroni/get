@@ -21,7 +21,7 @@ DISCLAIMER
 
 productname="Micro Dot pHAT" # the name of the product to install
 scriptname="microdotphat" # the name of this script
-debugmode="RogueM" # whether the script should use test Git user, branch and routines
+debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
