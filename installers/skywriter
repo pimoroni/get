@@ -21,7 +21,6 @@ DISCLAIMER
 
 productname="Skywriter" # the name of the product to install
 scriptname="skywriter" # the name of this script
-piphotfix="no" # whether the script should ignore debian package availability
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
@@ -38,6 +37,7 @@ wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
 piplibname="skywriter" # the name of the lib in pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
 localdir="skywriter" # the name of the dir for copy of examples
