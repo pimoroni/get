@@ -58,7 +58,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607111330
+#based on template 1607111345
 
 FORCE=$1
 DEVICE_TREE=true
@@ -382,7 +382,7 @@ if [ $spireq == "yes" ]; then
 fi
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!"
+    warning "The serial console will be enabled if you proceed!"
 fi
 
 newline
