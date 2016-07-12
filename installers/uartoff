@@ -198,8 +198,7 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-echo "This script will disable UART communication with devices"
-echo "and enable the serial console login on your Raspberry Pi"
+warning "This script will enable the serial console login on your Raspberry Pi"
 newline
 warning "--- Warning ---"
 newline

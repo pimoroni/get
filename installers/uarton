@@ -200,7 +200,7 @@ fi
 
 newline
 echo "This script will enable UART communication on your Raspberry Pi"
-warning "Proceeding will disable the serial console login!"
+warning "Proceeding will enable the serial console login!"
 newline
 warning "--- Warning ---"
 newline

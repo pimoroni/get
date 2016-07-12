@@ -21,7 +21,7 @@ DISCLAIMER
 
 productname="ESP IoT pHAT" # the name of the product to install
 scriptname="iotphat" # the name of this script
-debugmode="no" # whether the script outputs debug level messages
+debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -37,6 +37,7 @@ wheezysupport="yes" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
 localdir="espiotphat" # the name of the dir for copy of examples
@@ -51,13 +52,13 @@ libdir="na" # subdirectory of library in repo
 copydir=( "firmware" ) # subdirectories to copy from repo
 pipdeplist=( "pyserial" "esptool" ) # list of dependencies to source from pip
 pkgaptremove=( "python-serial" ) # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" ) # list core dependencies assuming Wheezy
+pkgdeplist7=( "git" "python-pip" "python-rpi.gpio" ) # list core dependencies
 pkgdeplist8=( "python-gpiozero" ) # list extra dependencies assuming Jessie
 moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607051945
+#based on template 1607111345
 
 FORCE=$1
 DEVICE_TREE=true
@@ -332,7 +333,7 @@ elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     echo "Please only run this script on Raspbian on your Raspberry Pi"
     exit 1
 else
-    if [ $debugmode == "yes" ]; then
+    if [ $debugmode != "no" ]; then
         newline
         echo "IS_RASPBIAN is $IS_RASPBIAN"
         echo "IS_MACOSX is $IS_MACOSX"
@@ -343,6 +344,19 @@ fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
+fi
+
+if [ $pipoverride == "yes" ]; then    
+    debpackage="na"
+else
+    piplibname="na"    
+fi
+
+if [ $debugmode != "no" ]; then    
+    gitusername="$debugmode"
+    gitrepobranch="testing"
+    newline
+    warning "debug mode: $gitusername user and $gitrepobranch branch"
 fi
 
 newline
@@ -368,7 +382,7 @@ if [ $spireq == "yes" ]; then
 fi
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!"
+    warning "The serial console will be enabled if you proceed!"
 fi
 
 newline
@@ -419,6 +433,9 @@ if confirm "Do you wish to continue?"; then
                 REMOVE_PKG=true
             fi
         done
+        if [ $debpackage != "na" ]; then
+            UPDATE_DB=true
+        fi
         for pkgdep in ${pkgdeplist7[@]}; do
             if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
@@ -460,6 +477,9 @@ if confirm "Do you wish to continue?"; then
                     fi
                 done
             fi
+            if [ $debpackage != "na" ]; then
+                apt_pkg_install "$debpackage"
+            fi
         else
             success "Done!"
         fi
@@ -478,7 +498,7 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $piplibname != "na" ]; then
+    if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
             if command -v pip > /dev/null; then
                 newline
@@ -548,7 +568,12 @@ if confirm "Do you wish to continue?"; then
         if [ $EUID -ne 0 ]; then
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
-            USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+            if $SUDO_USER; then
+                USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+            else
+                warning "Running as root and no other sudo user available"
+                exit 1
+            fi
         fi
     else
         if [ $EUID -ne 0 ]; then
@@ -564,33 +589,35 @@ if confirm "Do you wish to continue?"; then
             mkdir $WORKING_DIR
     fi
 
-    if [ $copydir != "na" ]; then
-
+    if [ -n "$copydir" ]; then
+        echo "Downloading examples and documentation..."
         if ! [ -d $WORKING_DIR/$localdir ]; then
             newline
-            echo "Downloading $productname examples..."
             TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $TMPDIR
             git clone --depth=1 https://github.com/$gitusername/$gitreponame
             cd $WORKING_DIR
             mkdir $localdir
-            cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
+            for repodir in ${copydir[@]}; do
+                cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$localdir/$repodir
+            done
             rm -rf $TMPDIR
-            success "Examples copied to $WORKING_DIR/$localdir/"
+            success "Resources copied to $WORKING_DIR/$localdir/"
         else
             newline
-            if confirm "Examples already exist, shall I replace them?"; then
+            if confirm "Resources already exist, shall I replace them?"; then
                 mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
-                echo "Updating $productname examples..."
                 TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $TMPDIR
                 git clone --depth=1 https://github.com/$gitusername/$gitreponame
                 cd $WORKING_DIR
                 mkdir $localdir
-                cp -R $TMPDIR/$copydir/* $WORKING_DIR/$localdir/
+                for repodir in ${copydir[@]}; do
+                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$localdir/$repodir
+                done
                 rm -rf $TMPDIR
                 warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
-                success "Examples copied to $WORKING_DIR/$localdir/"
+                success "Resources copied to $WORKING_DIR/$localdir/"
             fi
         fi
     fi
@@ -663,7 +690,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Installing library..."
         newline
-        cd $WORKING_DIR/$localdir/$libdir
+        cd $WORKING_DIR/$localdir/$gitreponame/$libdir
         if [ $pip2support == "yes" ] && command -v python > /dev/null; then
             sudo python ./setup.py install
         fi
