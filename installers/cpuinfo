@@ -226,7 +226,7 @@ get_pi_rev
 
 newline
 echo "System info:"
-grep "^Revision" /proc/cpuinfo
+echo "Hardware" $(grep "^Revision" /proc/cpuinfo)
 
 case $hwver in
    "0002"|"0003") echo "Revision match: Pi 1 Model B Rev 1.0";;
