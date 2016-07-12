@@ -167,25 +167,10 @@ get_init_sys() {
     fi
 }
 
-get_pi_type() {
-    if grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]08[0-9a-fA-F]$" /proc/cpuinfo; then
-        echo "Pi 3"
-    elif grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]04[0-9a-fA-F]$" /proc/cpuinfo; then
-        echo "Pi 2"
-    elif grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]09[0-9a-fA-F]$" /proc/cpuinfo; then
-        echo "Pi Zero"
-    elif grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]$" /proc/cpuinfo; then
-        echo "Pi 1"
-    else
-        echo "Unknow"
-    fi
-}
-
 get_pi_rev() {
     hwrid=$(grep "^Revision" /proc/cpuinfo | rev | cut -c 2-3 | rev)
     if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
-        echo "Pi 1"
         if [ "$hwrid" == "00" ];then
             hwgen="126" # P1
         elif [ "$hwrid" == "01" ];then
@@ -203,7 +188,6 @@ get_pi_rev() {
             hwgen="000"
         fi
     fi
-    echo "rev $hwver id $hwrid gen $hwgen"
 }
 
 : <<'MAINSTART'
@@ -238,49 +222,23 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 get_init_sys
-#get_pi_type
 get_pi_rev
 
-# full list of revisions extracted from /proc/cpuinfo
+uname -a
+echo "rev $hwver id $hwrid gen $hwgen"
 
-if [ "$hwver" == "0002" ] || [ "$hwver" == "0003" ]; then
-    echo "Pi 1 Model B Rev 1.0"
-fi
-
-if [ "$hwver" == "0004" ] || [ "$hwver" == "0005" ] || [ "$hwver" == "0006" ] ; then
-    echo "Pi 1 Model B Rev 2.0"
-fi
-
-if [ "$hwver" == "0007" ] || [ "$hwver" == "0008" ] || [ "$hwver" == "0009" ] ; then
-    echo "Pi 1 Model A"
-fi
-
-if [ "$hwver" == "000d" ] || [ "$hwver" == "000e" ] || [ "$hwver" == "000f" ] ; then
-    echo "Pi 1 Model B"
-fi
-
-if [ "$hwver" == "0010" ] || [ "$hwver" == "0013" ]; then
-    echo "Pi 1 Model B+"
-fi
-
-if [ "$hwver" == "0012" ] || [ "$hwver" == "0015" ]; then
-    echo "Pi 1 Model A+"
-fi
-
-if [ "$hwver" == "0011" ]; then
-    echo "Compute Module"
-fi
-
-if [ "$hwver" == "900092" ] || [ "$hwver" == "900093" ]; then
-    echo "Pi Zero"
-fi
-
-if [ "$hwver" == "a01040" ] || [ "$hwver" == "a01041" ] || [ "$hwver" == "a21041" ] ; then
-    echo "Pi 2 Model B"
-fi
-
-if [ "$hwver" == "a02082" ] || [ "$hwver" == "a22082" ] ; then
-    echo "Pi 3 Model B"
-fi
+case $hwver in
+   "0002"|"0003") echo "Revision match: Pi 1 Model B Rev 1.0";;
+   "0004"|"0005"|"0006") echo "Revision match: Pi 1 Model B Rev 2.0";;
+   "0007"|"0008"|"0009") echo "Revision match: Pi 1 Model A";;
+   "000d"|"000e"|"000f") echo "Revision match: Pi 1 Model B";;
+   "0011") echo "Revision match: Compute Module";;
+   "0012"|"0015") echo "Revision match: Pi 1 Model A+";;
+   "0010"|"0013") echo "Revision match: Pi 1 Model B+";;
+   "a01040"|"a01041"|"a21041") echo "Revision match: Pi 2 Model B";;
+   "a02082"|"a22082") echo "Revision match: Pi 3 Model B";;
+   "900092"|"900093") echo "Revision match: Pi 3 Model B";;
+   *) warning "Revision unmatched";;
+esac
 
 exit 0
