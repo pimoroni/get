@@ -199,8 +199,7 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-echo "This script will enable UART communication on your Raspberry Pi"
-warning "Proceeding will enable the serial console login!"
+echo "This script will enable the serial console login!"
 newline
 warning "--- Warning ---"
 newline
@@ -230,7 +229,7 @@ if confirm "Do you wish to continue?"; then
     sed -i $BOOTCMD -e "s/console=serial0,[0-9]\+ //"
     sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
     newline
-    success "UART interface disabled"
+    success "Serial console enabled"
     newline
     ASK_TO_REBOOT=true
 else

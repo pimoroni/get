@@ -394,7 +394,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        echo "UART must be enabled for $productname to work"
+        echo "The serial console must be enabled for $productname to work"
         \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
