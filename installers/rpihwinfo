@@ -181,6 +181,31 @@ get_pi_type() {
     fi
 }
 
+get_pi_rev() {
+    hwrid=$(grep "^Revision" /proc/cpuinfo | rev | cut -c 2-3 | rev)
+    if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
+        hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
+        echo "Pi 1"
+        if [ "$hwrid" == "00" ];then
+            hwgen="126" # P1
+        elif [ "$hwrid" == "01" ];then
+            hwgen="140" # J8
+        fi
+    else
+        hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-6 | rev)"
+        if [ "$hwrid" == "04" ];then # Pi 2
+            hwgen="240"
+        elif [ "$hwrid" == "08" ];then # Pi 3
+            hwgen="340"
+        elif [ "$hwrid" == "09" ];then # Pi 0
+            hwgen="040"
+        else # Unknown
+            hwgen="000"
+        fi
+    fi
+    echo "rev $hwver id $hwrid gen $hwgen"
+}
+
 : <<'MAINSTART'
 
 Perform all global variables declarations as well as function definition
@@ -213,49 +238,48 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 get_init_sys
-get_pi_type
+#get_pi_type
+get_pi_rev
 
 # full list of revisions extracted from /proc/cpuinfo
 
-hwver="0x00"
-
-if [ "$hwver" == "0x02" ] || [ "$hwver" == "0x03" ]; then
+if [ "$hwver" == "0002" ] || [ "$hwver" == "0003" ]; then
     echo "Pi 1 Model B Rev 1.0"
 fi
 
-if [ "$hwver" == "0x04" ] || [ "$hwver" == "0x05" ] || [ "$hwver" == "0x06" ] ; then
+if [ "$hwver" == "0004" ] || [ "$hwver" == "0005" ] || [ "$hwver" == "0006" ] ; then
     echo "Pi 1 Model B Rev 2.0"
 fi
 
-if [ "$hwver" == "0x07" ] || [ "$hwver" == "0x08" ] || [ "$hwver" == "0x09" ] ; then
+if [ "$hwver" == "0007" ] || [ "$hwver" == "0008" ] || [ "$hwver" == "0009" ] ; then
     echo "Pi 1 Model A"
 fi
 
-if [ "$hwver" == "0x0d" ] || [ "$hwver" == "0x0e" ] || [ "$hwver" == "0x0f" ] ; then
+if [ "$hwver" == "000d" ] || [ "$hwver" == "000e" ] || [ "$hwver" == "000f" ] ; then
     echo "Pi 1 Model B"
 fi
 
-if [ "$hwver" == "0x10" ] || [ "$hwver" == "0x13" ]; then
+if [ "$hwver" == "0010" ] || [ "$hwver" == "0013" ]; then
     echo "Pi 1 Model B+"
 fi
 
-if [ "$hwver" == "0x12" ] || [ "$hwver" == "0x15" ]; then
+if [ "$hwver" == "0012" ] || [ "$hwver" == "0015" ]; then
     echo "Pi 1 Model A+"
 fi
 
-if [ "$hwver" == "0x11" ]; then
+if [ "$hwver" == "0011" ]; then
     echo "Compute Module"
 fi
 
-if [ "$hwver" == "0x900092" ] || [ "$hwver" == "0x900093" ]; then
+if [ "$hwver" == "900092" ] || [ "$hwver" == "900093" ]; then
     echo "Pi Zero"
 fi
 
-if [ "$hwver" == "0xa01040" ] || [ "$hwver" == "0xa01041" ] || [ "$hwver" == "0xa21041" ] ; then
+if [ "$hwver" == "a01040" ] || [ "$hwver" == "a01041" ] || [ "$hwver" == "a21041" ] ; then
     echo "Pi 2 Model B"
 fi
 
-if [ "$hwver" == "0xa02082" ] || [ "$hwver" == "0xa22082" ] ; then
+if [ "$hwver" == "a02082" ] || [ "$hwver" == "a22082" ] ; then
     echo "Pi 3 Model B"
 fi
 
