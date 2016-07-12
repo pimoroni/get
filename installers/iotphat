@@ -58,7 +58,7 @@ moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607111345
+#based on template 1607111620
 
 FORCE=$1
 DEVICE_TREE=true
@@ -394,7 +394,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline
-        echo "UART must be Enabled for $productname to work"
+        echo "The serial console must be enabled for $productname to work"
         \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
@@ -403,9 +403,9 @@ if confirm "Do you wish to continue?"; then
     if [ $spireq == "yes" ]; then
         newline
         if ls /dev/spi* &> /dev/null; then
-            success "SPI Already Enabled"
+            success "SPI Already enabled"
         else
-            echo "SPI must be Enabled for $productname to work"
+            echo "SPI must be enabled for $productname to work"
             \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
@@ -414,9 +414,9 @@ if confirm "Do you wish to continue?"; then
     if [ $i2creq == "yes" ]; then
         newline
         if ls /dev/i2c* &> /dev/null; then
-            success "I2C Already Enabled"
+            success "I2C Already enabled"
         else
-            echo "I2C must be Enabled for $productname to work"
+            echo "I2C must be enabled for $productname to work"
             \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
@@ -526,8 +526,6 @@ if confirm "Do you wish to continue?"; then
                     fi
                 fi
             fi
-        else
-            echo "Note: $productname currently supports Python 3 only."
         fi
 
         if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
@@ -554,12 +552,6 @@ if confirm "Do you wish to continue?"; then
                         success "Done!"
                     fi
                 fi
-            fi
-        else
-            if [ $pip3support == "no" ]; then
-                echo "Note: $productname currently supports Python 2 only."
-            else
-                echo "Python3-pip does not seem to be installed"
             fi
         fi
     fi
@@ -710,12 +702,6 @@ if confirm "Do you wish to continue?"; then
         success "All done!"
         newline
         echo "Enjoy your $productname!"
-        if [ $pip3support == "no" ]; then
-            echo "Note: $productname currently supports Python 2 only."
-        fi
-        if [ $pip2support == "no" ]; then
-            echo "Note: $productname currently supports Python 3 only."
-        fi
         newline
     else # custom block starts here
         newline
