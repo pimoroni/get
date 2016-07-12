@@ -224,7 +224,8 @@ fi
 get_init_sys
 get_pi_rev
 
-uname -a
+newline
+echo "System info:"
 grep "^Revision" /proc/cpuinfo
 
 case $hwver in
@@ -240,5 +241,8 @@ case $hwver in
    "900092"|"900093") echo "Revision match: Pi 3 Model B";;
    *) warning "Revision unmatched";;
 esac
+
+uname -a
+newline
 
 exit 0
