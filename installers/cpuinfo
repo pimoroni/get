@@ -224,8 +224,6 @@ fi
 get_init_sys
 get_pi_rev
 
-newline
-echo "System info:"
 echo "Hardware" $(grep "^Revision" /proc/cpuinfo)
 
 case $hwver in
@@ -243,6 +241,5 @@ case $hwver in
 esac
 
 uname -a
-newline
 
 exit 0
