@@ -174,8 +174,10 @@ get_pi_type() {
         echo "Pi 2"
     elif grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]09[0-9a-fA-F]$" /proc/cpuinfo; then
         echo "Pi Zero"
+    elif grep -q "^Revision\s*:\s*[ 123][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]$" /proc/cpuinfo; then
+        echo "Pi 1"
     else
-        echo "Pi 1 most likely"
+        echo "Unknow"
     fi
 }
 
@@ -215,45 +217,45 @@ get_pi_type
 
 # full list of revisions extracted from /proc/cpuinfo
 
-$hwver="0x00"
+hwver="0x00"
 
-if [ $hwver == "0x02" ] || [ $hwver == "0x03" ]; then
+if [ "$hwver" == "0x02" ] || [ "$hwver" == "0x03" ]; then
     echo "Pi 1 Model B Rev 1.0"
 fi
 
-if [ $hwver == "0x04" ] || [ $hwver == "0x05" ] || [ $hwver == "0x06" ] ; then
+if [ "$hwver" == "0x04" ] || [ "$hwver" == "0x05" ] || [ "$hwver" == "0x06" ] ; then
     echo "Pi 1 Model B Rev 2.0"
 fi
 
-if [ $hwver == "0x07" ] || [ $hwver == "0x08" ] || [ $hwver == "0x09" ] ; then
+if [ "$hwver" == "0x07" ] || [ "$hwver" == "0x08" ] || [ "$hwver" == "0x09" ] ; then
     echo "Pi 1 Model A"
 fi
 
-if [ $hwver == "0x0d" ] || [ $hwver == "0x0e" ] || [ $hwver == "0x0f" ] ; then
+if [ "$hwver" == "0x0d" ] || [ "$hwver" == "0x0e" ] || [ "$hwver" == "0x0f" ] ; then
     echo "Pi 1 Model B"
 fi
 
-if [ $hwver == "0x10" ] || [ $hwver == "0x13" ]; then
+if [ "$hwver" == "0x10" ] || [ "$hwver" == "0x13" ]; then
     echo "Pi 1 Model B+"
 fi
 
-if [ $hwver == "0x12" ] || [ $hwver == "0x15" ]; then
+if [ "$hwver" == "0x12" ] || [ "$hwver" == "0x15" ]; then
     echo "Pi 1 Model A+"
 fi
 
-if [ $hwver == "0x11" ]; then
+if [ "$hwver" == "0x11" ]; then
     echo "Compute Module"
 fi
 
-if [ $hwver == "0x900092" ] || [ $hwver == "0x900093" ]; then
+if [ "$hwver" == "0x900092" ] || [ "$hwver" == "0x900093" ]; then
     echo "Pi Zero"
 fi
 
-if [ $hwver == "0xa01040" ] || [ $hwver == "0xa01041" ] || [ $hwver == "0xa21041" ] ; then
+if [ "$hwver" == "0xa01040" ] || [ "$hwver" == "0xa01041" ] || [ "$hwver" == "0xa21041" ] ; then
     echo "Pi 2 Model B"
 fi
 
-if [ $hwver == "0xa02082" ] || [ $hwver == "0xa22082" ] ; then
+if [ "$hwver" == "0xa02082" ] || [ "$hwver" == "0xa22082" ] ; then
     echo "Pi 3 Model B"
 fi
 
