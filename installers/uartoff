@@ -40,6 +40,7 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+DTBODIR=/boot/overlays
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -154,6 +155,22 @@ dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
     fi    
+}
+
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
 }
 
 get_init_sys() {

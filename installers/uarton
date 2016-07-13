@@ -157,6 +157,22 @@ dt_check() {
     fi    
 }
 
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
