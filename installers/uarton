@@ -157,6 +157,22 @@ dt_check() {
     fi    
 }
 
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -242,12 +258,16 @@ if confirm "Do you wish to continue?"; then
     
     if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && [ $hwgen == "340" ]; then
         if ! grep -q "^dtoverlay=pi3-disable-bt$" $CONFIG && ! grep -q "^dtoverlay=pi3-miniuart-bt$" $CONFIG; then
+            newline
             warning "The serial console needs to run on UART0 for reliable communication!"
+            newline
             echo "Disabling the on-board Bluetooth adapter can achieve this result."
             echo "We can do this for you now by loading a dedicated overlay."
-            if ! confirm "Or would you rather sort this out yourself? (advanced users only)"; then
+            if confirm "Would you like the pi3-disable-bt device tree overlay to load on boot?"; then
+                newline
                 echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
-                echo "The on-board Bluetooth adapter has been disabled."
+                success "The on-board Bluetooth adapter has been disabled."
+                newline
                 echo "If you wish to re-enable it, you may do so by commenting out"
                 echo "the line starting with 'dtoverlay=pi3-disable-bt' in $CONFIG"
             fi
