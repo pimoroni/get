@@ -20,7 +20,7 @@ was written for this script.
 DISCLAIMER
 
 productname="na" # the name of the product to install
-scriptname="uarton" # the name of this script
+scriptname="uartoff" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
 forcesudo="yes" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
@@ -40,6 +40,7 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+DTBODIR=/boot/overlays
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -150,6 +151,28 @@ raspbian_old() {
     fi
 }
 
+dt_check() {
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
+    fi    
+}
+
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -160,10 +183,27 @@ get_init_sys() {
     fi
 }
 
-dt_check() {
-    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-        DEVICE_TREE=false
-    fi    
+get_hw_rev() {
+    hwrid=$(grep "^Revision" /proc/cpuinfo | rev | cut -c 2-3 | rev)
+    if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
+        hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
+        if [ "$hwrid" == "00" ];then
+            hwgen="126" # P1
+        elif [ "$hwrid" == "01" ];then
+            hwgen="140" # J8
+        fi
+    else
+        hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-6 | rev)"
+        if [ "$hwrid" == "04" ];then # Pi 2
+            hwgen="240"
+        elif [ "$hwrid" == "08" ];then # Pi 3
+            hwgen="340"
+        elif [ "$hwrid" == "09" ];then # Pi 0
+            hwgen="040"
+        else # Unknown
+            hwgen="000"
+        fi
+    fi
 }
 
 : <<'MAINSTART'
@@ -198,7 +238,7 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-warning "This script will enable the serial console login on your Raspberry Pi"
+warning "This script will disable the serial console login on your Raspberry Pi"
 newline
 warning "--- Warning ---"
 newline
@@ -214,6 +254,7 @@ newline
 if confirm "Do you wish to continue?"; then
 
     get_init_sys
+    get_hw_rev
 
     if [ $SYSTEMD -eq 0 ]; then
         sed -i $INITABCONF -e "s|^#\(.*:.*:respawn:.*ttyAMA0\)|\1|"
@@ -232,9 +273,8 @@ if confirm "Do you wish to continue?"; then
         sed -i $BOOTCMD -e "s/root=/console=ttyAMA0,115200 root=/"
       fi
     fi
-    sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
     newline
-    success "UART interface enabled"
+    success "Serial console disabled"
     newline
     ASK_TO_REBOOT=true
 else
