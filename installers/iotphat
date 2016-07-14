@@ -58,7 +58,7 @@ moreaptdep=( "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-#based on template 1607111620
+#based on template 1607141340
 
 FORCE=$1
 DEVICE_TREE=true
@@ -213,7 +213,6 @@ usb_max_power() {
             echo "Adjusting USB current setting in $CONFIG"
             echo "max_usb_current=1" | sudo tee -a $CONFIG
             newline
-            ASK_TO_REBOOT=true
         fi
     fi
 }
