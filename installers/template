@@ -60,7 +60,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607221040
+# template 1607222230
 
 FORCE=$1
 DEVICE_TREE=true
@@ -123,7 +123,7 @@ sysupdate() {
     sudo apt-get update
 }
 
-sysupdgrade() {
+sysupgrade() {
     sudo apt-get update && sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
     sudo apt-get -y autoremove &> /dev/null
@@ -271,7 +271,7 @@ space_chk() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
 }
 
 apt_pkg_req() {
