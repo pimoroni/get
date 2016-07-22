@@ -238,7 +238,7 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-warning "This script will enable the serial console login on your Raspberry Pi"
+echo "This script will enable the serial console login on your Raspberry Pi"
 newline
 warning "--- Warning ---"
 newline

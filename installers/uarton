@@ -267,7 +267,7 @@ if confirm "Do you wish to continue?"; then
             if confirm "Would you like the pi3-disable-bt device tree overlay to load on boot?"; then
                 newline
                 echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
-                success "The on-board Bluetooth adapter has been disabled."
+                warning "The on-board Bluetooth adapter has been disabled."
                 newline
                 echo "If you wish to re-enable it, you may do so by commenting out"
                 echo "the line starting with 'dtoverlay=pi3-disable-bt' in $CONFIG"
