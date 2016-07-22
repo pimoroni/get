@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Pimoroni Product Setup Dashboard
-# Provides a familiar GUI for choosing which product installer to run
-
-# original imgur script by Bart Nagel <bart@tremby.net>
-# modified from version 4
-# API Key provided by Alan@imgur.com
-
 : <<'DISCLAIMER'
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
@@ -27,6 +20,7 @@ was written for this script.
 DISCLAIMER
 
 productname="Pimstaller" # the name of the product to install
+prodversion="2016-07-22" # version of the present implementation
 scriptname="pimstaller" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -63,6 +57,10 @@ warning() {
 
 newline() {
     echo ""
+}
+
+timestamp() {
+    date +%Y%m%d-%H%M
 }
 
 sudocheck() {
@@ -171,7 +169,7 @@ home_dir() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && return 0 || return 1
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
 }
 
 apt_pkg_req() {
@@ -181,51 +179,6 @@ apt_pkg_req() {
         true
     else
         false
-    fi
-}
-
-get_install() {
-    check_network || (whip_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    \curl -sS get.pimoroni.com/$1 | bash
-    read -p "Press [Enter] key to continue..." < /dev/tty
-}
-
-imgur_upload() {
-    file="$1"
-    apikey="b3625162d3418ac51a9ee805b1840452"
-
-    response=$(curl -F "key=$apikey" -H "Expect: " -F "image=@$file" \
-    http://imgur.com/api/upload.xml 2>/dev/null)
-    # the "Expect: " header is to get around a problem when using this through 
-    # the Squid proxy. Not sure if it's a Squid bug or what.
-    if [ $? -ne 0 ]; then
-        echo "Upload failed" >&2
-    elif [ $(echo $response | grep -c "<error_msg>") -gt 0 ]; then
-        echo "Error message from imgur:" >&2
-        echo $response | sed -r 's/.*<error_msg>(.*)<\/error_msg>.*/\1/' >&2
-    fi
-
-    url=$(echo $response | sed -r 's/.*<original_image>(.*)<\/original_image>.*/\1/')
-    deleteurl=$(echo $response | sed -r 's/.*<delete_page>(.*)<\/delete_page>.*/\1/')
-    echo $url
-    return 0
-}
-
-take_snap() {
-    if ! command -v scrot > /dev/null; then
-        warning "scrot is not installed" 
-        echo "try: sudo apt-get install scrot"
-    else
-        whip_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nWarning!\nThis screenshot will be uploaded to imgur so you can share it with us, make sure it's not showing anything sensitive!"
-        echo "Taking screenshot..."
-        echo "Draw a rectangle around your subject."
-        export PIMCWD=$(pwd)
-        cd /tmp
-        export IMGNAME=`scrot '%Y-%m-%d-pimoroni-help.png' -s -e 'echo $f'`
-        export IMGURL=$(imgur_upload $IMGNAME)
-        #rm $IMGNAME
-        cd $PIMCWD
-        whip_msgbox "Okay, your screenshot has been uploaded to:\n\n$IMGURL\n\nInclude this URL in your support query, and we'll be able to better identify your problem!\n\nYou can also find it in /tmp/$IMGNAME"
     fi
 }
 
@@ -239,6 +192,38 @@ self_update() {
         pimstaller
         exit 0
     fi
+}
+
+get_install() {
+    check_network || (whip_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    \curl -sS get.pimoroni.com/$1 | bash
+    read -p "Press Enter to continue..." < /dev/tty
+}
+
+save_stdout() {
+    savename=$(timestamp)-info.txt
+    get_install $1 2>&1 | tee ~/Desktop/$savename
+    sed -i "/Press Enter/d" ~/Desktop/$savename
+    whip_msgbox "Success, your system info has been saved to the Desktop!"
+}
+
+save_snap() {
+    if ! command -v scrot > /dev/null; then
+        warning "scrot is not installed" 
+        echo "try: sudo apt-get install scrot"
+    elif ! [ "$DISPLAY" ]; then
+        whip_msgbox "X is not running, we can't take screenshots, sorry!"        
+    else
+        whip_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nThis screenshot will be stored on your desktop, from where you can share it with us or with the world!"
+        echo "Taking screenshot..."
+        echo "Draw a rectangle around your subject."
+        scrot -s ~/Desktop/%Y%m%d-%H%M-snap.png
+        whip_msgbox "Success, your screenshot has been saved to the Desktop!"
+    fi
+}
+
+about_box() {
+    whip_msgbox "$productname $prodversion"        
 }
 
 whip_confirm() {
@@ -429,6 +414,7 @@ util_menu() {
             "Take Screenshot" "" \
             "Upgrade my Pi Software" "" \
             "Update Product List" "" \
+            "About Pimstaller" "" \
     3>&1 1>&2 2>&3)
 
     RETURN=$?
@@ -436,10 +422,11 @@ util_menu() {
         return 0
     elif [ $RETURN -eq 0 ]; then
         case "$UTIL" in
-            Gather\ *) get_install cpuinfo ;;
-            Take\ *) take_snap ;;
+            Gather\ *) save_stdout cpuinfo ;;
+            Take\ *) save_snap ;;
             Upgrade\ *) get_install uptodate ;;
             Update\ *) self_update ;;
+            About\ *) about_box ;;
             *) whip_msgbox "Error: unrecognized option";;
         esac ||whip_msgbox "There was an error running option $UTIL"
     fi
