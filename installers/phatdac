@@ -281,9 +281,9 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Commenting out Blacklist entry in "
                 echo "$BLACKLIST"
-                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*i2c-bcm2708.*/#blacklist i2c-bcm2708/"
-                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-pcm512x.*/#blacklist snd-soc-pcm512x/"
-                sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*snd-soc-wm8804.*/#blacklist snd-soc-wm8804/"
+                sudo sed -i $BLACKLIST "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|"
+                sudo sed -i $BLACKLIST "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|"
+                sudo sed -i $BLACKLIST "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|"
             fi
         else
             newline
@@ -296,16 +296,16 @@ if confirm "Do you wish to continue?"; then
             bcm2835off="no"
             newline
             echo "Disabling default sound driver"
-            sudo sed -i $CONFIG -e "s/^dtparam=audio=on$/#dtparam=audio=on/"
+            sudo sed -i $CONFIG "s|^dtparam=audio=on$|#dtparam=audio=on|"
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
-                sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
+                sudo sed -i $LOADMOD "s|^snd-bcm2835|#snd-bcm2835|"
             fi
             ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
             newline
             echo "Disabling default sound module"
-            sudo sed -i $LOADMOD -e "s/^snd-bcm2835/#snd-bcm2835/"
+            sudo sed -i $LOADMOD "s|^snd-bcm2835|#snd-bcm2835|"
             ASK_TO_REBOOT=true
         else
             newline
