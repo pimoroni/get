@@ -276,10 +276,10 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $SYSTEMD -eq 0 ]; then
-        sed -i $INITABCONF "s|^.*:.*:respawn:.*ttyAMA0|#&|"
+        sed -i "s|^.*:.*:respawn:.*ttyAMA0|#&|" $INITABCONF &> /dev/null
     fi
-    sed -i $BOOTCMD -e "s|console=ttyAMA0,[0-9]\+ ||" -e "s|console=serial0,[0-9]\+ ||"
-    sed -i $CONFIG -e "/^enable_uart=0/d" -e "/^enable_uart=1/d"
+    sed -i -e "s|console=ttyAMA0,[0-9]\+ ||" -e "s|console=serial0,[0-9]\+ ||" $BOOTCMD &> /dev/null
+    sed -i -e "/^enable_uart=0/d" -e "/^enable_uart=1/d" $CONFIG &> /dev/null
     newline
     success "Your Raspberry Pi is ready for UART communication"
     warning "A reboot is required before this change takes effect."
