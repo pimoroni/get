@@ -263,9 +263,9 @@ if confirm "Do you wish to continue?"; then
         echo "Adding Device Tree Entry to "
         echo $CONFIG
         if grep -q "^dtparam=spi=off" $CONFIG; then
-            sudo sed -i $CONFIG -e "s/^dtparam=spi=off/dtparam=spi=on/" &> /dev/null
+            sudo sed -i "s|^dtparam=spi=off|dtparam=spi=on|" $CONFIG &> /dev/null
         elif grep -q "^#dtparam=spi=on" $CONFIG; then
-            sudo sed -i $CONFIG -e "s/^#dtparam=spi=on/dtparam=spi=on/" &> /dev/null
+            sudo sed -i "s|^#dtparam=spi=on|dtparam=spi=on|" $CONFIG &> /dev/null
         else
             echo "dtparam=spi=on" | sudo tee -a $CONFIG &> /dev/null
         fi
@@ -274,7 +274,7 @@ if confirm "Do you wish to continue?"; then
         if ! [ -e $BLACKLIST ]; then
             touch $BLACKLIST
         fi
-        sudo sed -i $BLACKLIST -e "s/^\(blacklist[[:space:]]*spi[-_]bcm2708\)/#\1/" &> /dev/null
+        sudo sed -i "s|^\(blacklist[[:space:]]*spi[-_]bcm2708\)|#\1|" $BLACKLIST &> /dev/null
         dtparam spi=on &> /dev/null
         newline
         success "SPI enabled"
@@ -288,7 +288,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Commenting out Blacklist entry in "
         echo "$BLACKLIST"
-        sudo sed -i $BLACKLIST -e "s/^blacklist[[:space:]]*spi-bcm2708.*/#blacklist spi-bcm2708/" &> /dev/null
+        sudo sed -i "s|^blacklist[[:space:]]*spi-bcm2708.*|#blacklist spi-bcm2708|"  $BLACKLIST &> /dev/null
         newline
         success "SPI enabled"
         newline

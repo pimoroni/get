@@ -238,7 +238,8 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 newline
-echo "This script will enable the serial console login!"
+echo "This script will disable the serial console so that"
+echo "Serial communication with devices is operational."
 newline
 warning "--- Warning ---"
 newline
@@ -259,14 +260,14 @@ if confirm "Do you wish to continue?"; then
     if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && [ $hwgen == "340" ]; then
         if ! grep -q "^dtoverlay=pi3-disable-bt$" $CONFIG && ! grep -q "^dtoverlay=pi3-miniuart-bt$" $CONFIG; then
             newline
-            warning "The serial console needs to run on UART0 for reliable communication!"
+            warning "Communication needs to run on UART0 for reliable operation!"
             newline
             echo "Disabling the on-board Bluetooth adapter can achieve this result."
             echo "We can do this for you now by loading a dedicated overlay."
             if confirm "Would you like the pi3-disable-bt device tree overlay to load on boot?"; then
                 newline
                 echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
-                success "The on-board Bluetooth adapter has been disabled."
+                warning "The on-board Bluetooth adapter has been disabled."
                 newline
                 echo "If you wish to re-enable it, you may do so by commenting out"
                 echo "the line starting with 'dtoverlay=pi3-disable-bt' in $CONFIG"
@@ -275,13 +276,13 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $SYSTEMD -eq 0 ]; then
-        sed -i $INITABCONF -e "s|^.*:.*:respawn:.*ttyAMA0|#&|"
+        sed -i "s|^.*:.*:respawn:.*ttyAMA0|#&|" $INITABCONF &> /dev/null
     fi
-    sed -i $BOOTCMD -e "s/console=ttyAMA0,[0-9]\+ //"
-    sed -i $BOOTCMD -e "s/console=serial0,[0-9]\+ //"
-    sed -i $CONFIG -e "/^enable_uart=0/d" && sed -i $CONFIG -e "/^enable_uart=1/d"
+    sed -i -e "s|console=ttyAMA0,[0-9]\+ ||" -e "s|console=serial0,[0-9]\+ ||" $BOOTCMD &> /dev/null
+    sed -i -e "/^enable_uart=0/d" -e "/^enable_uart=1/d" $CONFIG &> /dev/null
     newline
-    success "Serial console enabled"
+    success "Your Raspberry Pi is ready for UART communication"
+    warning "A reboot is required before this change takes effect."
     newline
     ASK_TO_REBOOT=true
 else
