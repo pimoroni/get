@@ -20,7 +20,7 @@ was written for this script.
 DISCLAIMER
 
 productname="Pimstaller" # the name of the product to install
-prodversion="2016-07-22" # version of the present implementation
+prodversion="2016-07-25" # version of the present implementation
 scriptname="pimstaller" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -186,7 +186,7 @@ self_update() {
     if check_network; then
         echo "Updating..."
         export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        curl -sS get.pimoroni.com/pimstaller >> $TMPDIR/pimstaller
+        curl -sS https://get.pimoroni.com/pimstaller >> $TMPDIR/pimstaller
         sudo cp $TMPDIR/pimstaller $DASHBOARD_SCRIPT
         rm -rf $TMPDIR
         pimstaller
@@ -196,7 +196,7 @@ self_update() {
 
 get_install() {
     check_network || (whip_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    \curl -sS get.pimoroni.com/$1 | bash
+    \curl -sS https://get.pimoroni.com/$1 | bash
     read -p "Press Enter to continue..." < /dev/tty
 }
 
