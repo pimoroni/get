@@ -154,7 +154,7 @@ raspbian_old() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 get_init_sys() {
@@ -244,5 +244,13 @@ case $hwver in
 esac
 
 uname -a
+
+if ls /dev/i2c* &> /dev/null; then
+    echo "I2C appears to be enabled"
+fi
+
+if ls /dev/spi* &> /dev/null; then
+    echo "SPI appears to be enabled"
+fi
 
 exit 0
