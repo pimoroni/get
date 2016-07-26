@@ -31,7 +31,6 @@ FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
-INTERACTIVE=false
 UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt

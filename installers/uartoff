@@ -31,7 +31,6 @@ FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
-INTERACTIVE=false
 UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
@@ -154,7 +153,7 @@ raspbian_old() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
-    fi    
+    fi
 }
 
 i2c_check() {
