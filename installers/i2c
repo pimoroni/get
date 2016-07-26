@@ -30,6 +30,7 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
+CURRENT_SETTING=false
 UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
@@ -157,17 +158,17 @@ dt_check() {
 
 i2c_check() {
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        return 1
+        CURRENT_SETTING=true
     else
-        return 0
+        CURRENT_SETTING=false
     fi
 }
 
 spi_check() {
     if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
-        return 1
+        CURRENT_SETTING=true
     else
-        return 0
+        CURRENT_SETTING=false
     fi
 }
 
@@ -251,7 +252,9 @@ newline
 
 if confirm "Do you wish to continue?"; then
 
-    if $DEVICE_TREE && ! i2c_check; then
+    i2c_check
+
+    if $DEVICE_TREE && ! $CURRENT_SETTING; then
         newline
         echo "Device Tree Detected"
         echo "Enabling I2C..."
