@@ -60,14 +60,13 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607222230
+# template 1607261145
 
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
-CURRENT_SETTING=false
-INTERACTIVE=false
 UPDATE_DB=false
+CURRENT_SETTING=false
 REMOVE_PKG=false
 
 BOOTCMD=/boot/cmdline.txt
@@ -245,10 +244,10 @@ usb_max_power() {
 force_hdmi() {
     if $IS_RASPBIAN; then
         if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
-            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
+            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
         else
             echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
-            \curl -sS get.pimoroni.com/audio | sudo bash -s - "2"
+            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
             ASK_TO_REBOOT=true
         fi
     fi
@@ -260,7 +259,7 @@ space_chk() {
             newline
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
-                \curl -sS get.pimoroni.com/expandfs | sudo bash
+                \curl -sS https://get.pimoroni.com/expandfs | sudo bash
                 exit 1
             else
                 newline
@@ -285,7 +284,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
+    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
 }
 
 pip_pkg_req() {
@@ -339,7 +338,7 @@ echo "trusted source."
 newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo "\curl -sS https://get.pimoroni.com/$scriptname"
 newline
 
 # checks and init
@@ -381,8 +380,8 @@ if $IS_RASPBIAN; then
         exit 1
     fi
 elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
+    warning "Please only run this script on Raspbian on your Raspberry Pi"
+    newline
     exit 1
 else
     if [ $debugmode != "no" ]; then
@@ -398,13 +397,13 @@ if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-if [ $pipoverride == "yes" ]; then    
+if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
-    piplibname="na"    
+    piplibname="na"
 fi
 
-if [ $debugmode != "no" ]; then    
+if [ $debugmode != "no" ]; then
     gitusername="$debugmode"
     gitrepobranch="testing"
     newline
@@ -435,7 +434,7 @@ if confirm "Do you wish to continue?"; then
     if [ $uartreq == "yes" ]; then
         newline
         echo "The serial console must be disabled for $productname to work"
-        \curl -sS get.pimoroni.com/uarton | sudo bash -s - "-y"
+        \curl -sS https://get.pimoroni.com/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true
         newline
     fi
@@ -446,7 +445,7 @@ if confirm "Do you wish to continue?"; then
             success "SPI Already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            \curl -sS get.pimoroni.com/spi | sudo bash -s - "-y"
+            \curl -sS https://get.pimoroni.com/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
     fi
@@ -457,7 +456,7 @@ if confirm "Do you wish to continue?"; then
             success "I2C Already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            \curl -sS get.pimoroni.com/i2c | sudo bash -s - "-y"
+            \curl -sS https://get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
     fi

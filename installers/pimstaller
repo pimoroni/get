@@ -20,7 +20,7 @@ was written for this script.
 DISCLAIMER
 
 productname="Pimstaller" # the name of the product to install
-prodversion="2016-07-25" # version of the present implementation
+prodversion="2016-07-26" # version of the present implementation
 scriptname="pimstaller" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -209,10 +209,10 @@ save_stdout() {
 
 save_snap() {
     if ! command -v scrot > /dev/null; then
-        warning "scrot is not installed" 
+        warning "scrot is not installed"
         echo "try: sudo apt-get install scrot"
     elif ! [ "$DISPLAY" ]; then
-        whip_msgbox "X is not running, we can't take screenshots, sorry!"        
+        whip_msgbox "X is not running, we can't take screenshots, sorry!"
     else
         whip_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nThis screenshot will be stored on your desktop, from where you can share it with us or with the world!"
         echo "Taking screenshot..."
@@ -223,7 +223,7 @@ save_snap() {
 }
 
 about_box() {
-    whip_msgbox "$productname $prodversion"        
+    whip_msgbox "$productname $prodversion"
 }
 
 whip_confirm() {
