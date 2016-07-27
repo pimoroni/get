@@ -19,13 +19,6 @@ was written for this script.
 
 DISCLAIMER
 
-: <<'ACKNOWLEDGEMENT'
-
-The code for the kernelatleast reproduced herein is lifted from:
-http://linux-tipps.blogspot.co.uk/2011/05/checking-if-at-least-kernel-version-is.html
-
-ACKNOWLEDGEMENT
-
 productname="pHAT DAC" # the name of the product to install
 scriptname="phatdac" # the name of this script
 debugmode="no" # whether the script outputs debug level messages
