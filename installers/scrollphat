@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script variable behaviour
+
 productname="Scroll pHAT" # the name of the product to install
 scriptname="scrollphat" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
@@ -53,7 +55,7 @@ copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-smbus" "python3-pip" "python3-smbus" ) # list core dependencies
-pkgdeplist8=() # list extra dependencies assuming Jessie 
+pkgdeplist8=() # list extra dependencies assuming Jessie
 moreaptdep=( "python-pil" "python-psutil" "python-feedparser" "python3-pil" "python3-psutil" "python3-feedparser" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
@@ -345,13 +347,13 @@ if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-if [ $pipoverride == "yes" ]; then    
+if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
-    piplibname="na"    
+    piplibname="na"
 fi
 
-if [ $debugmode != "no" ]; then    
+if [ $debugmode != "no" ]; then
     gitusername="$debugmode"
     gitrepobranch="testing"
     newline
