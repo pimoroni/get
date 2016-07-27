@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script variable behaviour
+
 productname="Unicorn HAT/pHAT" # the name of the product to install
 scriptname="unicornhat" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
