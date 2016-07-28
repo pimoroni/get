@@ -64,7 +64,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of al
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607282345
+# template 1607282355
 
 FORCE=$1
 DEVICE_TREE=true
@@ -95,6 +95,15 @@ confirm() {
             false
         fi
     fi
+}
+
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
 }
 
 success() {
@@ -135,7 +144,7 @@ sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
     newline
-    if confirm "Would you like to reboot now?"; then
+    if prompt "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
@@ -654,11 +663,10 @@ if confirm "Do you wish to continue?"; then
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
-                if confirm "Resources already exist, shall I replace them?"; then
-                    mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
+                mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
                     cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
-                    warning "I backed up the examples to $WORKING_DIR-backup, just in case you've changed anything!"
-                fi
+                    warning a $repodir directory already exists!
+                    echo "I backed up the $repodir to $repodir-backup, just in case you've changed anything!"
             else
                 cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
             fi
