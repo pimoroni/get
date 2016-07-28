@@ -64,7 +64,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of al
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607282240
+# template 1607282245
 
 FORCE=$1
 DEVICE_TREE=true
@@ -711,9 +711,9 @@ if confirm "Do you wish to continue?"; then
             else
                 cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
             fi
-            success "Resources copied to $WORKING_DIR/"
-            rm -rf $TMPDIR
         done
+        success "Resources copied to $WORKING_DIR/"
+        rm -rf $TMPDIR
     fi
 
 # additional install
