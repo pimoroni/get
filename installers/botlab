@@ -748,12 +748,12 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         i2c_vc_dtparam
         newline
+        \curl -sS https://get.pimoroni.com/uarton | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/blinkt | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/displayotron | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/drumhat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/envirophat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/explorerhat | bash -s - "-y"
-        \curl -sS https://get.pimoroni.com/iotphat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/microdotphat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/pianohat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/piglow | bash -s - "-y"
