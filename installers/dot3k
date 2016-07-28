@@ -506,7 +506,9 @@ if confirm "Do you wish to continue?"; then
         pkgdeplists=( "pkgdeplist1" "pkgdeplist2" "pkgdeplist3" )
 
         for pkglist in ${pkgdeplists[@]}; do
+            echo $pkglist
             for pkgdep in ${pkglist[@]}; do
+                echo $pkgdep
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
