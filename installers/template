@@ -64,7 +64,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607282335
+# template 1607282345
 
 FORCE=$1
 DEVICE_TREE=true
@@ -464,7 +464,7 @@ if confirm "Do you wish to continue?"; then
     if [ $spireq == "yes" ]; then
         newline
         if ls /dev/spi* &> /dev/null; then
-            success "SPI Already enabled"
+            success "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
             \curl -sS https://get.pimoroni.com/spi | sudo bash -s - "-y"
@@ -475,7 +475,7 @@ if confirm "Do you wish to continue?"; then
     if [ $i2creq == "yes" ]; then
         newline
         if ls /dev/i2c* &> /dev/null; then
-            success "I2C Already enabled"
+            success "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
             \curl -sS https://get.pimoroni.com/i2c | sudo bash -s - "-y"
@@ -653,8 +653,9 @@ if confirm "Do you wish to continue?"; then
         cd $WORKING_DIR
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
+                newline
                 if confirm "Resources already exist, shall I replace them?"; then
-                    mv $WORKING_DIR $WORKING_DIR-backup
+                    mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
                     cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
                     warning "I backed up the examples to $WORKING_DIR-backup, just in case you've changed anything!"
                 fi
