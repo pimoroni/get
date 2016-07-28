@@ -64,12 +64,11 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of al
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607282245
+# template 1607282310
 
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
-UPDATE_DB=false
 CURRENT_SETTING=false
 REMOVE_PKG=false
 
@@ -491,92 +490,45 @@ if confirm "Do you wish to continue?"; then
     echo "Checking install requirements..."
 
     if command -v apt-get > /dev/null; then
+        newline
+        echo "Updating package indexes..."
+        sysupdate
+        newline
+        echo "Checking for dependencies..."
 
-        for pkgrm in ${pkgaptremove[@]}; do
-            if apt_pkg_req "$pkgrm"; then
-                REMOVE_PKG=true
-            fi
-        done
-        if [ $debpackage != "na" ]; then
-            UPDATE_DB=true
+        if $REMOVE_PKG; then
+            for pkgrm in ${pkgaptremove[@]}; do
+                warning "Installed package conflicts with requirements"
+                sudo apt-get remove "$pkgrm"
+            done
         fi
-        for pkgdep in ${pkgdeplist1[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
-        for pkgdep in ${pkgdeplist2[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
-        for pkgdep in ${pkgdeplist3[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
-        for pkgdep in ${pkgdeplist7[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
-        for pkgdep in ${pkgdeplist8[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
-        for morepkgdep in ${moreaptdep[@]}; do
-            if apt_pkg_req "$morepkgdep"; then
-                UPDATE_DB=true
-            fi
-        done
 
-        if $UPDATE_DB; then
-            newline
-            echo "Updating package indexes..."
-            sysupdate
-            newline
-            echo "Checking for dependencies..."
+        pkgdeplists=( "pkgdeplist1" "pkgdeplist2" "pkgdeplist3" )
 
-            if $REMOVE_PKG; then
-                for pkgrm in ${pkgaptremove[@]}; do
-                    warning "Installed package conflicts with requirements"
-                    sudo apt-get remove "$pkgrm"
-                done
-            fi
-            for pkgdep in ${pkgdeplist1[@]}; do
+        for pkglist in ${pkgdeplists[@]}; do
+            for pkgdep in ${pkglist[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-            for pkgdep in ${pkgdeplist2[@]}; do
-                if apt_pkg_req "$pkgdep"; then
-                    apt_pkg_install "$pkgdep"
-                fi
-            done
-            for pkgdep in ${pkgdeplist3[@]}; do
-                if apt_pkg_req "$pkgdep"; then
-                    apt_pkg_install "$pkgdep"
-                fi
-            done
+        done
+        if raspbian_old; then 
             for pkgdep in ${pkgdeplist7[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
                 fi
             done
-            if ! raspbian_old; then
-                for pkgdep in ${pkgdeplist8[@]}; do
-                    if apt_pkg_req "$pkgdep"; then
-                        apt_pkg_install "$pkgdep"
-                    fi
-                done
-            fi
-            if [ $debpackage != "na" ]; then
-                apt_pkg_install "$debpackage"
-            fi
         else
-            success "Done!"
+            for pkgdep in ${pkgdeplist8[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
         fi
+        if [ $debpackage != "na" ]; then
+            apt_pkg_install "$debpackage"
+        fi
+        success "Done!"
     fi
 
 # pypi repo install
