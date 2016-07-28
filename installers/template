@@ -64,7 +64,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607282205
+# template 1607282240
 
 FORCE=$1
 DEVICE_TREE=true
@@ -707,12 +707,12 @@ if confirm "Do you wish to continue?"; then
                     mv $WORKING_DIR $WORKING_DIR-backup
                     cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
                     warning "I backed up the examples to $WORKING_DIR-backup, just in case you've changed anything!"
-                else
-                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
                 fi
-                success "Resources copied to $WORKING_DIR/"
-                rm -rf $TMPDIR
+            else
+                cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
             fi
+            success "Resources copied to $WORKING_DIR/"
+            rm -rf $TMPDIR
         done
     fi
 
@@ -758,10 +758,12 @@ if confirm "Do you wish to continue?"; then
 # script custom routines
 
     if [ $customcmd == "no" ]; then
-        newline
-        echo "Finalising Install..."
-        newline
-        sysclean
+        if [ -n "$pkgaptremove" ]; then
+            newline
+            echo "Finalising Install..."
+            newline
+            sysclean
+        fi
         newline
         success "All done!"
         newline
