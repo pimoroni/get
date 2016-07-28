@@ -64,7 +64,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of al
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607290035
+# template 1607290045
 
 FORCE=$1
 DEVICE_TREE=true
@@ -557,55 +557,25 @@ if confirm "Do you wish to continue?"; then
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
             if command -v pip > /dev/null; then
                 newline
-                echo "Checking for Python 2 library..."
-
-                if pip_pkg_req "$piplibname"; then
-                    echo "Installing $productname library for Python 2..."
-                    newline
-                    if ! sudo pip install $piplibname; then
-                        warning "Python 2 library install failed!"
-                        echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit 1
-                    fi
-                    success "Done!"
-                else
-                    success "Found!"
-                    newline
-                    if confirm "Python 2 module found. Reinstall/Update?"; then
-                        if ! sudo pip install $piplibname -I; then
-                            warning "Python 2 library install failed!"
-                            echo "If problems persist, visit forums.pimoroni.com for support"
-                            exit 1
-                        fi
-                        success "Done!"
-                    fi
+                echo "Installing $productname library for Python 2..."
+                newline
+                if ! sudo pip install $piplibname -I; then
+                    warning "Python 2 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit 1
                 fi
+                success "Done!"
             fi
         fi
-
         if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
             if [ -n "$PIP3_BIN" ]; then
                 newline
-                echo "Checking for Python 3 library..."
-                if pip_pkg_req3 "$piplibname"; then
-                    echo "Installing $productname library for Python 3..."
-                    newline
-                    if ! sudo $PIP3_BIN install $piplibname; then
+                echo "Installing $productname library for Python 3..."
+                newline
+                    if ! sudo $PIP3_BIN install $piplibname -I; then
                         warning "Python 3 library install failed!"
-                        echo "If problems persist, visit forums.pimoroni.com for support"
-                        exit 1
-                    fi
-                else
-                    success "Found!"
-                    newline
-                    if confirm "Python 3 module found. Reinstall/Update?"; then
-                        if ! sudo $PIP3_BIN install $piplibname -I; then
-                            warning "Python 3 library install failed!"
-                            echo "If problems persist, visit forums.pimoroni.com for support"
-                            exit 1
-                        fi
-                        success "Done!"
-                    fi
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit 1
                 fi
             fi
         fi
