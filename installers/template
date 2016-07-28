@@ -665,7 +665,7 @@ if confirm "Do you wish to continue?"; then
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
                 if [ -d $WORKING_DIR/$repodir-backup ]; then
-                    rm $WORKING_DIR/$repodir-old &> /dev/null
+                    rm -R $WORKING_DIR/$repodir-old &> /dev/null
                     mv $WORKING_DIR/$repodir-backup $WORKING_DIR/$repodir-old
                 fi
                 mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
@@ -673,7 +673,7 @@ if confirm "Do you wish to continue?"; then
                 warning "The $repodir directory already exists on your system!"
                 echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
-                rm $WORKING_DIR/$repodir &> /dev/null
+                rm -R $WORKING_DIR/$repodir &> /dev/null
                 cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
             fi
         done
