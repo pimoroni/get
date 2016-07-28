@@ -42,6 +42,7 @@ piplibname="skywriter" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
+topdir="Pimoroni" # the name of the top level directory
 localdir="skywriter" # the name of the dir for copy of examples
 gitreponame="skywriter-hat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
