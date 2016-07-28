@@ -64,7 +64,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607282355
+# template 1607290000
 
 FORCE=$1
 DEVICE_TREE=true
@@ -665,7 +665,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
                     cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
-                    warning a $repodir directory already exists!
+                    warning "a $repodir directory already exists!"
                     echo "I backed up the $repodir to $repodir-backup, just in case you've changed anything!"
             else
                 cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
