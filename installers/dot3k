@@ -64,7 +64,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of al
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607290000
+# template 1607290005
 
 FORCE=$1
 DEVICE_TREE=true
@@ -664,9 +664,9 @@ if confirm "Do you wish to continue?"; then
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
                 mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup
-                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
-                    warning "a $repodir directory already exists!"
-                    echo "I backed up the $repodir to $repodir-backup, just in case you've changed anything!"
+                cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
+                warning "The $repodir directory already exists on your system!"
+                echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
                 cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
             fi
@@ -674,7 +674,7 @@ if confirm "Do you wish to continue?"; then
         success "Resources copied to $WORKING_DIR/"
         rm -rf $TMPDIR
     fi
-
+    
 # additional install
 
     newline
