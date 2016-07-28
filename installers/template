@@ -19,7 +19,7 @@ was written for this script.
 
 DISCLAIMER
 
-# script variable behaviour
+# script control variables
 
 productname="product name" # the name of the product to install
 scriptname="script name" # the name of this script
@@ -42,6 +42,7 @@ piplibname="pip lib name" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
+topdir="Pimoroni" # the name of the top level directory
 localdir="local dir" # the name of the dir for copy of examples
 gitreponame="git repo name" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
@@ -54,13 +55,16 @@ libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git"  "python-pip"  "python3-pip" ) # list core dependencies
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" ) # list extra dependencies assuming Jessie
+pkgdeplist1=( "git" ) # list core dependencies
+pkgdeplist2=( "python-pip" ) # list python 2 dependencies
+pkgdeplist3=( "python3-pip" ) # list python 3 dependencies
+pkgdeplist7=() # list dependencies for Wheezy only
+pkgdeplist8=() # list dependencies for Jessie only
 moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607261145
+# template 1607282205
 
 FORCE=$1
 DEVICE_TREE=true
@@ -227,6 +231,20 @@ get_init_sys() {
     fi
 }
 
+i2c_vc_dtparam() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
+            newline
+            echo "i2c0 bus already active"
+        else
+            newline
+            echo "Enabling i2c0 bus in $CONFIG"
+            echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG
+            newline
+        fi
+    fi
+}
+
 usb_max_power() {
     if $IS_RASPBIAN; then
         if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
@@ -352,8 +370,13 @@ if [ "$FORCE" != '-y' ]; then
     space_chk
 fi
 
-WORKING_DIR="$USER_HOME/Pimoroni"
-[ -d $WORKING_DIR ] || mkdir $WORKING_DIR
+if [ $localdir != "na" ]; then 
+    WORKING_DIR="$USER_HOME/$topdir/$localdir"
+else
+    WORKING_DIR="$USER_HOME/$topdir"
+fi
+
+[ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
 
 if $IS_RASPBIAN; then
     raspbian_check
@@ -477,6 +500,21 @@ if confirm "Do you wish to continue?"; then
         if [ $debpackage != "na" ]; then
             UPDATE_DB=true
         fi
+        for pkgdep in ${pkgdeplist1[@]}; do
+            if apt_pkg_req "$pkgdep"; then
+                UPDATE_DB=true
+            fi
+        done
+        for pkgdep in ${pkgdeplist2[@]}; do
+            if apt_pkg_req "$pkgdep"; then
+                UPDATE_DB=true
+            fi
+        done
+        for pkgdep in ${pkgdeplist3[@]}; do
+            if apt_pkg_req "$pkgdep"; then
+                UPDATE_DB=true
+            fi
+        done
         for pkgdep in ${pkgdeplist7[@]}; do
             if apt_pkg_req "$pkgdep"; then
                 UPDATE_DB=true
@@ -506,6 +544,21 @@ if confirm "Do you wish to continue?"; then
                     sudo apt-get remove "$pkgrm"
                 done
             fi
+            for pkgdep in ${pkgdeplist1[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
+            for pkgdep in ${pkgdeplist2[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
+            for pkgdep in ${pkgdeplist3[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
             for pkgdep in ${pkgdeplist7[@]}; do
                 if apt_pkg_req "$pkgdep"; then
                     apt_pkg_install "$pkgdep"
@@ -602,24 +655,21 @@ if confirm "Do you wish to continue?"; then
 # git repo install
 
     if [ $gitrepoclone == "yes" ]; then
-        if ! [ -d $WORKING_DIR/$localdir ]; then
-            mkdir $WORKING_DIR/$localdir
-        fi
         if [ $gitclonedir == "source" ]; then
             gitclonedir=$gitreponame
         fi
         if [ $repoclean == "yes" ]; then
-            rm -Rf $WORKING_DIR/$localdir/$gitclonedir
+            rm -Rf $WORKING_DIR/$gitclonedir
         fi
-        if [ -d $WORKING_DIR/$localdir/$gitclonedir ]; then
+        if [ -d $WORKING_DIR/$gitclonedir ]; then
             newline
             echo "Github repo already present. Updating..."
-            cd $WORKING_DIR/$localdir/$gitclonedir
+            cd $WORKING_DIR/$gitclonedir
             git pull
         else
             newline
             echo "Cloning Github repo locally..."
-            cd $WORKING_DIR/$localdir
+            cd $WORKING_DIR
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -632,7 +682,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Installing library..."
         newline
-        cd $WORKING_DIR/$localdir/$gitreponame/$libdir
+        cd $WORKING_DIR/$gitreponame/$libdir
         if [ $pip2support == "yes" ] && command -v python > /dev/null; then
             sudo python ./setup.py install
         fi
@@ -647,35 +697,23 @@ if confirm "Do you wish to continue?"; then
 
     if [ -n "$copydir" ]; then
         echo "Downloading examples and documentation..."
-        if ! [ -d $WORKING_DIR/$localdir ]; then
-            newline
-            TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-            cd $TMPDIR
-            git clone --depth=1 https://github.com/$gitusername/$gitreponame
-            cd $WORKING_DIR
-            mkdir $localdir
-            for repodir in ${copydir[@]}; do
-                cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$localdir/$repodir
-            done
-            rm -rf $TMPDIR
-            success "Resources copied to $WORKING_DIR/$localdir/"
-        else
-            newline
-            if confirm "Resources already exist, shall I replace them?"; then
-                mv $WORKING_DIR/$localdir $WORKING_DIR/$localdir-backup
-                TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $TMPDIR
-                git clone --depth=1 https://github.com/$gitusername/$gitreponame
-                cd $WORKING_DIR
-                mkdir $localdir
-                for repodir in ${copydir[@]}; do
-                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$localdir/$repodir
-                done
+        TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $TMPDIR
+        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        cd $WORKING_DIR
+        for repodir in ${copydir[@]}; do
+            if [ -d $repodir ] && [ $repodir != "documentation" ]; then
+                if confirm "Resources already exist, shall I replace them?"; then
+                    mv $WORKING_DIR $WORKING_DIR-backup
+                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir
+                    warning "I backed up the examples to $WORKING_DIR-backup, just in case you've changed anything!"
+                else
+                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir                    
+                fi
+                success "Resources copied to $WORKING_DIR/"
                 rm -rf $TMPDIR
-                warning "I backed up the examples to $localdir-backup, just in case you've changed anything!"
-                success "Resources copied to $WORKING_DIR/$localdir/"
             fi
-        fi
+        done
     fi
 
 # additional install
@@ -701,17 +739,17 @@ if confirm "Do you wish to continue?"; then
         echo "Some $productname examples/plugins"
         echo "require additional software and/or modules"
         if confirm "Would you like to install them now?"; then
-            for moredep in ${moreaptdep[@]}
-                do if apt_pkg_req "$moredep"; then
+            for moredep in ${moreaptdep[@]}; do
+                if apt_pkg_req "$moredep"; then
                     apt_pkg_install "$moredep"
                 fi
-                done
-            for moredep in ${morepipdep[@]}
-                do if pip_pkg_req "$moredep"; then
+            done
+            for moredep in ${morepipdep[@]}; do
+                if pip_pkg_req "$moredep"; then
                     sudo pip install "$moredep"
                     sudo $PIP3_BIN install "$moredep"
                 fi
-                done
+            done
         fi
     else
         success "Done!"
