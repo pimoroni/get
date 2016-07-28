@@ -57,7 +57,7 @@ pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist7=( "git" "git-gui" "gitk" ) # list core dependencies
 pkgdeplist8=( "python-pip" "python-smbus" "python-spidev" "python-dev" ) # list extra dependencies assuming Jessie
 moreaptdep=() # list of all the additional apt dependencies
-morepipdep=( "esptool.py" ) # list of all the additional pip dependencies
+morepipdep=( "esptool" ) # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
 # template 1607261145
