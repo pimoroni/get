@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="Display-o-Tron 3000/HAT" # the name of the product to install
 scriptname="displayotron" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
@@ -40,6 +42,7 @@ piplibname="dot3k" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="yes" # whether python3 is supported or not
+topdir="Pimoroni" # the name of the top level directory
 localdir="displayotron" # the name of the dir for copy of examples
 gitreponame="dot3k" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
@@ -52,9 +55,12 @@ libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist7=( "git" "i2c-tools" "python-pip" "python-rpi.gpio" "python-smbus" "python-dev" "python3-pip" "python3-rpi.gpio" "python3-smbus" "python3-dev" ) # list core dependencies
-pkgdeplist8=( "python-gpiozero" "python3-gpiozero" "python-spidev" "python-spidev" ) # list extra dependencies assuming Jessie
-moreaptdep=( "python-pil" "python-psutil" "python3-pil" "python3-psutil" "libudev-dev" "vlc" ) # list of all the additional apt dependencies
+pkgdeplist1=( "git" "i2c-tools" ) # list core dependencies
+pkgdeplist2=( "python-pip" "python-dev" "python-smbus" "python-spidev" "python-rpi.gpio" ) # list python 2 dependencies
+pkgdeplist3=( "python3-pip" "python3-dev" "python3-smbus" "python3-spidev" "python3-rpi.gpio" ) # list python 3 dependencies
+pkgdeplist7=() # list dependencies for Wheezy only
+pkgdeplist8=() # list dependencies for Jessie only
+moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of all the additional apt dependencies
 morepipdep=( "python-uinput" "wifi" ) # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
