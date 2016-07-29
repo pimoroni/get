@@ -47,6 +47,7 @@ localdir="na" # the name of the dir for copy of resources
 gitreponame="hat-testing" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
+gitrepotop="root" # the name of the dir to base repo from
 gitrepoclone="yes" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
