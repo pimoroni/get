@@ -738,7 +738,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         echo "We will now check that your dock is running the latest firmware"
-        cd $WORKING_DIR/$localdir/$gitclonedir/firmware
+        cd $WORKING_DIR/$gitclonedir/firmware
         newline
         sudo bash ./update_firmware
         usb_max_power &> /dev/null
