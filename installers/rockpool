@@ -64,7 +64,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607292220
+# template 1607292320
 
 FORCE=$1
 DEVICE_TREE=true
@@ -391,8 +391,7 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline
         exit 1
-    fi
-    if [ $wheezysupport == "no" ] && $IS_WHEEZY; then
+    elif [ $wheezysupport == "no" ] && $IS_WHEEZY; then
         newline
         warning "--- Warning ---"
         newline
