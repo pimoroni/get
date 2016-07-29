@@ -26,7 +26,7 @@ scriptname="mote" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
@@ -730,6 +730,9 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
+        rm -R $WORKING_DIR/python/library &> /dev/null
+        rm -R $WORKING_DIR/python/packaging &> /dev/null
+        rm -R $WORKING_DIR/python/sphinx &> /dev/null
         mv $WORKING_DIR/python $WORKING_DIR/mote-python &> /dev/null
         newline
     fi
