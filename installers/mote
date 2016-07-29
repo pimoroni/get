@@ -355,7 +355,7 @@ MAINSTART
 
 newline
 echo "This script will install everything needed to use"
-echo "$topdir $productname"
+echo "the $topdir $productname"
 newline
 warning "--- Warning ---"
 newline
