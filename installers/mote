@@ -64,7 +64,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607292030
+# template 1607292035
 
 FORCE=$1
 DEVICE_TREE=true
@@ -355,7 +355,7 @@ MAINSTART
 
 newline
 echo "This script will install everything needed to use"
-echo "$productname"
+echo "$topdir $productname"
 newline
 warning "--- Warning ---"
 newline
@@ -495,7 +495,7 @@ if confirm "Do you wish to continue?"; then
     success "Done!"
     newline
 
-    echo "$product includes a number of examples that you may wish to install."
+    echo "$productname includes a number of examples that you may wish to install."
     echo "Performing a full install with ensure those examples are installed,"
     echo "along with all required dependencies. It may however take a while!"
     newline
