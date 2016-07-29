@@ -52,7 +52,7 @@ gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
-copydir=( "python" ) # subdirectories to copy from repo
+copydir=( "documentation" "examples" "python" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist1=() # list core dependencies
@@ -64,7 +64,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1607292035
+# template 1607292135
 
 FORCE=$1
 DEVICE_TREE=true
@@ -379,14 +379,6 @@ if [ "$FORCE" != '-y' ]; then
     space_chk
 fi
 
-if [ $localdir != "na" ]; then 
-    WORKING_DIR="$USER_HOME/$topdir/$localdir"
-else
-    WORKING_DIR="$USER_HOME/$topdir"
-fi
-
-[ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
-
 if $IS_RASPBIAN; then
     raspbian_check
     if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
@@ -495,12 +487,27 @@ if confirm "Do you wish to continue?"; then
     success "Done!"
     newline
 
-    echo "$productname includes a number of examples that you may wish to install."
-    echo "Performing a full install with ensure those examples are installed,"
-    echo "along with all required dependencies. It may however take a while!"
-    newline
-    if ! confirm "Do you wish to perform a full install?"; then
-        MIN_INSTALL=true
+# minimum install routine
+
+    if [ $gitrepoclone != "yes" ]; then
+            
+        echo "$productname includes a number of examples that you may wish to install."
+        echo "Performing a full install with ensure those examples are installed,"
+        echo "along with all required dependencies. It may however take a while!"
+        newline
+
+        if ! confirm "Do you wish to perform a full install?"; then
+            MIN_INSTALL=true
+        fi
+    fi
+
+    if ! $MIN_INSTALL;then
+        if [ $localdir != "na" ]; then 
+            WORKING_DIR="$USER_HOME/$topdir/$localdir"
+        else
+            WORKING_DIR="$USER_HOME/$topdir"
+        fi
+        [ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
     fi
 
 # raspbian repo install
@@ -723,7 +730,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        mv $WORKING_DIR/python $WORKING_DIR/mote-python
+        mv $WORKING_DIR/python $WORKING_DIR/mote-python &> /dev/null
         newline
     fi
 
