@@ -737,10 +737,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        rm -R $WORKING_DIR/python/library &> /dev/null
-        rm -R $WORKING_DIR/python/packaging &> /dev/null
-        rm -R $WORKING_DIR/python/sphinx &> /dev/null
-        mv $WORKING_DIR/python $WORKING_DIR/mote-python &> /dev/null
+        # place all custom commands in this scope
         newline
     fi
 
