@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Rockpool" # the name of the product to install
-scriptname="rockpool" # the name of this script
+productname="Flotilla Rockpool" # the name of the product to install
+scriptname="flotilla" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
@@ -739,7 +739,7 @@ if confirm "Do you wish to continue?"; then
         sudo bash ./install
         newline
         echo "Installing Flotilla Python API..."
-        \curl -sS get.pimoroni.com/flotilla | bash -s - "-y"
+        \curl -sS get.pimoroni.com/flotilla-python | bash -s - "-y"
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
