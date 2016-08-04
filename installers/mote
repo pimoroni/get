@@ -61,7 +61,7 @@ pkgdeplist2=( "python-pip" "python-serial" ) # list python 2 dependencies
 pkgdeplist3=( "python3-pip" "python3-serial" ) # list python 3 dependencies
 pkgdeplist7=() # list dependencies for Wheezy only
 pkgdeplist8=() # list dependencies for Jessie only
-moreaptdep=( "git" ) # list of all the additional apt dependencies
+moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
