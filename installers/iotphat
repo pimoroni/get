@@ -56,12 +56,12 @@ libdir="na" # subdirectory of library in repo
 copydir=( "firmware" ) # subdirectories to copy from repo
 pipdeplist=( "esptool" ) # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist1=( "git" ) # list core dependencies
+pkgdeplist1=() # list core dependencies
 pkgdeplist2=( "python-pip" "python-serial" "python-rpi.gpio" ) # list python 2 dependencies
 pkgdeplist3=() # list python 3 dependencies
 pkgdeplist7=() # list dependencies for Wheezy only
 pkgdeplist8=() # list dependencies for Jessie only
-moreaptdep=( "minicom" ) # list of all the additional apt dependencies
+moreaptdep=( "git" "minicom" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
