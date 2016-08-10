@@ -355,6 +355,8 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
+    warning "debug mode enabled"
+else
     newline
     echo "This script will install everything needed to use"
     echo "the $topdir $productname"
@@ -369,8 +371,6 @@ if [ $debugmode != "no" ]; then
     echo "running it, you should run:"
     echo "\curl -sS https://get.pimoroni.com/$scriptname"
     newline
-else
-    echo "debug mode enabled"
 fi
 
 # checks and init
