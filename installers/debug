@@ -207,11 +207,17 @@ raspbian_old() {
 home_dir() {
     if ! $IS_MACOSX; then
         if [ $EUID -ne 0 ]; then
+            echo "euid not equal to 0"
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
             if [ $SUDO_USER ]; then
+                echo "sudo user en var has value"
+                if $(getent passwd $SUDO_USER) | grep "No passwd entry for user"; then
+                    echo "sudo su used"
+                fi
                 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
             else
+                echo "sudo user en var has no value"
                 warning "Running as root and no other sudo user available"
                 exit 1
             fi
