@@ -65,7 +65,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607292320
+# template 1608102305
 
 FORCE=$1
 DEVICE_TREE=true
@@ -207,17 +207,11 @@ raspbian_old() {
 home_dir() {
     if ! $IS_MACOSX; then
         if [ $EUID -ne 0 ]; then
-            echo "euid not equal to 0"
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
             if [ $SUDO_USER ]; then
-                echo "sudo user en var has value"
-                if $(getent passwd $SUDO_USER) | grep "No passwd entry for user"; then
-                    echo "sudo su used"
-                fi
                 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
             else
-                echo "sudo user en var has no value"
                 warning "Running as root and no other sudo user available"
                 exit 1
             fi
@@ -524,8 +518,8 @@ DISABLE
         [ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
 #   fi
     echo $WORKING_DIR
-<<DISABLE
 
+<<DISABLE
 # raspbian repo install
 
     echo "Checking install requirements..."
