@@ -23,7 +23,7 @@ DISCLAIMER
 
 productname="productname" # the name of the product to install
 scriptname="scriptname" # the name of this script
-debugmode="no" # whether the script should use test Git user, branch and routines
+debugmode="yes" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -231,12 +231,6 @@ servd_trig() {
     fi
 }
 
-servd_trig() {
-    if command -v service > /dev/null; then
-        sudo service $1 $2
-    fi
-}
-
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -386,6 +380,9 @@ os_check
 home_dir
 check_network
 
+echo $USER_HOME
+
+<<DISABLE
 if [ "$FORCE" != '-y' ]; then
     space_chk
 fi
@@ -511,15 +508,18 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if ! $MIN_INSTALL;then
+DISABLE
+#    if ! $MIN_INSTALL;then
         if [ $localdir != "na" ]; then
             installdir="$USER_HOME/$topdir/$localdir"
         else
             installdir="$USER_HOME/$topdir"
         fi
         [ -d $installdir ] || mkdir -p $installdir
-    fi
+#   fi
+    echo $installdir
 
+<<DISABLE
 # raspbian repo install
 
     echo "Checking install requirements..."
@@ -614,7 +614,7 @@ if confirm "Do you wish to continue?"; then
             gitclonedir=$gitreponame
         fi
         if [ $repoclean == "yes" ]; then
-            rm -Rf $installdir/$gitclonedir
+            echo $installdir/$gitclonedir
         fi
         if [ -d $installdir/$gitclonedir ]; then
             newline
@@ -662,7 +662,7 @@ if confirm "Do you wish to continue?"; then
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
                 if [ -d $installdir/$repodir-backup ]; then
-                    rm -R $installdir/$repodir-old &> /dev/null
+                    echo $installdir/$repodir-old &> /dev/null
                     mv $installdir/$repodir-backup $installdir/$repodir-old &> /dev/null
                 fi
                 mv $installdir/$repodir $installdir/$repodir-backup &> /dev/null
@@ -674,7 +674,7 @@ if confirm "Do you wish to continue?"; then
                 warning "The $repodir directory already exists on your system!"
                 echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
-                rm -R $installdir/$repodir &> /dev/null
+                echo $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
                     cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
                 else
@@ -685,7 +685,7 @@ if confirm "Do you wish to continue?"; then
         newline
         success "Resources for your $productname were copied to"
         echo  "$installdir/"
-        rm -rf $TMPDIR
+        echo $TMPDIR
     fi
 
 # additional install
@@ -759,5 +759,6 @@ else
     echo "Aborting..."
     newline
 fi
+DISABLE
 
 exit 0
