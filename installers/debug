@@ -23,7 +23,7 @@ DISCLAIMER
 
 productname="product name" # the name of the product to install
 scriptname="script name" # the name of this script
-debugmode="no" # whether the script should use test Git user, branch and routines
+debugmode="yes" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -209,7 +209,7 @@ home_dir() {
         if [ $EUID -ne 0 ]; then
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
-            if $SUDO_USER; then
+            if [ $SUDO_USER ]; then
                 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
             else
                 warning "Running as root and no other sudo user available"
@@ -354,20 +354,24 @@ MAINSTART
 
 # intro message
 
-newline
-echo "This script will install everything needed to use"
-echo "the $topdir $productname"
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "\curl -sS https://get.pimoroni.com/$scriptname"
-newline
+if [ $debugmode != "no" ]; then
+    newline
+    echo "This script will install everything needed to use"
+    echo "the $topdir $productname"
+    newline
+    warning "--- Warning ---"
+    newline
+    echo "Always be careful when running scripts and commands"
+    echo "copied from the internet. Ensure they are from a"
+    echo "trusted source."
+    newline
+    echo "If you want to see what this script does before"
+    echo "running it, you should run:"
+    echo "\curl -sS https://get.pimoroni.com/$scriptname"
+    newline
+else
+    echo "debug mode enabled"
+fi
 
 # checks and init
 
