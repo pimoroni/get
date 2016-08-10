@@ -514,14 +514,17 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if ! $MIN_INSTALL;then
+DISABLE
+#    if ! $MIN_INSTALL;then
         if [ $localdir != "na" ]; then
             WORKING_DIR="$USER_HOME/$topdir/$localdir"
         else
             WORKING_DIR="$USER_HOME/$topdir"
         fi
         [ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
-    fi
+#   fi
+    echo $WORKING_DIR
+<<DISABLE
 
 # raspbian repo install
 
