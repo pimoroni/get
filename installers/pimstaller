@@ -152,7 +152,7 @@ home_dir() {
         if [ $EUID -ne 0 ]; then
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
-            if $SUDO_USER; then
+            if [ $SUDO_USER ]; then
                 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
             else
                 warning "Running as root and no other sudo user available"
