@@ -65,7 +65,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608102310
+# template 1608102335
 
 FORCE=$1
 DEVICE_TREE=true
@@ -380,7 +380,9 @@ os_check
 home_dir
 check_network
 
-echo $USER_HOME
+if [ $debugmode != "no" ]; then
+    echo $USER_HOME
+fi
 
 <<DISABLE
 if [ "$FORCE" != '-y' ]; then
@@ -507,17 +509,20 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     fi
-
 DISABLE
-#    if ! $MIN_INSTALL;then
+
+    if ! $MIN_INSTALL;then
         if [ $localdir != "na" ]; then
             installdir="$USER_HOME/$topdir/$localdir"
         else
             installdir="$USER_HOME/$topdir"
         fi
         [ -d $installdir ] || mkdir -p $installdir
-#   fi
-    echo $installdir
+    fi
+
+    if [ $debugmode != "no" ]; then
+        echo $installdir
+    fi
 
 <<DISABLE
 # raspbian repo install

@@ -65,7 +65,7 @@ moreaptdep=( "git" "puredata-core" ) # list of all the additional apt dependenci
 morepipdep=( "python-uinput" ) # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1607292320
+# template 1608102335
 
 FORCE=$1
 DEVICE_TREE=true
@@ -209,7 +209,7 @@ home_dir() {
         if [ $EUID -ne 0 ]; then
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         else
-            if $SUDO_USER; then
+            if [ $SUDO_USER ]; then
                 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
             else
                 warning "Running as root and no other sudo user available"
@@ -222,6 +222,12 @@ home_dir() {
         else
             USER_HOME=$(dscl . -read /Users/$SUDO_USER NFSHomeDirectory | cut -d: -f2)
         fi
+    fi
+}
+
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
     fi
 }
 
@@ -354,20 +360,24 @@ MAINSTART
 
 # intro message
 
-newline
-echo "This script will install everything needed to use"
-echo "the $topdir $productname"
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "\curl -sS https://get.pimoroni.com/$scriptname"
-newline
+if [ $debugmode != "no" ]; then
+    warning "debug mode enabled"
+else
+    newline
+    echo "This script will install everything needed to use"
+    echo "the $topdir $productname"
+    newline
+    warning "--- Warning ---"
+    newline
+    echo "Always be careful when running scripts and commands"
+    echo "copied from the internet. Ensure they are from a"
+    echo "trusted source."
+    newline
+    echo "If you want to see what this script does before"
+    echo "running it, you should run:"
+    echo "\curl -sS https://get.pimoroni.com/$scriptname"
+    newline
+fi
 
 # checks and init
 
@@ -375,6 +385,10 @@ arch_check
 os_check
 home_dir
 check_network
+
+if [ $debugmode != "no" ]; then
+    echo $USER_HOME
+fi
 
 if [ "$FORCE" != '-y' ]; then
     space_chk
@@ -503,11 +517,15 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL;then
         if [ $localdir != "na" ]; then
-            WORKING_DIR="$USER_HOME/$topdir/$localdir"
+            installdir="$USER_HOME/$topdir/$localdir"
         else
-            WORKING_DIR="$USER_HOME/$topdir"
+            installdir="$USER_HOME/$topdir"
         fi
-        [ -d $WORKING_DIR ] || mkdir -p $WORKING_DIR
+        [ -d $installdir ] || mkdir -p $installdir
+    fi
+
+    if [ $debugmode != "no" ]; then
+        echo $installdir
     fi
 
 # raspbian repo install
@@ -604,17 +622,17 @@ if confirm "Do you wish to continue?"; then
             gitclonedir=$gitreponame
         fi
         if [ $repoclean == "yes" ]; then
-            rm -Rf $WORKING_DIR/$gitclonedir
+            rm -Rf $installdir/$gitclonedir
         fi
-        if [ -d $WORKING_DIR/$gitclonedir ]; then
+        if [ -d $installdir/$gitclonedir ]; then
             newline
             echo "Github repo already present. Updating..."
-            cd $WORKING_DIR/$gitclonedir
+            cd $installdir/$gitclonedir
             git pull
         else
             newline
             echo "Cloning Github repo locally..."
-            cd $WORKING_DIR
+            cd $installdir
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -627,7 +645,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Installing library..."
         newline
-        cd $WORKING_DIR/$gitreponame/$libdir
+        cd $installdir/$gitreponame/$libdir
         if [ $pip2support == "yes" ] && command -v python > /dev/null; then
             sudo python ./setup.py install
         fi
@@ -647,34 +665,34 @@ if confirm "Do you wish to continue?"; then
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
         git clone --depth=1 https://github.com/$gitusername/$gitreponame
-        cd $WORKING_DIR
+        cd $installdir
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
-                if [ -d $WORKING_DIR/$repodir-backup ]; then
-                    rm -R $WORKING_DIR/$repodir-old &> /dev/null
-                    mv $WORKING_DIR/$repodir-backup $WORKING_DIR/$repodir-old &> /dev/null
+                if [ -d $installdir/$repodir-backup ]; then
+                    rm -R $installdir/$repodir-old &> /dev/null
+                    mv $installdir/$repodir-backup $installdir/$repodir-old &> /dev/null
                 fi
-                mv $WORKING_DIR/$repodir $WORKING_DIR/$repodir-backup &> /dev/null
+                mv $installdir/$repodir $installdir/$repodir-backup &> /dev/null
                 if [ $gitrepotop != "root" ]; then
-                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $WORKING_DIR/$repodir &> /dev/null
+                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
                 else
-                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir &> /dev/null
+                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
                 warning "The $repodir directory already exists on your system!"
                 echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
-                rm -R $WORKING_DIR/$repodir &> /dev/null
+                rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
-                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $WORKING_DIR/$repodir &> /dev/null
+                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
                 else
-                    cp -R $TMPDIR/$gitreponame/$repodir $WORKING_DIR/$repodir &> /dev/null
+                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
             fi
         done
         newline
         success "Resources for your $productname were copied to"
-        echo  "$WORKING_DIR/"
+        echo  "$installdir/"
         rm -rf $TMPDIR
     fi
 
