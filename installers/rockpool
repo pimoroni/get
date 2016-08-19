@@ -753,7 +753,7 @@ if confirm "Do you wish to continue?"; then
         newline
     else # custom block starts here
         newline
-        cd $WORKING_DIR/$gitclonedir
+        cd $installdir/$gitclonedir
         sudo bash ./install
         newline
         echo "Installing Flotilla Python API..."
