@@ -30,7 +30,7 @@ customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="no" # whether uart communication is required or not
-armv6="yes" # whether armv6 processors is supported or not
+armv6="no" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
 raspbianonly="yes" # whether the script is allowed to run on other OSes
@@ -65,7 +65,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608102335
+# template 1608232210
 
 FORCE=$1
 DEVICE_TREE=true
@@ -431,6 +431,20 @@ else
     fi
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+fi    
+
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
@@ -505,8 +519,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gitrepoclone != "yes" ]; then
 
-        echo "$productname includes a number of examples that you may wish to install."
-        echo "Performing a full install with ensure those examples are installed,"
+        echo "$productname comes with examples and documentation that you may wish to install."
+        echo "Performing a full install with ensure those resources are installed,"
         echo "along with all required dependencies. It may however take a while!"
         newline
 
@@ -756,15 +770,13 @@ if confirm "Do you wish to continue?"; then
         echo "Finalising Install..."
         newline
         sudo adduser pi bluetooth
-        newline        
-        if ! $IS_ARMv6; then
-            if confirm "Would you like to update to the latest version of blueman (recommended)"; then
-                newline
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $DEBDIR
-                wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
-                sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
-            fi
+        newline
+        if confirm "Would you like to update to the latest version of blueman (recommended)"; then
+            newline
+            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $DEBDIR
+            wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
+            sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
         fi
         sysclean
         newline
