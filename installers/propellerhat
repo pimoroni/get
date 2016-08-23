@@ -1,0 +1,792 @@
+#!/bin/bash
+
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+# script control variables
+
+productname="Propeller HAT" # the name of the product to install
+scriptname="propellerhat" # the name of this script
+debugmode="no" # whether the script should use test Git user, branch and routines
+forcesudo="no" # whether the script requires to be ran with root privileges
+promptreboot="no" # whether the script should always prompt user to reboot
+customcmd="no" # whether to execute commands specified before exit
+i2creq="no" # whether i2c interface is required or not
+spireq="no" # whether spi interface is required or not
+uartreq="yes" # whether uart communication is required or not
+armv6="no" # whether armv6 processors is supported or not
+armv7="yes" # whether armv7 processors is supported or not
+armv8="yes" # whether armv8 processors is supported or not
+raspbianonly="yes" # whether the script is allowed to run on other OSes
+squeezesupport="no" # whether Squeeze is supported or not
+wheezysupport="no" # whether Wheezy is supported or not
+jessiesupport="yes" # whether Jessie is supported or not
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
+pip2support="yes" # whether python2 is supported or not
+pip3support="no" # whether python3 is supported or not
+topdir="Pimoroni" # the name of the top level directory
+localdir="propellerhat" # the name of the dir for copy of examples
+gitreponame="propeller-hat" # the name of the git project repo
+gitusername="pimoroni" # the name of the git user to fetch repo from
+gitrepobranch="master" # repo branch to checkout
+gitrepotop="root" # the name of the dir to base repo from
+gitrepoclone="no" # whether the git repo is to be cloned locally
+gitclonedir="source" # the name of the local dir for repo
+repoclean="no"  # whether any git repo clone found should be cleaned up
+repoinstall="no" # whether the library should be installed from repo
+libdir="na" # subdirectory of library in repo
+copydir=( "documentation" ) # subdirectories to copy from repo
+pipdeplist=() # list of dependencies to source from pip
+pkgaptremove=() # list of conflicting apt packages to remove
+pkgdeplist1=() # list core dependencies
+pkgdeplist2=() # list python 2 dependencies
+pkgdeplist3=() # list python 3 dependencies
+pkgdeplist7=() # list dependencies for Wheezy only
+pkgdeplist8=() # list dependencies for Jessie only
+moreaptdep=( "git" ) # list of all the additional apt dependencies
+morepipdep=() # list of all the additional pip dependencies
+spacereq=150 # minimum size required on root partition in MB
+
+# template 1608232110
+
+FORCE=$1
+DEVICE_TREE=true
+ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+MIN_INSTALL=false
+REMOVE_PKG=false
+
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+RASPOOL="http://archive.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.uk.debian.org/debian/pool"
+
+# function define
+
+confirm() {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+    fi
+}
+
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+}
+
+success() {
+    echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+warning() {
+    echo "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+newline() {
+    echo ""
+}
+
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysupdate() {
+    sudo apt-get update
+}
+
+sysupgrade() {
+    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    newline
+    if prompt "Would you like to reboot now?"; then
+        sync
+        sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMv6=false
+
+    if uname -m | grep "armv6l" > /dev/null; then
+        IS_ARMv6=true
+    fi
+}
+
+os_check() {
+    IS_RASPBIAN=false
+    IS_MACOSX=false
+    IS_X86_64=false
+    IS_X86_32=false
+
+    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        IS_RASPBIAN=true
+    elif uname -s | grep "Darwin" > /dev/null; then
+        IS_MACOSX=true
+    elif uname -m | grep "x86_64" > /dev/null; then
+        IS_X86_64=true
+    else
+        IS_X86_32=true
+    fi
+}
+
+raspbian_check() {
+    IS_SQUEEZE=false
+    IS_WHEEZY=false
+    IS_JESSIE=false
+
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_JESSIE=true
+        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+            IS_WHEEZY=true
+        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
+            IS_SQUEEZE=true
+        else
+            echo "Unsupported distribution"
+            exit 1
+        fi
+    fi
+}
+
+raspbian_old() {
+    if $IS_SQUEEZE || $IS_WHEEZY ;then
+        true
+    else
+        false
+    fi
+}
+
+home_dir() {
+    if ! $IS_MACOSX; then
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            if [ $SUDO_USER ]; then
+                USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+            else
+                warning "Running as root and no other sudo user available"
+                exit 1
+            fi
+        fi
+    else
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
+        else
+            USER_HOME=$(dscl . -read /Users/$SUDO_USER NFSHomeDirectory | cut -d: -f2)
+        fi
+    fi
+}
+
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
+    fi
+}
+
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
+    fi
+}
+
+get_init_sys() {
+    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
+        SYSTEMD=1
+    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
+        SYSTEMD=0
+    else
+        echo "Unrecognised init system" && exit 1
+    fi
+}
+
+i2c_vc_dtparam() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
+            newline
+            echo "i2c0 bus already active"
+        else
+            newline
+            echo "Enabling i2c0 bus in $CONFIG"
+            echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG
+            newline
+        fi
+    fi
+}
+
+usb_max_power() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+            newline
+            echo "Max USB current setting already active"
+        else
+            newline
+            echo "Adjusting USB current setting in $CONFIG"
+            echo "max_usb_current=1" | sudo tee -a $CONFIG
+            newline
+        fi
+    fi
+}
+
+force_hdmi() {
+    if $IS_RASPBIAN; then
+        if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
+        else
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
+            ASK_TO_REBOOT=true
+        fi
+    fi
+}
+
+space_chk() {
+    if command -v stat > /dev/null && ! $IS_MACOSX; then
+        if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+            newline
+            warning  "There is not enough space left to proceed with  installation"
+            if confirm "Would you like to attempt to expand your filesystem?"; then
+                \curl -sS https://get.pimoroni.com/expandfs | sudo bash
+                exit 1
+            else
+                newline
+                exit 1
+            fi
+        fi
+    fi
+}
+
+check_network() {
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
+}
+
+apt_pkg_req() {
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+apt_pkg_install() {
+    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
+}
+
+pip_pkg_req() {
+    PIP_CHK=$(pip search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip_chk_pip3() {
+    if command -v pip3 > /dev/null; then
+        PIP3_BIN="pip3"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip-3.2"
+    else
+        PIP3_BIN=""
+    fi
+}
+
+pip_pkg_req3() {
+    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+: <<'MAINSTART'
+
+Perform all variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+# intro message
+
+if [ $debugmode != "no" ]; then
+    warning "debug mode enabled"
+else
+    newline
+    echo "This script will install everything needed to use"
+    echo "the $topdir $productname"
+    newline
+    warning "--- Warning ---"
+    newline
+    echo "Always be careful when running scripts and commands"
+    echo "copied from the internet. Ensure they are from a"
+    echo "trusted source."
+    newline
+    echo "If you want to see what this script does before"
+    echo "running it, you should run:"
+    echo "\curl -sS https://get.pimoroni.com/$scriptname"
+    newline
+fi
+
+# checks and init
+
+arch_check
+os_check
+home_dir
+check_network
+
+if [ $debugmode != "no" ]; then
+    echo $USER_HOME
+fi
+
+if [ "$FORCE" != '-y' ]; then
+    space_chk
+fi
+
+if $IS_RASPBIAN; then
+    raspbian_check
+    if [ $squeezesupport == "no" ] && $IS_SQUEEZE; then
+        newline
+        warning "--- Warning ---"
+        newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/$gitusername/$gitreponame"
+        echo "for additional information and support"
+        newline
+        exit 1
+    elif [ $wheezysupport == "no" ] && $IS_WHEEZY; then
+        newline
+        warning "--- Warning ---"
+        newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/$gitusername/$gitreponame"
+        echo "for additional information and support"
+        newline
+        exit 1
+    fi
+elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
+    warning "Please only run this script on Raspbian on your Raspberry Pi"
+    newline
+    exit 1
+else
+    if [ $debugmode != "no" ]; then
+        newline
+        echo "IS_RASPBIAN is $IS_RASPBIAN"
+        echo "IS_MACOSX is $IS_MACOSX"
+        echo "IS_X86_64 is $IS_X86_64"
+        echo "IS_X86_32 is $IS_X86_32"
+    fi
+fi
+
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+if $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+fi    
+
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
+
+if [ $pipoverride == "yes" ]; then
+    debpackage="na"
+else
+    piplibname="na"
+fi
+
+if [ $debugmode != "no" ]; then
+    gitusername="$debugmode"
+    gitrepobranch="testing"
+    newline
+    warning "debug mode: $gitusername user and $gitrepobranch branch"
+fi
+
+if [ $i2creq == "yes" ]; then
+    echo "Note: $productname requires I2C communication"
+    newline
+fi
+if [ $spireq == "yes" ]; then
+    echo "Note: $productname requires SPI communication"
+    newline
+fi
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!"
+    newline
+fi
+
+if confirm "Do you wish to continue?"; then
+
+# hardware setup
+
+    newline
+    echo "Checking hardware requirements..."
+
+    if [ $uartreq == "yes" ]; then
+        newline
+        echo "The serial console must be disabled for $productname to work"
+        \curl -sS https://get.pimoroni.com/uarton | sudo bash -s - "-y"
+        ASK_TO_REBOOT=true
+        newline
+    fi
+
+    if [ $spireq == "yes" ]; then
+        newline
+        if ls /dev/spi* &> /dev/null; then
+            success "SPI already enabled"
+        else
+            echo "SPI must be enabled for $productname to work"
+            \curl -sS https://get.pimoroni.com/spi | sudo bash -s - "-y"
+            ASK_TO_REBOOT=true
+        fi
+    fi
+
+    if [ $i2creq == "yes" ]; then
+        newline
+        if ls /dev/i2c* &> /dev/null; then
+            success "I2C already enabled"
+        else
+            echo "I2C must be enabled for $productname to work"
+            \curl -sS https://get.pimoroni.com/i2c | sudo bash -s - "-y"
+            ASK_TO_REBOOT=true
+        fi
+    fi
+    success "Done!"
+    newline
+
+# minimum install routine
+
+    if [ $gitrepoclone != "yes" ]; then
+
+        echo "$productname includes a number of examples that you may wish to install."
+        echo "Performing a full install with ensure those examples are installed,"
+        echo "along with all required dependencies. It may however take a while!"
+        newline
+
+        if ! confirm "Do you wish to perform a full install?"; then
+            MIN_INSTALL=true
+        fi
+    fi
+
+    if ! $MIN_INSTALL;then
+        if [ $localdir != "na" ]; then
+            installdir="$USER_HOME/$topdir/$localdir"
+        else
+            installdir="$USER_HOME/$topdir"
+        fi
+        [ -d $installdir ] || mkdir -p $installdir
+    fi
+
+    if [ $debugmode != "no" ]; then
+        echo $installdir
+    fi
+
+# raspbian repo install
+
+    echo "Checking install requirements..."
+
+    if command -v apt-get > /dev/null; then
+        newline
+        echo "Updating package indexes..."
+        sysupdate
+        newline
+        echo "Checking for dependencies..."
+
+        if $REMOVE_PKG; then
+            for pkgrm in ${pkgaptremove[@]}; do
+                warning "Installed package conflicts with requirements"
+                sudo apt-get remove "$pkgrm"
+            done
+        fi
+
+        pkgdeplist=( "${pkgdeplist1[@]}" "${pkgdeplist2[@]}" "${pkgdeplist3[@]}" )
+
+        for pkgdep in ${pkgdeplist[@]}; do
+            if apt_pkg_req "$pkgdep"; then
+                apt_pkg_install "$pkgdep"
+            fi
+        done
+        if raspbian_old; then
+            for pkgdep in ${pkgdeplist7[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
+        else
+            for pkgdep in ${pkgdeplist8[@]}; do
+                if apt_pkg_req "$pkgdep"; then
+                    apt_pkg_install "$pkgdep"
+                fi
+            done
+        fi
+        if [ $debpackage != "na" ]; then
+            apt_pkg_install "$debpackage"
+        fi
+        success "Done!"
+    fi
+
+# pypi repo install
+
+    pip_chk_pip3
+
+    for pipdep in ${pipdeplist[@]}
+        do if pip_pkg_req "$pipdep"; then
+            if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo pip install "$pipdep"
+            fi
+            if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+        sudo $PIP3_BIN install "$pipdep"
+            fi
+        fi
+    done
+
+    if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
+        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+            if command -v pip > /dev/null; then
+                newline
+                echo "Installing $productname library for Python 2..."
+                newline
+                if ! sudo pip install $piplibname -I; then
+                    warning "Python 2 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit 1
+                fi
+                success "Done!"
+            fi
+        fi
+        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+            if [ -n "$PIP3_BIN" ]; then
+                newline
+                echo "Installing $productname library for Python 3..."
+                newline
+                    if ! sudo $PIP3_BIN install $piplibname -I; then
+                        warning "Python 3 library install failed!"
+                    echo "If problems persist, visit forums.pimoroni.com for support"
+                    exit 1
+                fi
+            fi
+        fi
+    fi
+
+# git repo install
+
+    if [ $gitrepoclone == "yes" ]; then
+        if [ $gitclonedir == "source" ]; then
+            gitclonedir=$gitreponame
+        fi
+        if [ $repoclean == "yes" ]; then
+            rm -Rf $installdir/$gitclonedir
+        fi
+        if [ -d $installdir/$gitclonedir ]; then
+            newline
+            echo "Github repo already present. Updating..."
+            cd $installdir/$gitclonedir
+            git pull
+        else
+            newline
+            echo "Cloning Github repo locally..."
+            cd $installdir
+            if [ $gitrepobranch != "master" ]; then
+                git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
+            else
+                git clone --depth=1 https://github.com/$gitusername/$gitreponame $gitclonedir
+            fi
+        fi
+    fi
+
+    if [ $repoinstall == "yes" ]; then
+        newline
+        echo "Installing library..."
+        newline
+        cd $installdir/$gitreponame/$libdir
+        if [ $pip2support == "yes" ] && command -v python > /dev/null; then
+            sudo python ./setup.py install
+        fi
+        if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+            sudo python3 ./setup.py install
+        fi
+        newline
+        success "Done!"
+    fi
+
+# resources install
+
+    if ! $MIN_INSTALL && [ -n "$copydir" ]; then
+        newline
+        echo "Downloading examples and documentation..."
+        newline
+        TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $TMPDIR
+        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        cd $installdir
+        for repodir in ${copydir[@]}; do
+            if [ -d $repodir ] && [ $repodir != "documentation" ]; then
+                newline
+                if [ -d $installdir/$repodir-backup ]; then
+                    rm -R $installdir/$repodir-old &> /dev/null
+                    mv $installdir/$repodir-backup $installdir/$repodir-old &> /dev/null
+                fi
+                mv $installdir/$repodir $installdir/$repodir-backup &> /dev/null
+                if [ $gitrepotop != "root" ]; then
+                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
+                else
+                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
+                fi
+                warning "The $repodir directory already exists on your system!"
+                echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
+            else
+                rm -R $installdir/$repodir &> /dev/null
+                if [ $gitrepotop != "root" ]; then
+                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
+                else
+                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
+                fi
+            fi
+        done
+        newline
+        success "Resources for your $productname were copied to"
+        echo  "$installdir/"
+        rm -rf $TMPDIR
+    fi
+
+# additional install
+
+    if ! $MIN_INSTALL; then
+        newline
+        echo "Checking for additional software..."
+
+        moredepreq=false
+
+        for moredep in ${moreaptdep[@]}
+            do if apt_pkg_req "$moredep"; then
+                moredepreq=true
+            fi
+            done
+        for moredep in ${morepipdep[@]}
+            do if pip_pkg_req "$moredep"; then
+                moredepreq=true
+            fi
+            done
+
+        if $moredepreq; then
+            newline
+            echo "Some $productname examples/plugins"
+            echo "require additional software and/or modules"
+            if confirm "Would you like to install them now?"; then
+                for moredep in ${moreaptdep[@]}; do
+                    if apt_pkg_req "$moredep"; then
+                        apt_pkg_install "$moredep"
+                    fi
+                done
+                for moredep in ${morepipdep[@]}; do
+                    if pip_pkg_req "$moredep"; then
+                        sudo pip install "$moredep"
+                        sudo $PIP3_BIN install "$moredep"
+                    fi
+                done
+            fi
+        else
+            success "Done!"
+        fi
+    fi
+
+# script custom routines
+
+    if [ $customcmd == "no" ]; then
+        if [ -n "$pkgaptremove" ]; then
+            newline
+            echo "Finalising Install..."
+            newline
+            sysclean
+        fi
+        newline
+        success "All done!"
+        newline
+        echo "Enjoy your $productname!"
+        newline
+    else # custom block starts here
+        newline
+        echo "Finalising Install..."
+        newline
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb
+                sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
+        sysclean
+        newline
+        success "All done!"
+        newline
+    fi
+
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+        newline
+    fi
+else
+    newline
+    echo "Aborting..."
+    newline
+fi
+
+exit 0
