@@ -21,15 +21,15 @@ DISCLAIMER
 
 # script control variables
 
-productname="Bluetooth" # the name of the product to install
-scriptname="bluetooth" # the name of this script
+productname="Propeller HAT" # the name of the product to install
+scriptname="propellerhat" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
-uartreq="no" # whether uart communication is required or not
+uartreq="yes" # whether uart communication is required or not
 armv6="no" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -40,11 +40,11 @@ jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="na" # whether python2 is supported or not
-pip3support="na" # whether python3 is supported or not
+pip2support="yes" # whether python2 is supported or not
+pip3support="no" # whether python3 is supported or not
 topdir="Pimoroni" # the name of the top level directory
-localdir="na" # the name of the dir for copy of examples
-gitreponame="na" # the name of the git project repo
+localdir="propellerhat" # the name of the dir for copy of examples
+gitreponame="propeller-hat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -53,15 +53,15 @@ gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
-copydir=() # subdirectories to copy from repo
+copydir=( "documentation" ) # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist1=( "pi-bluetooth" "blueman" "bluez-tools" "bluez-obexd" "network-manager" "notification-daemon" ) # list core dependencies
-pkgdeplist2=( "python-dbus" "python-gi-cairo" ) # list python 2 dependencies
-pkgdeplist3=( "python3-dbus" "python3-gi-cairo" ) # list python 3 dependencies
+pkgdeplist1=( "libftdi1" "libqt5gui5" "libqt5serialport5" "libqt5widgets5" ) # list core dependencies
+pkgdeplist2=() # list python 2 dependencies
+pkgdeplist3=() # list python 3 dependencies
 pkgdeplist7=() # list dependencies for Wheezy only
 pkgdeplist8=() # list dependencies for Jessie only
-moreaptdep=() # list of all the additional apt dependencies
+moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
@@ -769,15 +769,10 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         newline
-        sudo adduser pi bluetooth
-        newline
-        if confirm "Would you like to update to the latest version of blueman (recommended)"; then
-            newline
-            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-            cd $DEBDIR
-            wget $DEBPOOL/main/b/blueman/blueman_2.0.3-1~bpo8+1_armhf.deb
-            sudo dpkg -i $DEBDIR/blueman_2.0.3-1~bpo8+1_armhf.deb
-        fi
+        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $DEBDIR
+        wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb &> /dev/null
+        sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
         sysclean
         newline
         success "All done!"
