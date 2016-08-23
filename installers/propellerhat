@@ -65,7 +65,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608232110
+# template 1608232120
 
 FORCE=$1
 DEVICE_TREE=true
@@ -439,7 +439,7 @@ elif $IS_ARMv7 && [ $armv7 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
-if $IS_ARMv6 && [ $armv6 == "no" ]; then
+else $IS_ARMv6 && [ $armv6 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
@@ -769,10 +769,10 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         newline
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $DEBDIR
-                wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb
-                sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
+        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $DEBDIR
+        wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb
+        sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
         sysclean
         newline
         success "All done!"
