@@ -26,7 +26,7 @@ scriptname="propellerhat" # the name of this script
 debugmode="no" # whether the script should use test Git user, branch and routines
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
 uartreq="yes" # whether uart communication is required or not
@@ -65,7 +65,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608232120
+# template 1608232125
 
 FORCE=$1
 DEVICE_TREE=true
@@ -519,8 +519,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gitrepoclone != "yes" ]; then
 
-        echo "$productname includes a number of examples that you may wish to install."
-        echo "Performing a full install with ensure those examples are installed,"
+        echo "$productname comes with examples and documentation that you may wish to install."
+        echo "Performing a full install with ensure those resources are installed,"
         echo "along with all required dependencies. It may however take a while!"
         newline
 
