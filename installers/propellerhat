@@ -439,7 +439,7 @@ elif $IS_ARMv7 && [ $armv7 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
-else $IS_ARMv6 && [ $armv6 == "no" ]; then
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
