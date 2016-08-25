@@ -67,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250305
+# template 1608250310
 
 FORCE=$1
 DEVICE_TREE=true
@@ -366,8 +366,9 @@ if [ $debugmode != "no" ]; then
     gitusername="$debuguser"
     gitrepobranch="$debugtag"
     newline
-    warning "debug mode enabled"
+    warning "DEBUG MODE ENABLED"
     warning "git user $gitusername and $gitrepobranch branch/tag will be used"
+    newline
 else
     newline
     echo "This script will install everything needed to use"
@@ -538,7 +539,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $debugmode != "no" ]; then
-        echo $installdir
+        echo "INSTALLDIR is $installdir"
     fi
 
 # raspbian repo install
