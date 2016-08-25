@@ -24,14 +24,14 @@ DISCLAIMER
 productname="PackThing" # the name of the product to install
 scriptname="packthing" # the name of this script
 debugmode="yes" # whether the script should use debug routines
-debuguser="RogueM" # test git user in debug mode
+debuguser="0.38.5" # test git user in debug mode
 debugtag="testing" # test git repo branch or tag
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
-uartreq="yes" # whether uart communication is required or not
+uartreq="no" # whether uart communication is required or not
 armv6="no" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -772,9 +772,10 @@ if confirm "Do you wish to continue?"; then
         newline
     else # custom block starts here
         newline
-        echo "Finalising Install..."
+        echo "Building..."
         newline
-        warning "Don't forget to checkout the release tag needed!"
+        cd $installdir
+        packthing --arch=armhf deb
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
