@@ -368,9 +368,6 @@ if [ $debugmode != "no" ]; then
     newline
     warning "debug mode enabled"
     warning "git user $gitusername and $gitrepobranch branch/tag will be used"
-fi
-
-
 else
     newline
     echo "This script will install everything needed to use"
