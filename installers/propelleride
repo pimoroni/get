@@ -23,13 +23,15 @@ DISCLAIMER
 
 productname="PackThing" # the name of the product to install
 scriptname="packthing" # the name of this script
-debugmode="yes" # whether the script should use test Git user, branch and routines
+debugmode="no" # whether the script should use debug routines
+debuguser="none" # optional test git user to use in debug mode
+debugpoint="0.38.5" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 i2creq="no" # whether i2c interface is required or not
 spireq="no" # whether spi interface is required or not
-uartreq="yes" # whether uart communication is required or not
+uartreq="no" # whether uart communication is required or not
 armv6="no" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -38,11 +40,11 @@ squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="no" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
-piplibname="packthing" # the name of the lib in pip repo
+piplibname="na" #"packthing" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
-topdir="PropellerIDE" # the name of the top level directory
+topdir="Parallax" # the name of the top level directory
 localdir="na" # the name of the dir for copy of examples
 gitreponame="PropellerIDE" # the name of the git project repo
 gitusername="parallaxinc" # the name of the git user to fetch repo from
@@ -56,8 +58,8 @@ libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 pipdeplist=() # list of dependencies to source from pip
 pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist1=( "git" "debhelper" "fpc" "imagemagick" "libftdi1" "qt5-default" "libqt5gui5" "libqt5serialport5" "libqt5widgets5" ) # list core dependencies
-pkgdeplist2=() # list python 2 dependencies
+pkgdeplist1=( "git" "debhelper" "fpc" "imagemagick" "libftdi1" "qt5-default" "libqt5gui5" "libqt5serialport5-dev" "libqt5widgets5" ) # list core dependencies
+pkgdeplist2=( "python-yaml" ) # list python 2 dependencies
 pkgdeplist3=() # list python 3 dependencies
 pkgdeplist7=() # list dependencies for Wheezy only
 pkgdeplist8=() # list dependencies for Jessie only
@@ -65,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608232210
+# template 1608250425
 
 FORCE=$1
 DEVICE_TREE=true
@@ -361,7 +363,16 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
-    warning "debug mode enabled"
+    if [ $debuguser != "none" ]; then
+        gitusername="$debuguser"
+    fi
+    if [ $debugpoint != "none" ]; then
+        gitrepobranch="$debugpoint"
+    fi
+    newline
+    warning "DEBUG MODE ENABLED"
+    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
+    newline
 else
     newline
     echo "This script will install everything needed to use"
@@ -387,7 +398,8 @@ home_dir
 check_network
 
 if [ $debugmode != "no" ]; then
-    echo $USER_HOME
+    echo "USER_HOME is $USER_HOME"
+    newline
 fi
 
 if [ "$FORCE" != '-y' ]; then
@@ -453,13 +465,6 @@ if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
     piplibname="na"
-fi
-
-if [ $debugmode != "no" ]; then
-    gitusername="$debugmode"
-    gitrepobranch="testing"
-    newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then
@@ -539,7 +544,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $debugmode != "no" ]; then
-        echo $installdir
+        echo "INSTALLDIR is $installdir"
     fi
 
 # raspbian repo install
@@ -647,6 +652,10 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Cloning Github repo locally..."
             cd $installdir
+            if [ $debugmode != "no" ]; then
+                echo "git user name is $gitusername"
+                echo "git repo name is $gitreponame"
+            fi        
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -767,9 +776,10 @@ if confirm "Do you wish to continue?"; then
         newline
     else # custom block starts here
         newline
-        echo "Finalising Install..."
+        echo "Building..."
         newline
-        warning "Don't forget to checkout the release tag needed!"
+        cd $installdir/$gitclonedir
+        sudo packthing --arch=armhf deb
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
