@@ -23,8 +23,9 @@ DISCLAIMER
 
 productname="PackThing" # the name of the product to install
 scriptname="packthing" # the name of this script
-debugmode="yes" # whether the script should use test git user, branch and routines
+debugmode="yes" # whether the script should use debug routines
 debuguser="RogueM" # test git user in debug mode
+debugtag="testing" # test git repo branch or tag
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
@@ -66,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250245
+# template 1608250305
 
 FORCE=$1
 DEVICE_TREE=true
@@ -362,7 +363,14 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
+    gitusername="$debuguser"
+    gitrepobranch="$debugtag"
+    newline
     warning "debug mode enabled"
+    warning "git user $gitusername and $gitrepobranch branch/tag will be used"
+fi
+
+
 else
     newline
     echo "This script will install everything needed to use"
@@ -454,13 +462,6 @@ if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
     piplibname="na"
-fi
-
-if [ $debugmode != "no" ]; then
-    gitusername="$debuguser"
-    gitrepobranch="testing"
-    newline
-    warning "debug mode: git user $gitusername and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then
