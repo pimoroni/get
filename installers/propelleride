@@ -44,7 +44,7 @@ piplibname="packthing==0.2.3" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
-topdir="PropellerIDE" # the name of the top level directory
+topdir="Parallax" # the name of the top level directory
 localdir="na" # the name of the dir for copy of examples
 gitreponame="PropellerIDE" # the name of the git project repo
 gitusername="parallaxinc" # the name of the git user to fetch repo from
@@ -774,8 +774,7 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Building..."
         newline
-        cd $installdir
-        echo $installdir
+        cd $installdir/$gitclonedir
         packthing --arch=armhf deb
     fi
 
