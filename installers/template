@@ -460,7 +460,7 @@ if [ $debugmode != "no" ]; then
     gitusername="$debuguser"
     gitrepobranch="testing"
     newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
+    warning "debug mode: git user $gitusername and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then

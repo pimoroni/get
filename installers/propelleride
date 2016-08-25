@@ -39,7 +39,7 @@ squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="no" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
-piplibname="na" #"packthing" # the name of the lib in pip repo
+piplibname="packthing==0.2.3" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
@@ -460,7 +460,7 @@ if [ $debugmode != "no" ]; then
     gitusername="$debuguser"
     gitrepobranch="testing"
     newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
+    warning "debug mode: git user $gitusername and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then
