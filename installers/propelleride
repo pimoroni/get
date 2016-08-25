@@ -23,7 +23,8 @@ DISCLAIMER
 
 productname="PackThing" # the name of the product to install
 scriptname="packthing" # the name of this script
-debugmode="yes" # whether the script should use test Git user, branch and routines
+debugmode="yes" # whether the script should use test git user, branch and routines
+debuguser="RogueM" # test git user in debug mode
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
@@ -38,7 +39,7 @@ squeezesupport="no" # whether Squeeze is supported or not
 wheezysupport="no" # whether Wheezy is supported or not
 jessiesupport="yes" # whether Jessie is supported or not
 debpackage="na" # the name of the package in apt repo
-piplibname="packthing" # the name of the lib in pip repo
+piplibname="na" #"packthing" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported or not
 pip3support="no" # whether python3 is supported or not
@@ -65,7 +66,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608232210
+# template 1608250245
 
 FORCE=$1
 DEVICE_TREE=true
@@ -456,7 +457,7 @@ else
 fi
 
 if [ $debugmode != "no" ]; then
-    gitusername="$debugmode"
+    gitusername="$debuguser"
     gitrepobranch="testing"
     newline
     warning "debug mode: $gitusername user and $gitrepobranch branch"
