@@ -367,7 +367,7 @@ if [ $debugmode != "no" ]; then
     gitrepobranch="$debugtag"
     newline
     warning "DEBUG MODE ENABLED"
-    warning "git user $gitusername and $gitrepobranch branch/tag will be used"
+    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
     newline
 else
     newline
@@ -395,6 +395,7 @@ check_network
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME"
+    newline
 fi
 
 if [ "$FORCE" != '-y' ]; then
