@@ -24,8 +24,8 @@ DISCLAIMER
 productname="PackThing" # the name of the product to install
 scriptname="packthing" # the name of this script
 debugmode="yes" # whether the script should use debug routines
-debuguser="0.38.5" # test git user in debug mode
-debugtag="testing" # test git repo branch or tag
+debuguser="RogueM" # test git user in debug mode
+debugtag="0.38.5" # test git repo branch or tag
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
