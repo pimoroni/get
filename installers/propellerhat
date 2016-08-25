@@ -771,8 +771,9 @@ if confirm "Do you wish to continue?"; then
         newline
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
-        wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb &> /dev/null
-        sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
+        wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.38.5-armhf.deb &> /dev/null
+        sudo dpkg -i $DEBDIR/propelleride-0.38.5-armhf.deb
+        sudo rm /usr/bin/bstc && sudo rm /usr/bin/bstl
         sysclean
         newline
         success "All done!"
