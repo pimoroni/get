@@ -67,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250410
+# template 1608250425
 
 FORCE=$1
 DEVICE_TREE=true
