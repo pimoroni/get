@@ -67,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250320
+# template 1608250325
 
 FORCE=$1
 DEVICE_TREE=true
@@ -649,7 +649,7 @@ if confirm "Do you wish to continue?"; then
             echo "Cloning Github repo locally..."
             cd $installdir
             if [ $debugmode != "no" ]; then
-                echo "git user name is $$gitusername"
+                echo "git user name is $gitusername"
                 echo "git repo name is $gitreponame"
             fi        
             if [ $gitrepobranch != "master" ]; then
