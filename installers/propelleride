@@ -67,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250325
+# template 1608250340
 
 FORCE=$1
 DEVICE_TREE=true
@@ -775,6 +775,7 @@ if confirm "Do you wish to continue?"; then
         echo "Building..."
         newline
         cd $installdir
+        echo $installdir
         packthing --arch=armhf deb
     fi
 
