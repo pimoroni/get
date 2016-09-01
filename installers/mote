@@ -23,7 +23,9 @@ DISCLAIMER
 
 productname="Mote" # the name of the product to install
 scriptname="mote" # the name of this script
-debugmode="no" # whether the script should use test Git user, branch and routines
+debugmode="no" # whether the script should use debug routines
+debuguser="none" # optional test git user to use in debug mode
+debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -65,7 +67,7 @@ moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the addi
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1608102335
+# template 1609012005
 
 FORCE=$1
 DEVICE_TREE=true
@@ -361,7 +363,16 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
-    warning "debug mode enabled"
+    if [ $debuguser != "none" ]; then
+        gitusername="$debuguser"
+    fi
+    if [ $debugpoint != "none" ]; then
+        gitrepobranch="$debugpoint"
+    fi
+    newline
+    warning "DEBUG MODE ENABLED"
+    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
+    newline
 else
     newline
     echo "This script will install everything needed to use"
@@ -387,7 +398,8 @@ home_dir
 check_network
 
 if [ $debugmode != "no" ]; then
-    echo $USER_HOME
+    echo "USER_HOME is $USER_HOME"
+    newline
 fi
 
 if [ "$FORCE" != '-y' ]; then
@@ -431,6 +443,20 @@ else
     fi
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+fi    
+
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
@@ -439,13 +465,6 @@ if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
     piplibname="na"
-fi
-
-if [ $debugmode != "no" ]; then
-    gitusername="$debugmode"
-    gitrepobranch="testing"
-    newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then
@@ -505,8 +524,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gitrepoclone != "yes" ]; then
 
-        echo "$productname includes a number of examples that you may wish to install."
-        echo "Performing a full install with ensure those examples are installed,"
+        echo "$productname comes with examples and documentation that you may wish to install."
+        echo "Performing a full install with ensure those resources are installed,"
         echo "along with all required dependencies. It may however take a while!"
         newline
 
@@ -525,7 +544,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $debugmode != "no" ]; then
-        echo $installdir
+        echo "INSTALLDIR is $installdir"
     fi
 
 # raspbian repo install
@@ -593,7 +612,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 2..."
                 newline
-                if ! sudo pip install $piplibname -I; then
+                if ! sudo pip install $piplibname -U; then
                     warning "Python 2 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -606,7 +625,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 3..."
                 newline
-                    if ! sudo $PIP3_BIN install $piplibname -I; then
+                    if ! sudo $PIP3_BIN install $piplibname -U; then
                         warning "Python 3 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -633,6 +652,10 @@ if confirm "Do you wish to continue?"; then
             newline
             echo "Cloning Github repo locally..."
             cd $installdir
+            if [ $debugmode != "no" ]; then
+                echo "git user name is $gitusername"
+                echo "git repo name is $gitreponame"
+            fi        
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -717,21 +740,17 @@ if confirm "Do you wish to continue?"; then
 
         if $moredepreq; then
             newline
-            echo "Some $productname examples/plugins"
-            echo "require additional software and/or modules"
-            if confirm "Would you like to install them now?"; then
-                for moredep in ${moreaptdep[@]}; do
-                    if apt_pkg_req "$moredep"; then
-                        apt_pkg_install "$moredep"
-                    fi
-                done
-                for moredep in ${morepipdep[@]}; do
-                    if pip_pkg_req "$moredep"; then
-                        sudo pip install "$moredep"
-                        sudo $PIP3_BIN install "$moredep"
-                    fi
-                done
-            fi
+            for moredep in ${moreaptdep[@]}; do
+                if apt_pkg_req "$moredep"; then
+                    apt_pkg_install "$moredep"
+                fi
+            done
+            for moredep in ${morepipdep[@]}; do
+                if pip_pkg_req "$moredep"; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+            done
         else
             success "Done!"
         fi

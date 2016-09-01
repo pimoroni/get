@@ -67,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608250425
+# template 1609012005
 
 FORCE=$1
 DEVICE_TREE=true
@@ -612,7 +612,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 2..."
                 newline
-                if ! sudo pip install $piplibname -I; then
+                if ! sudo pip install $piplibname -U; then
                     warning "Python 2 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -625,7 +625,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 3..."
                 newline
-                    if ! sudo $PIP3_BIN install $piplibname -I; then
+                    if ! sudo $PIP3_BIN install $piplibname -U; then
                         warning "Python 3 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -740,21 +740,17 @@ if confirm "Do you wish to continue?"; then
 
         if $moredepreq; then
             newline
-            echo "Some $productname examples/plugins"
-            echo "require additional software and/or modules"
-            if confirm "Would you like to install them now?"; then
-                for moredep in ${moreaptdep[@]}; do
-                    if apt_pkg_req "$moredep"; then
-                        apt_pkg_install "$moredep"
-                    fi
-                done
-                for moredep in ${morepipdep[@]}; do
-                    if pip_pkg_req "$moredep"; then
-                        sudo pip install "$moredep"
-                        sudo $PIP3_BIN install "$moredep"
-                    fi
-                done
-            fi
+            for moredep in ${moreaptdep[@]}; do
+                if apt_pkg_req "$moredep"; then
+                    apt_pkg_install "$moredep"
+                fi
+            done
+            for moredep in ${morepipdep[@]}; do
+                if pip_pkg_req "$moredep"; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+            done
         else
             success "Done!"
         fi
