@@ -23,7 +23,9 @@ DISCLAIMER
 
 productname="productname" # the name of the product to install
 scriptname="scriptname" # the name of this script
-debugmode="yes" # whether the script should use test Git user, branch and routines
+debugmode="no" # whether the script should use debug routines
+debuguser="none" # optional test git user to use in debug mode
+debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
@@ -65,7 +67,7 @@ moreaptdep=() # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1608102335
+# template 1609012005
 
 FORCE=$1
 DEVICE_TREE=true
@@ -231,6 +233,12 @@ servd_trig() {
     fi
 }
 
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
+    fi
+}
+
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -355,7 +363,16 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
-    warning "debug mode enabled"
+    if [ $debuguser != "none" ]; then
+        gitusername="$debuguser"
+    fi
+    if [ $debugpoint != "none" ]; then
+        gitrepobranch="$debugpoint"
+    fi
+    newline
+    warning "DEBUG MODE ENABLED"
+    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
+    newline
 else
     newline
     echo "This script will install everything needed to use"
@@ -381,10 +398,10 @@ home_dir
 check_network
 
 if [ $debugmode != "no" ]; then
-    echo $USER_HOME
+    echo "USER_HOME is $USER_HOME"
+    newline
 fi
 
-<<DISABLE
 if [ "$FORCE" != '-y' ]; then
     space_chk
 fi
@@ -426,6 +443,20 @@ else
     fi
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline
+    exit 1
+fi    
+
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
@@ -434,13 +465,6 @@ if [ $pipoverride == "yes" ]; then
     debpackage="na"
 else
     piplibname="na"
-fi
-
-if [ $debugmode != "no" ]; then
-    gitusername="$debugmode"
-    gitrepobranch="testing"
-    newline
-    warning "debug mode: $gitusername user and $gitrepobranch branch"
 fi
 
 if [ $i2creq == "yes" ]; then
@@ -500,8 +524,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gitrepoclone != "yes" ]; then
 
-        echo "$productname includes a number of examples that you may wish to install."
-        echo "Performing a full install with ensure those examples are installed,"
+        echo "$productname comes with examples and documentation that you may wish to install."
+        echo "Performing a full install with ensure those resources are installed,"
         echo "along with all required dependencies. It may however take a while!"
         newline
 
@@ -509,7 +533,6 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     fi
-DISABLE
 
     if ! $MIN_INSTALL;then
         if [ $localdir != "na" ]; then
@@ -521,10 +544,9 @@ DISABLE
     fi
 
     if [ $debugmode != "no" ]; then
-        echo $installdir
+        echo "INSTALLDIR is $installdir"
     fi
 
-<<DISABLE
 # raspbian repo install
 
     echo "Checking install requirements..."
@@ -590,7 +612,7 @@ DISABLE
                 newline
                 echo "Installing $productname library for Python 2..."
                 newline
-                if ! sudo pip install $piplibname -I; then
+                if ! sudo pip install $piplibname -U; then
                     warning "Python 2 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -603,7 +625,7 @@ DISABLE
                 newline
                 echo "Installing $productname library for Python 3..."
                 newline
-                    if ! sudo $PIP3_BIN install $piplibname -I; then
+                    if ! sudo $PIP3_BIN install $piplibname -U; then
                         warning "Python 3 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -619,7 +641,7 @@ DISABLE
             gitclonedir=$gitreponame
         fi
         if [ $repoclean == "yes" ]; then
-            echo $installdir/$gitclonedir
+            rm -Rf $installdir/$gitclonedir
         fi
         if [ -d $installdir/$gitclonedir ]; then
             newline
@@ -630,6 +652,10 @@ DISABLE
             newline
             echo "Cloning Github repo locally..."
             cd $installdir
+            if [ $debugmode != "no" ]; then
+                echo "git user name is $gitusername"
+                echo "git repo name is $gitreponame"
+            fi        
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -667,7 +693,7 @@ DISABLE
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
                 newline
                 if [ -d $installdir/$repodir-backup ]; then
-                    echo $installdir/$repodir-old &> /dev/null
+                    rm -R $installdir/$repodir-old &> /dev/null
                     mv $installdir/$repodir-backup $installdir/$repodir-old &> /dev/null
                 fi
                 mv $installdir/$repodir $installdir/$repodir-backup &> /dev/null
@@ -679,7 +705,7 @@ DISABLE
                 warning "The $repodir directory already exists on your system!"
                 echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
-                echo $installdir/$repodir &> /dev/null
+                rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
                     cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
                 else
@@ -690,7 +716,7 @@ DISABLE
         newline
         success "Resources for your $productname were copied to"
         echo  "$installdir/"
-        echo $TMPDIR
+        rm -rf $TMPDIR
     fi
 
 # additional install
@@ -714,21 +740,17 @@ DISABLE
 
         if $moredepreq; then
             newline
-            echo "Some $productname examples/plugins"
-            echo "require additional software and/or modules"
-            if confirm "Would you like to install them now?"; then
-                for moredep in ${moreaptdep[@]}; do
-                    if apt_pkg_req "$moredep"; then
-                        apt_pkg_install "$moredep"
-                    fi
-                done
-                for moredep in ${morepipdep[@]}; do
-                    if pip_pkg_req "$moredep"; then
-                        sudo pip install "$moredep"
-                        sudo $PIP3_BIN install "$moredep"
-                    fi
-                done
-            fi
+            for moredep in ${moreaptdep[@]}; do
+                if apt_pkg_req "$moredep"; then
+                    apt_pkg_install "$moredep"
+                fi
+            done
+            for moredep in ${morepipdep[@]}; do
+                if pip_pkg_req "$moredep"; then
+                    sudo pip install "$moredep"
+                    sudo $PIP3_BIN install "$moredep"
+                fi
+            done
         else
             success "Done!"
         fi
@@ -764,6 +786,5 @@ else
     echo "Aborting..."
     newline
 fi
-DISABLE
 
 exit 0
