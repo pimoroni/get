@@ -21,11 +21,13 @@ DISCLAIMER
 
 productname="na" # the name of the product to install
 scriptname="audio" # the name of this script
-debugmode="no" # whether the script outputs debug level messages
+debugmode="no" # whether the script should use debug routines
+debuguser="none" # optional test git user to use in debug mode
+debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-raspbianonly="yes" # whether the script is allowed to run on other OSes
+raspbianonly="no" # whether the script is allowed to run on other OSes
 
 FORCE=$1
 DEVICE_TREE=true
