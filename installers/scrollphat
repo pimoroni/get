@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609030025
+# template 1609030035
 
 FORCE=$1
 DEVICE_TREE=true
@@ -525,7 +525,6 @@ if confirm "Do you wish to continue?"; then
             if apt_pkg_req "i2c-tools"; then
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $DEBDIR
-                http://archive.raspberrypi.org/debian/pool
                 wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1+svn-2_armhf.deb
                 sudo dpkg -i $DEBDIR/i2c-tools_3.1.1+svn-2_armhf.deb
             fi
