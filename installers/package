@@ -27,7 +27,7 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-raspbianonly="yes" # whether the script is allowed to run on other OSes
+raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" "Ubuntu" "Debian" ) # list all the os-releases supported
 
