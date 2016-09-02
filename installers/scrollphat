@@ -69,7 +69,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609021510
+# template 1609021525
 
 FORCE=$1
 DEVICE_TREE=true
@@ -504,21 +504,23 @@ if confirm "Do you wish to continue?"; then
     if [ $i2creq == "yes" ]; then
         newline
         if ! $IS_RASPBIAN; then
+            if apt_pkg_req "i2c-tools"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb &> /dev/null
+            fi
             if apt_pkg_req "python-smbus"; then
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb
-                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1-1_armhf.deb
-                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb
-                sudo dpkg -i $DEBDIR/python-smbus_3.1.1-1_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1-1_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python-smbus_3.1.1-1_armhf.deb &> /dev/null
             fi
             if apt_pkg_req "python3-smbus"; then
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                 cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb
-                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1-1_armhf.deb
-                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb
-                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1-1_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1-1_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1-1_armhf.deb &> /dev/null
             fi
         fi
         if ls /dev/i2c* &> /dev/null; then
