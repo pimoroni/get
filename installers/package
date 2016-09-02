@@ -27,7 +27,9 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-raspbianonly="no" # whether the script is allowed to run on other OSes
+raspbianonly="yes" # whether the script is allowed to run on other OSes
+macosxsupport="no" # whether Mac OS X is supported by the script
+osreleases=( "Raspbian" "Ubuntu" "Debian" ) # list all the os-releases supported
 
 FORCE=$1
 DEVICE_TREE=true
@@ -52,6 +54,15 @@ confirm() {
             false
         fi
     fi
+}
+
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
 }
 
 success() {
@@ -92,7 +103,7 @@ sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
     newline
-    if confirm "Would you like to reboot now?"; then
+    if prompt "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
@@ -109,17 +120,24 @@ arch_check() {
 os_check() {
     IS_RASPBIAN=false
     IS_MACOSX=false
-    IS_X86_64=false
-    IS_X86_32=false
+    IS_SUPPORTED=false
 
-    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
-        IS_RASPBIAN=true
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+            IS_RASPBIAN=true && IS_SUPPORTED=true
+        fi
+        if command -v apt-get &> /dev/null; then
+            for os in ${osreleases[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_SUPPORTED=true
+                fi
+            done
+        fi
     elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-    elif uname -m | grep "x86_64" > /dev/null; then
-        IS_X86_64=true
-    else
-        IS_X86_32=true
+        if [ $macosxsupport == "yes" ]; then
+            IS_SUPPORTED=true
+        fi
     fi
 }
 
@@ -162,18 +180,10 @@ os_check
 
 if $IS_RASPBIAN; then
     raspbian_check # insert any flavour specific routine in this scope
-elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
+elif ! $IS_SUPPORTED; then
+    warning "Your operating system is not supported, sorry!"
+    newline
     exit 1
-else
-    if [ $debugmode == "yes" ]; then
-        newline
-        echo "IS_RASPBIAN is $IS_RASPBIAN"
-        echo "IS_MACOSX is $IS_MACOSX"
-        echo "IS_X86_64 is $IS_X86_64"
-        echo "IS_X86_32 is $IS_X86_32"
-    fi
 fi
 
 if [ $forcesudo == "yes" ]; then
