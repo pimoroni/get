@@ -329,7 +329,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Sorry, Apt failed to install $1, I can't continue!" && exit 1; }
+    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Apt failed to install $1, I can't continue!"; }
 }
 
 pip_pkg_req() {
