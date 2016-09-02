@@ -69,7 +69,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609021525
+# template 1609021530
 
 FORCE=$1
 DEVICE_TREE=true
@@ -330,7 +330,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && $FAILED_PKG=true; }
+    \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true; }
 }
 
 pip_pkg_req() {
