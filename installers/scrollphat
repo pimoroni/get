@@ -69,7 +69,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609021355
+# template 1609021510
 
 FORCE=$1
 DEVICE_TREE=true
@@ -448,7 +448,7 @@ elif $IS_ARMv6 && [ $armv6 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
-fi    
+fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
@@ -502,6 +502,24 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2creq == "yes" ]; then
         newline
+        if ! $IS_RASPBIAN; then
+            if apt_pkg_req "python-smbus"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1-1_armhf.deb
+                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb
+                sudo dpkg -i $DEBDIR/python-smbus_3.1.1-1_armhf.deb
+            fi
+            if apt_pkg_req "python3-smbus"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1-1_armhf.deb
+                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb
+                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1-1_armhf.deb
+            fi
+        fi
         if ls /dev/i2c* &> /dev/null; then
             success "I2C already enabled"
         else
@@ -540,7 +558,7 @@ if confirm "Do you wish to continue?"; then
         echo "INSTALLDIR is $installdir"
     fi
 
-# raspbian repo install
+# apt repo install
 
     echo "Checking install requirements..."
 
