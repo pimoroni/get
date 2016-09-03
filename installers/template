@@ -543,7 +543,7 @@ if confirm "Do you wish to continue?"; then
                 wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
                 sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
                 if python3 --version | grep "3.5" > /dev/null; then
-                    cp /usr/lib/python3/dist-packages/smbus.cpython-34m-arm-linux-gnueabihf.so \
+                    sudo cp /usr/lib/python3/dist-packages/smbus.cpython-34m-arm-linux-gnueabihf.so \
                         /usr/lib/python3/dist-packages/smbus.cpython-35m-arm-linux-gnueabihf.so
                 fi
             fi
