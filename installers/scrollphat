@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609032335
+# template 1609040015
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -439,7 +439,11 @@ if ! $IS_ARMHF; then
     exit 1
 fi
 
-if ! $IS_SUPPORTED; then
+if [ $raspbianonly == "yes" ]; then
+    warning "Your operating system is not supported, sorry!"
+    newline
+    exit 1
+elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
     newline
     exit 1
