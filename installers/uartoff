@@ -249,8 +249,10 @@ if ! $IS_ARMHF; then
     exit 1
 fi
 
-if $IS_RASPBIAN; then
-    raspbian_check # insert any flavour specific routine in this scope
+if [ $raspbianonly == "yes" ]; then
+    warning "Your operating system is not supported, sorry!"
+    newline
+    exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
     newline
