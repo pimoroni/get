@@ -32,6 +32,7 @@ customcmd="no" # whether to execute commands specified before exit
 i2creq="yes" # whether i2c is required or not
 spireq="no" # whether spi is required or not
 uartreq="no" # whether uart communication is required or not
+armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors is supported or not
 armv7="yes" # whether armv7 processors is supported or not
 armv8="yes" # whether armv8 processors is supported or not
@@ -69,7 +70,7 @@ moreaptdep=( "git" "python-pil" "python-psutil" "python-feedparser" "python3-pil
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609021535
+# template 1609030145
 
 FORCE=$1
 DEVICE_TREE=true
@@ -86,7 +87,7 @@ INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
-RASPOOL="http://archive.raspbian.org/raspbian/pool"
+RASPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.uk.debian.org/debian/pool"
 
 # function define
@@ -158,10 +159,14 @@ sysreboot() {
 }
 
 arch_check() {
+    IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv6l" > /dev/null; then
-        IS_ARMv6=true
+    if uname -m | grep "armv.l" > /dev/null; then
+        IS_ARMHF=true
+        if uname -m | grep "armv6l" > /dev/null; then
+            IS_ARMv6=true
+        fi
     fi
 }
 
@@ -416,6 +421,12 @@ if [ "$FORCE" != '-y' ]; then
     space_chk
 fi
 
+if ! $IS_ARMHF; then
+    warning "This hardware is not supported, sorry!"
+    newline
+    exit 1
+fi
+
 if ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
     newline
@@ -503,32 +514,39 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2creq == "yes" ]; then
         newline
-        if ! $IS_RASPBIAN; then
-            if apt_pkg_req "i2c-tools"; then
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1-1_armhf.deb &> /dev/null
-                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1-1_armhf.deb &> /dev/null
-            fi
-            if apt_pkg_req "python-smbus"; then
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1-1_armhf.deb &> /dev/null
-                sudo dpkg -i $DEBDIR/python-smbus_3.1.1-1_armhf.deb &> /dev/null
-            fi
-            if apt_pkg_req "python3-smbus"; then
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1-1_armhf.deb &> /dev/null
-                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1-1_armhf.deb &> /dev/null
-            fi
-        fi
         if ls /dev/i2c* &> /dev/null; then
             success "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
             \curl -sS https://get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
+        fi
+        if ! $IS_RASPBIAN; then
+            newline
+            echo "Checking packages required by interface..."
+            newline
+            if apt_pkg_req "i2c-tools"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1+svn-2_armhf.deb
+            fi
+            if apt_pkg_req "python-smbus"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
+            fi
+            if apt_pkg_req "python3-smbus"; then
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
+                if python3 --version | grep "3.5" > /dev/null; then
+                    sudo cp /usr/lib/python3/dist-packages/smbus.cpython-34m-arm-linux-gnueabihf.so \
+                        /usr/lib/python3/dist-packages/smbus.cpython-35m-arm-linux-gnueabihf.so
+                fi
+            fi
         fi
     fi
     newline
@@ -610,10 +628,10 @@ if confirm "Do you wish to continue?"; then
     for pipdep in ${pipdeplist[@]}
         do if pip_pkg_req "$pipdep"; then
             if [ $pip2support == "yes" ] && command -v python > /dev/null; then
-            sudo pip install "$pipdep"
+            sudo -H pip install "$pipdep"
             fi
             if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
-        sudo $PIP3_BIN install "$pipdep"
+        sudo -H $PIP3_BIN install "$pipdep"
             fi
         fi
     done
@@ -624,7 +642,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 2..."
                 newline
-                if ! sudo pip install $piplibname -U; then
+                if ! sudo -H pip install $piplibname -U; then
                     warning "Python 2 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -636,7 +654,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 3..."
                 newline
-                    if ! sudo $PIP3_BIN install $piplibname -U; then
+                    if ! sudo -H $PIP3_BIN install $piplibname -U; then
                         warning "Python 3 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -666,7 +684,7 @@ if confirm "Do you wish to continue?"; then
             if [ $debugmode != "no" ]; then
                 echo "git user name is $gitusername"
                 echo "git repo name is $gitreponame"
-            fi        
+            fi
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
@@ -757,8 +775,8 @@ if confirm "Do you wish to continue?"; then
             done
             for moredep in ${morepipdep[@]}; do
                 if pip_pkg_req "$moredep"; then
-                    sudo pip install "$moredep"
-                    sudo $PIP3_BIN install "$moredep"
+                    sudo -H pip install "$moredep"
+                    sudo -H $PIP3_BIN install "$moredep"
                 fi
             done
         fi
