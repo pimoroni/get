@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the addi
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1609031735
+# template 1609031740
 
 FORCE=$1
 DEVICE_TREE=true
@@ -343,6 +343,8 @@ pip2_chk() {
         PIP2_BIN="pip2"
     elif command -v pip-2.7 > /dev/null; then
         PIP2_BIN="pip-2.7"
+    elif command -v pip2.7 > /dev/null; then
+        PIP2_BIN="pip2.7"
     else
         PIP2_BIN="pip"
     fi
@@ -363,6 +365,8 @@ pip3_chk() {
         PIP3_BIN="pip3"
     elif command -v pip-3.2 > /dev/null; then
         PIP3_BIN="pip-3.2"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip3.2"
     else
         PIP3_BIN="pip"
     fi
