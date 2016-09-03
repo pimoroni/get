@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the addi
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1609032025
+# template 1609032150
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -182,7 +182,7 @@ os_check() {
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
-        if command -v apt-get &> /dev/null; then
+        if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
                 if cat /etc/os-release | grep "$os" > /dev/null; then
                     IS_SUPPORTED=true
@@ -268,42 +268,36 @@ get_init_sys() {
 }
 
 i2c_vc_dtparam() {
-    if $IS_RASPBIAN; then
-        if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
-            newline
-            echo "i2c0 bus already active"
-        else
-            newline
-            echo "Enabling i2c0 bus in $CONFIG"
-            echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG
-            newline
-        fi
+    if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
+        newline
+        echo "i2c0 bus already active"
+    else
+        newline
+        echo "Enabling i2c0 bus in $CONFIG"
+        echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG
+        newline
     fi
 }
 
 usb_max_power() {
-    if $IS_RASPBIAN; then
-        if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-            newline
-            echo "Max USB current setting already active"
-        else
-            newline
-            echo "Adjusting USB current setting in $CONFIG"
-            echo "max_usb_current=1" | sudo tee -a $CONFIG
-            newline
-        fi
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        newline
+        echo "Max USB current setting already active"
+    else
+        newline
+        echo "Adjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG
+        newline
     fi
 }
 
 force_hdmi() {
-    if $IS_RASPBIAN; then
-        if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
-            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
-        else
-            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
-            \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
-            ASK_TO_REBOOT=true
-        fi
+    if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+        \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
+    else
+        echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+        \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -676,6 +670,9 @@ if confirm "Do you wish to continue?"; then
 # git repo install
 
     if [ $gitrepoclone == "yes" ]; then
+        if ! command -v git > /dev/null; then
+            apt_pkg_install git
+        fi
         if [ $gitclonedir == "source" ]; then
             gitclonedir=$gitreponame
         fi
@@ -765,6 +762,9 @@ if confirm "Do you wish to continue?"; then
 # resources install
 
     if ! $MIN_INSTALL && [ -n "$copydir" ]; then
+        if ! command -v git > /dev/null; then
+            apt_pkg_install git
+        fi
         newline
         echo "Downloading examples and documentation..."
         newline
