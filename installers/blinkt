@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-numpy" "python-psutil" "python-requests" "python-twee
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609031830
+# template 1609031845
 
 FORCE=$1
 DEVICE_TREE=true
@@ -535,33 +535,31 @@ if confirm "Do you wish to continue?"; then
             \curl -sS https://get.pimoroni.com/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
-        if ! $IS_RASPBIAN; then
-            newline
-            echo "Checking packages required by interface..."
-            newline
-            if apt_pkg_req "i2c-tools"; then
-                if ! apt_pkg_install "i2c-tools"; then            
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                    cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1+svn-2_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/i2c-tools_3.1.1+svn-2_armhf.deb
-                fi
+        newline
+        echo "Checking packages required by interface..."
+        newline
+        if apt_pkg_req "i2c-tools"; then
+            if ! apt_pkg_install "i2c-tools"; then            
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/i2c-tools_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/i2c-tools_3.1.1+svn-2_armhf.deb
             fi
-            if apt_pkg_req "python-smbus"; then
-                if ! apt_pkg_install "python-smbus"  && python3 --version | grep "2.7" > /dev/null; then            
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                    cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
-                fi
+        fi
+        if apt_pkg_req "python-smbus"; then
+            if ! apt_pkg_install "python-smbus"  && python3 --version | grep "2.7" > /dev/null; then            
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
             fi
-            if apt_pkg_req "python3-smbus"; then
-                if ! apt_pkg_install "python3-smbus" && python3 --version | grep "3.4" > /dev/null; then            
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-                    cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
-                fi
+        fi
+        if apt_pkg_req "python3-smbus"; then
+            if ! apt_pkg_install "python3-smbus" && python3 --version | grep "3.4" > /dev/null; then            
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+                cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
+                sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
             fi
         fi
     fi
@@ -814,6 +812,7 @@ if confirm "Do you wish to continue?"; then
             echo "Finalising Install..."
             newline
             sysclean
+            newline
         fi
         newline
         success "All done!"
@@ -828,8 +827,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        newline
         warning "Some packages could not be installed, review the output for details!"
+        newline
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
