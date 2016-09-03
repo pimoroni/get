@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the addi
 morepipdep=() # list of all the additional pip dependencies
 spacereq=250 # minimum size required on root partition in MB
 
-# template 1609030045
+# template 1609030135
 
 FORCE=$1
 DEVICE_TREE=true
@@ -523,7 +523,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if ! $IS_RASPBIAN; then
             newline
-            echo "Checking packages necessary for interface..."
+            echo "Checking packages required by interface..."
             newline
             if apt_pkg_req "i2c-tools"; then
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
@@ -542,6 +542,10 @@ if confirm "Do you wish to continue?"; then
                 cd $DEBDIR
                 wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
                 sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
+                if python3 --version | grep "3.5" > /dev/null; then
+                    cp /usr/lib/python3/dist-packages/smbus.cpython-34m-arm-linux-gnueabihf.so \
+                        /usr/lib/python3/dist-packages/smbus.cpython-35m-arm-linux-gnueabihf.so
+                fi
             fi
         fi
     fi
