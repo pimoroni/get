@@ -27,7 +27,7 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-raspbianonly="yes" # whether the script is allowed to run on other OSes
+raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" "Ubuntu" "Debian" ) # list all the os-releases supported
 
@@ -110,10 +110,14 @@ sysreboot() {
 }
 
 arch_check() {
+    IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv6l" > /dev/null; then
-        IS_ARMv6=true
+    if uname -m | grep "armv.l" > /dev/null; then
+        IS_ARMHF=true
+        if uname -m | grep "armv6l" > /dev/null; then
+            IS_ARMv6=true
+        fi
     fi
 }
 
@@ -177,6 +181,12 @@ MAINSTART
 
 arch_check
 os_check
+
+if ! $IS_ARMHF; then
+    warning "This hardware is not supported, sorry!"
+    newline
+    exit 1
+fi
 
 if $IS_RASPBIAN; then
     raspbian_check # insert any flavour specific routine in this scope
