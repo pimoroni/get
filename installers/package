@@ -35,6 +35,7 @@ FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -90,7 +91,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -188,8 +192,10 @@ if ! $IS_ARMHF; then
     exit 1
 fi
 
-if $IS_RASPBIAN; then
-    raspbian_check # insert any flavour specific routine in this scope
+if [ $raspbianonly == "yes" ]; then
+    warning "Your operating system is not supported, sorry!"
+    newline
+    exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
     newline
