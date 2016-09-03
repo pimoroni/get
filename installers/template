@@ -70,7 +70,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609030145
+# template 1609031740
 
 FORCE=$1
 DEVICE_TREE=true
@@ -338,30 +338,44 @@ apt_pkg_install() {
     \curl -sS https://get.pimoroni.com/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true; }
 }
 
-pip_pkg_req() {
-    PIP_CHK=$(pip search $1 | grep INSTALLED)
+pip2_chk() {
+    if command -v pip2 > /dev/null; then
+        PIP2_BIN="pip2"
+    elif command -v pip-2.7 > /dev/null; then
+        PIP2_BIN="pip-2.7"
+    elif command -v pip2.7 > /dev/null; then
+        PIP2_BIN="pip2.7"
+    else
+        PIP2_BIN="pip"
+    fi
+}
 
-    if [ "" == "$PIP_CHK" ]; then
+pip2_pkg_req() {
+    PIP2_CHK=$($PIP2_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP2_CHK" ]; then
         true
     else
         false
     fi
 }
 
-pip_chk_pip3() {
+pip3_chk() {
     if command -v pip3 > /dev/null; then
         PIP3_BIN="pip3"
     elif command -v pip-3.2 > /dev/null; then
         PIP3_BIN="pip-3.2"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip3.2"
     else
-        PIP3_BIN=""
+        PIP3_BIN="pip"
     fi
 }
 
-pip_pkg_req3() {
-    PIP_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+pip3_pkg_req() {
+    PIP3_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
 
-    if [ "" == "$PIP_CHK" ]; then
+    if [ "" == "$PIP3_CHK" ]; then
         true
     else
         false
@@ -623,42 +637,40 @@ if confirm "Do you wish to continue?"; then
 
 # pypi repo install
 
-    pip_chk_pip3
-
-    for pipdep in ${pipdeplist[@]}
-        do if pip_pkg_req "$pipdep"; then
-            if [ $pip2support == "yes" ] && command -v python > /dev/null; then
-            sudo -H pip install "$pipdep"
+    if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+        pip2_chk
+        for pipdep in ${pipdeplist[@]}; do
+            if pip2_pkg_req "$pipdep"; then
+                sudo -H $PIP2_BIN install "$pipdep"
             fi
-            if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
-        sudo -H $PIP3_BIN install "$pipdep"
-            fi
-        fi
-    done
-
-    if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
-        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
-            if command -v pip > /dev/null; then
-                newline
-                echo "Installing $productname library for Python 2..."
-                newline
-                if ! sudo -H pip install $piplibname -U; then
-                    warning "Python 2 library install failed!"
-                    echo "If problems persist, visit forums.pimoroni.com for support"
-                    exit 1
-                fi
+        done
+        if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
+            newline
+            echo "Installing $productname library for Python 2..."
+            newline
+            if ! sudo -H $PIP2_BIN install $piplibname -U; then
+                warning "Python 2 library install failed!"
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit 1
             fi
         fi
-        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
-            if [ -n "$PIP3_BIN" ]; then
-                newline
-                echo "Installing $productname library for Python 3..."
-                newline
-                    if ! sudo -H $PIP3_BIN install $piplibname -U; then
-                        warning "Python 3 library install failed!"
-                    echo "If problems persist, visit forums.pimoroni.com for support"
-                    exit 1
-                fi
+    fi
+
+    if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+        pip3_chk
+        for pipdep in ${pipdeplist[@]}; do
+            if pip3_pkg_req "$pipdep"; then
+                sudo -H $PIP3_BIN install "$pipdep"
+            fi
+        done
+        if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
+            newline
+            echo "Installing $productname library for Python 3..."
+            newline
+                if ! sudo -H $PIP3_BIN install $piplibname -U; then
+                    warning "Python 3 library install failed!"
+                echo "If problems persist, visit forums.pimoroni.com for support"
+                exit 1
             fi
         fi
     fi
@@ -698,10 +710,10 @@ if confirm "Do you wish to continue?"; then
         echo "Installing library..."
         newline
         cd $installdir/$gitreponame/$libdir
-        if [ $pip2support == "yes" ] && command -v python > /dev/null; then
-            sudo python ./setup.py install
+        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+            sudo python2 ./setup.py install
         fi
-        if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
+        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
             sudo python3 ./setup.py install
         fi
         newline
@@ -755,17 +767,11 @@ if confirm "Do you wish to continue?"; then
 
         moredepreq=false
 
-        for moredep in ${moreaptdep[@]}
-            do if apt_pkg_req "$moredep"; then
+        for moredep in ${moreaptdep[@]}; do
+            if apt_pkg_req "$moredep"; then
                 moredepreq=true
             fi
-            done
-        for moredep in ${morepipdep[@]}
-            do if pip_pkg_req "$moredep"; then
-                moredepreq=true
-            fi
-            done
-
+        done
         if $moredepreq; then
             newline
             for moredep in ${moreaptdep[@]}; do
@@ -773,12 +779,28 @@ if confirm "Do you wish to continue?"; then
                     apt_pkg_install "$moredep"
                 fi
             done
+            moredepreq=false
+        fi
+
+        for moredep in ${morepipdep[@]}; do
+            if pip2_pkg_req "$moredep"; then
+                moredepreq=true
+            fi
+            if pip3_pkg_req "$moredep"; then
+                moredepreq=true
+            fi
+        done
+        if $moredepreq; then
+            newline
             for moredep in ${morepipdep[@]}; do
-                if pip_pkg_req "$moredep"; then
-                    sudo -H pip install "$moredep"
+                if pip2_pkg_req "$moredep"; then
+                    sudo -H $PIP2_BIN install "$moredep"
+                fi
+                if pip3_pkg_req "$moredep"; then
                     sudo -H $PIP3_BIN install "$moredep"
                 fi
             done
+            moredepreq=false
         fi
     fi
 
@@ -799,7 +821,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        # place all custom commands in this scope
+        force_hdmi
         newline
     fi
 
