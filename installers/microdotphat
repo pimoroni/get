@@ -70,7 +70,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609031715
+# template 1609031725
 
 FORCE=$1
 DEVICE_TREE=true
@@ -633,8 +633,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
         pip2_chk
-        for pipdep in ${pipdeplist[@]}
-            do if pip2_pkg_req "$pipdep"; then
+        for pipdep in ${pipdeplist[@]}; do
+            if pip2_pkg_req "$pipdep"; then
                 sudo -H $PIP2_BIN install "$pipdep"
             fi
         done
@@ -652,8 +652,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
         pip3_chk
-        for pipdep in ${pipdeplist[@]}
-            do if pip3_pkg_req "$pipdep"; then
+        for pipdep in ${pipdeplist[@]}; do
+            if pip3_pkg_req "$pipdep"; then
                 sudo -H $PIP3_BIN install "$pipdep"
             fi
         done
@@ -761,8 +761,8 @@ if confirm "Do you wish to continue?"; then
 
         moredepreq=false
 
-        for moredep in ${moreaptdep[@]}
-            do if apt_pkg_req "$moredep"; then
+        for moredep in ${moreaptdep[@]}; do
+            if apt_pkg_req "$moredep"; then
                 moredepreq=true
             fi
         done
@@ -776,11 +776,11 @@ if confirm "Do you wish to continue?"; then
             moredepreq=false
         fi
 
-        for moredep in ${morepipdep[@]}
-            do if pip2_pkg_req "$moredep"; then
+        for moredep in ${morepipdep[@]}; do
+            if pip2_pkg_req "$moredep"; then
                 moredepreq=true
             fi
-            do if pip3_pkg_req "$moredep"; then
+            if pip3_pkg_req "$moredep"; then
                 moredepreq=true
             fi
         done
