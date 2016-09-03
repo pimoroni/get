@@ -70,7 +70,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609030135
+# template 1609030145
 
 FORCE=$1
 DEVICE_TREE=true
@@ -631,7 +631,7 @@ if confirm "Do you wish to continue?"; then
             sudo -H pip install "$pipdep"
             fi
             if [ $pip3support == "yes" ] && command -v python3 > /dev/null; then
-        sudo $PIP3_BIN install "$pipdep"
+        sudo -H $PIP3_BIN install "$pipdep"
             fi
         fi
     done
@@ -654,7 +654,7 @@ if confirm "Do you wish to continue?"; then
                 newline
                 echo "Installing $productname library for Python 3..."
                 newline
-                    if ! sudo $PIP3_BIN install $piplibname -U; then
+                    if ! sudo -H $PIP3_BIN install $piplibname -U; then
                         warning "Python 3 library install failed!"
                     echo "If problems persist, visit forums.pimoroni.com for support"
                     exit 1
@@ -776,7 +776,7 @@ if confirm "Do you wish to continue?"; then
             for moredep in ${morepipdep[@]}; do
                 if pip_pkg_req "$moredep"; then
                     sudo -H pip install "$moredep"
-                    sudo $PIP3_BIN install "$moredep"
+                    sudo -H $PIP3_BIN install "$moredep"
                 fi
             done
         fi
