@@ -70,7 +70,7 @@ moreaptdep=( "git" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609040015
+# template 1609052355
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -87,8 +87,8 @@ INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
-RASPOOL="http://archive.raspberrypi.org/debian/pool"
-DEBPOOL="http://ftp.uk.debian.org/debian/pool"
+RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.debian.org/debian/pool"
 
 # function define
 
