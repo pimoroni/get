@@ -55,6 +55,15 @@ confirm() {
     fi
 }
 
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+}
+
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
@@ -80,7 +89,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -93,34 +105,45 @@ sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
     newline
-    if confirm "Would you like to reboot now?"; then
+    if prompt "Would you like to reboot now?"; then
         sync
         sudo reboot
     fi
 }
 
 arch_check() {
+    IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv6l" > /dev/null; then
-        IS_ARMv6=true
+    if uname -m | grep "armv.l" > /dev/null; then
+        IS_ARMHF=true
+        if uname -m | grep "armv6l" > /dev/null; then
+            IS_ARMv6=true
+        fi
     fi
 }
 
 os_check() {
     IS_RASPBIAN=false
     IS_MACOSX=false
-    IS_X86_64=false
-    IS_X86_32=false
+    IS_SUPPORTED=false
 
-    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
-        IS_RASPBIAN=true
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+            IS_RASPBIAN=true && IS_SUPPORTED=true
+        fi
+        if command -v apt-get &> /dev/null; then
+            for os in ${osreleases[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_SUPPORTED=true
+                fi
+            done
+        fi
     elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-    elif uname -m | grep "x86_64" > /dev/null; then
-        IS_X86_64=true
-    else
-        IS_X86_32=true
+        if [ $macosxsupport == "yes" ]; then
+            IS_SUPPORTED=true
+        fi
     fi
 }
 
@@ -154,6 +177,22 @@ raspbian_old() {
 dt_check() {
     if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
         DEVICE_TREE=false
+    fi
+}
+
+i2c_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*i2c(_arm)?(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
+    fi
+}
+
+spi_check() {
+    if [ -e $CONFIG ] && grep -q -E "^(device_tree_param|dtparam)=([^,]*,)*spi(=(on|true|yes|1))?(,.*)?$" $CONFIG; then
+        CURRENT_SETTING=true
+    else
+        CURRENT_SETTING=false
     fi
 }
 
@@ -201,20 +240,20 @@ arch_check
 os_check
 dt_check
 
-if $IS_RASPBIAN; then
-    raspbian_check # insert any flavour specific routine in this scope
-elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
+if ! $IS_ARMHF; then
+    warning "This hardware is not supported, sorry!"
+    newline
     exit 1
-else
-    if [ $debugmode == "yes" ]; then
-        newline
-        echo "IS_RASPBIAN is $IS_RASPBIAN"
-        echo "IS_MACOSX is $IS_MACOSX"
-        echo "IS_X86_64 is $IS_X86_64"
-        echo "IS_X86_32 is $IS_X86_32"
-    fi
+fi
+
+if ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
+    warning "Your operating system is not supported, sorry!"
+    newline
+    exit 1
+elif ! $IS_SUPPORTED; then
+    warning "Your operating system is not supported, sorry!"
+    newline
+    exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
