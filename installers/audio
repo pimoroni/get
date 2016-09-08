@@ -35,6 +35,7 @@ FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -91,7 +92,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -105,8 +109,7 @@ sysreboot() {
     warning "your computer to reboot to take effect."
     newline
     if prompt "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+        sync && sudo reboot
     fi
 }
 
@@ -173,31 +176,46 @@ raspbian_old() {
     fi
 }
 
+force_hdmi() {
+    if [ -e $CONFIG ] && ! grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+        echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+        ASK_TO_REBOOT=true
+    fi
+}
+
 route_audio() {
-    if [ "$FORCE" == '1' ] || [ "$FORCE" == '2' ]; then
-        amixer cset numid=3 $FORCE > /dev/null
-        newline
-        if [ "$FORCE" == '1' ]; then
-            success "Audio output mode changed to Analog!"
-        else
-            success "Audio output mode changed to HDMI!"
-        fi
-        newline
+    if [ "$FORCE" == '1' ]; then
+        amixer cset numid=3 1 > /dev/null
+        success "Audio output mode changed to Analog!"
+    elif [ "$FORCE" == '2' ]; then
+        amixer cset numid=3 2 > /dev/null
+        success "Audio output mode changed to HDMI!"
+    elif [ "$FORCE" == '3' ]; then
+        amixer cset numid=3 2 > /dev/null
+        force_hdmi
+        success "Audio signal will be forcefully sent to HDMI!"
     else
         newline
         echo "Please choose an audio output mode:"
-        echo "0 : Automatic"
+        echo "0 : Automatic signal detection"
         echo "1 : Output to analogue (headphone/speaker jack)"
         echo "2 : Output to digital (HDMI port)"
+        echo "3 : Force route to digital (HDMI hotplug)"
         newline
-        read -r -p "Enter an option [0-2]:" choice < /dev/tty
+        read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if ! [[ $choice =~ '^[0-2]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
-            newline
-            success "Audio output mode changed!"
-            newline
+        if ! [[ $choice =~ '^[3]$' ]]; then
+            amixer cset numid=3 $choice  > /dev/null
+            force_hdmi
         else
             warning "Invalid option!"
+            newline && route_audio
+        fi
+        newline && success "Audio output mode changed!" && newline
+        if confirm "Do you wish to test your system now?"; then
+            echo "Testing..."
+            speaker-test -l5 -c2 -t wav
         fi
     fi
 }
@@ -214,18 +232,15 @@ os_check
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -258,25 +273,17 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "no" ]; then
         route_audio
-        if confirm "Do you wish to test your system now?"; then
-            echo "Testing..."
-            speaker-test -l5 -c2 -t wav
-        fi
     else
         newline
         warning "Default sound driver currently not loaded"
-        warning "This script must now exit."
-        exit 1
+        warning "This script must now exit." && exit 1
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
-        newline
+        sysreboot && newline
     fi
 else
-    newline
-    echo "Aborting..."
-    newline
+    newline && echo "Aborting..." && newline
 fi
 
 exit 0

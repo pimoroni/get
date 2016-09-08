@@ -70,7 +70,7 @@ moreaptdep=( "git" "python-numpy" "python3-numpy" "python-flask" "python3-flask"
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
 
-# template 1609071650
+# template 1609082035
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -291,16 +291,6 @@ usb_max_power() {
     fi
 }
 
-force_hdmi() {
-    if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
-        \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
-    else
-        echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
-        \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "2"
-        ASK_TO_REBOOT=true
-    fi
-}
-
 space_chk() {
     if command -v stat > /dev/null && ! $IS_MACOSX; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
@@ -435,22 +425,15 @@ fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
-fi
-
-if [ $forcesudo == "yes" ]; then
-    sudocheck
+    newline && exit 1
 fi
 
 if $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
@@ -470,16 +453,13 @@ fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
-    newline
-    exit 1
+    newline && exit 1
 elif $IS_ARMv7 && [ $armv7 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
-    newline
-    exit 1
+    newline && exit 1
 elif $IS_ARMv6 && [ $armv6 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -829,7 +809,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         echo "Finalising Install..."
-        force_hdmi
+        \curl -sS https://get.pimoroni.com/audio | sudo bash -s - "3"
         newline
     fi
 
