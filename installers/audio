@@ -212,10 +212,12 @@ route_audio() {
         if [[ $choice =~ ^(0|1|2)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             success "Audio output mode changed!"
+            test_audio
         elif [[ $choice =~ ^(3)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
             success "Audio signal will be forcefully sent to HDMI!"
+            test_audio
         else
             warning "Invalid option!"
             newline && route_audio
@@ -224,6 +226,7 @@ route_audio() {
 }
 
 test_audio() {
+    newline
     if confirm "Do you wish to test your system now?"; then
         newline && echo "Testing..."
         speaker-test -l5 -c2 -t wav
@@ -283,7 +286,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "no" ]; then
         newline
-        route_audio && test_audio
+        route_audio
         newline
     else
         newline
