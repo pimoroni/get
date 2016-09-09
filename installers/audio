@@ -21,7 +21,7 @@ DISCLAIMER
 
 productname="na" # the name of the product to install
 scriptname="audio" # the name of this script
-debugmode="yes" # whether the script should use debug routines
+debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -211,7 +211,7 @@ route_audio() {
         fi
         if [[ $choice =~ ^(0|1|2)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
-            echo "firing the main option"
+            success "Audio output mode changed!"
         elif [[ $choice =~ ^(3)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
@@ -220,7 +220,6 @@ route_audio() {
             warning "Invalid option!"
             newline && route_audio
         fi
-        newline && success "Audio output mode changed!" && newline
     fi
 }
 
