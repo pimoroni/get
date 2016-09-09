@@ -221,10 +221,13 @@ route_audio() {
             newline && route_audio
         fi
         newline && success "Audio output mode changed!" && newline
-        if confirm "Do you wish to test your system now?"; then
-            newline && echo "Testing..."
-            speaker-test -l5 -c2 -t wav
-        fi
+    fi
+}
+
+test_audio() {
+    if confirm "Do you wish to test your system now?"; then
+        newline && echo "Testing..."
+        speaker-test -l5 -c2 -t wav
     fi
 }
 
@@ -281,7 +284,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "no" ]; then
         newline
-        route_audio && newline
+        route_audio && test_audio
+        newline
     else
         newline
         warning "Default sound driver currently not loaded"
