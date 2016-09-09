@@ -178,7 +178,11 @@ raspbian_old() {
 
 force_hdmi() {
     if [ -e $CONFIG ] && ! grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
-        echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+        if grep -q "^#hdmi_force_hotplug=1$" $CONFIG; then
+            sudo sed -i "s|^#hdmi_force_hotplug=1|hdmi_force_hotplug=1|" $CONFIG &> /dev/null
+        else    
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
+        fi
         ASK_TO_REBOOT=true
     fi
 }
