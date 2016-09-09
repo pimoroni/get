@@ -218,6 +218,7 @@ route_audio() {
             success "Audio signal will be forcefully sent to HDMI!"
         else
             warning "Invalid option!"
+            newline && route_audio
         fi
         newline && success "Audio output mode changed!" && newline
     fi
