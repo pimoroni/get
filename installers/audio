@@ -205,7 +205,7 @@ route_audio() {
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if ! [[ $choice =~ '^[0-2]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
-        if ! [[ $choice =~ '^[3]$' ]]; then
+        elif ! [[ $choice =~ '^[3]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
         else
