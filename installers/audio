@@ -209,10 +209,10 @@ route_audio() {
         if [ $debugmode == "yes" ]; then
             echo "User chose option $choice"
         fi
-        if [[ $choice =~ '^[0-2]$' ]]; then
+        if ! [[ $choice =~ '^[0-2]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
             echo "firing the main option"
-        elif [[ $choice =~ '^[3]$' ]]; then
+        elif ! [[ $choice =~ '^[3]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
             success "Audio signal will be forcefully sent to HDMI!"
