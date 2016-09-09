@@ -220,7 +220,7 @@ route_audio() {
             test_audio
         else
             warning "Invalid option!"
-            newline && route_audio
+            route_audio
         fi
     fi
 }
