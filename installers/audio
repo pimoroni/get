@@ -35,6 +35,7 @@ FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -91,7 +92,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -105,8 +109,7 @@ sysreboot() {
     warning "your computer to reboot to take effect."
     newline
     if prompt "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+        sync && sudo reboot
     fi
 }
 
@@ -173,32 +176,74 @@ raspbian_old() {
     fi
 }
 
-route_audio() {
-    if [ "$FORCE" == '1' ] || [ "$FORCE" == '2' ]; then
-        amixer cset numid=3 $FORCE > /dev/null
-        newline
-        if [ "$FORCE" == '1' ]; then
-            success "Audio output mode changed to Analog!"
-        else
-            success "Audio output mode changed to HDMI!"
+force_hdmi() {
+    if [ -e $CONFIG ] && ! grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+        if grep -q "^#hdmi_force_hotplug=1$" $CONFIG; then
+            sudo sed -i "s|^#hdmi_force_hotplug=1|hdmi_force_hotplug=1|" $CONFIG &> /dev/null
+        else    
+            echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
         fi
-        newline
+        ASK_TO_REBOOT=true
+    fi
+}
+
+hotplug_hdmi() {
+    if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+        sudo sed -i "s|^hdmi_force_hotplug=1|#hdmi_force_hotplug=1|" $CONFIG &> /dev/null
+        ASK_TO_REBOOT=true
+    fi
+}
+
+route_audio() {
+    if [ $debugmode == "yes" ]; then
+        warning "passed parameter is $FORCE"
+    fi
+    if [ "$FORCE" == '1' ]; then
+        amixer cset numid=3 1 > /dev/null
+        success "Audio output mode changed to Analog!"
+        hotplug_hdmi
+    elif [ "$FORCE" == '2' ]; then
+        amixer cset numid=3 2 > /dev/null
+        success "Audio output mode changed to HDMI!"
+        hotplug_hdmi
+    elif [ "$FORCE" == '3' ]; then
+        amixer cset numid=3 2 > /dev/null
+        success "Audio signal will be forcefully sent to HDMI!"
+        force_hdmi
     else
         newline
-        echo "Please choose an audio output mode:"
-        echo "0 : Automatic"
+        echo "Please choose an audio output mode:" && newline
+        echo "0 : Automatic signal detection"
         echo "1 : Output to analogue (headphone/speaker jack)"
         echo "2 : Output to digital (HDMI port)"
-        newline
-        read -r -p "Enter an option [0-2]:" choice < /dev/tty
-        if ! [[ $choice =~ '^[0-2]$' ]]; then
+        echo "3 : Force route to digital (HDMI hotplug disabled)"
+        newline        
+        read -r -p "Enter an option [0-3]:" choice < /dev/tty
+        if [ $debugmode == "yes" ]; then
+            echo "User chose option $choice"
+        fi
+        if [[ $choice =~ ^(0|1|2)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
-            newline
             success "Audio output mode changed!"
-            newline
+            hotplug_hdmi
+            test_audio
+        elif [[ $choice =~ ^(3)$ ]]; then
+            amixer cset numid=3 $choice  > /dev/null
+            success "Audio signal will be forcefully sent to HDMI!"
+            force_hdmi
+            test_audio
         else
             warning "Invalid option!"
+            route_audio
         fi
+    fi
+}
+
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        newline && echo "Testing..."
+        speaker-test -l5 -c2 -t wav
     fi
 }
 
@@ -214,18 +259,15 @@ os_check
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -243,7 +285,7 @@ echo "trusted source."
 newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo "    \curl -sS https://get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
@@ -257,26 +299,20 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $bcm2835off == "no" ]; then
+        newline
         route_audio
-        if confirm "Do you wish to test your system now?"; then
-            echo "Testing..."
-            speaker-test -l5 -c2 -t wav
-        fi
+        newline
     else
         newline
         warning "Default sound driver currently not loaded"
-        warning "This script must now exit."
-        exit 1
+        warning "This script must now exit." && exit 1
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
-        newline
+        sysreboot && newline
     fi
 else
-    newline
-    echo "Aborting..."
-    newline
+    newline && echo "Aborting..." && newline
 fi
 
 exit 0
