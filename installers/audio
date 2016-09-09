@@ -196,7 +196,7 @@ route_audio() {
     elif [ "$FORCE" == '3' ]; then
         amixer cset numid=3 2 > /dev/null
         force_hdmi
-        success "Audio signal will be forcefully sent to HDMI!" && newline
+        success "Audio signal will be forcefully sent to HDMI!"
     else
         newline
         echo "Please choose an audio output mode:" && newline
