@@ -21,7 +21,7 @@ DISCLAIMER
 
 productname="na" # the name of the product to install
 scriptname="audio" # the name of this script
-debugmode="no" # whether the script should use debug routines
+debugmode="yes" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -184,6 +184,9 @@ force_hdmi() {
 }
 
 route_audio() {
+    if [ $debugmode == "yes" ]; then
+        echo "passed parameter is $FORCE"
+    fi
     if [ "$FORCE" == '1' ]; then
         amixer cset numid=3 1 > /dev/null
         success "Audio output mode changed to Analog!"
@@ -196,7 +199,7 @@ route_audio() {
         success "Audio signal will be forcefully sent to HDMI!"
     else
         newline
-        echo "Please choose an audio output mode:"
+        echo "Please choose an audio output mode:" && newline
         echo "0 : Automatic signal detection"
         echo "1 : Output to analogue (headphone/speaker jack)"
         echo "2 : Output to digital (HDMI port)"
@@ -214,7 +217,7 @@ route_audio() {
         fi
         newline && success "Audio output mode changed!" && newline
         if confirm "Do you wish to test your system now?"; then
-            echo "Testing..."
+            newline && echo "Testing..."
             speaker-test -l5 -c2 -t wav
         fi
     fi
@@ -258,7 +261,7 @@ echo "trusted source."
 newline
 echo "If you want to see what this script does before"
 echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
+echo "    \curl -sS https://get.pimoroni.com/$scriptname"
 newline
 
 if confirm "Do you wish to continue?"; then
