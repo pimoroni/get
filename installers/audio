@@ -185,7 +185,7 @@ force_hdmi() {
 
 route_audio() {
     if [ $debugmode == "yes" ]; then
-        echo "passed parameter is $FORCE"
+        warning "passed parameter is $FORCE"
     fi
     if [ "$FORCE" == '1' ]; then
         amixer cset numid=3 1 > /dev/null
@@ -196,21 +196,25 @@ route_audio() {
     elif [ "$FORCE" == '3' ]; then
         amixer cset numid=3 2 > /dev/null
         force_hdmi
-        success "Audio signal will be forcefully sent to HDMI!"
+        success "Audio signal will be forcefully sent to HDMI!" && newline
     else
         newline
         echo "Please choose an audio output mode:" && newline
         echo "0 : Automatic signal detection"
         echo "1 : Output to analogue (headphone/speaker jack)"
         echo "2 : Output to digital (HDMI port)"
-        echo "3 : Force route to digital (HDMI hotplug)"
-        newline
+        echo "3 : Force route to digital (HDMI hotplug disabled)"
+        newline        
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
+        if [ $debugmode == "yes" ]; then
+            echo "User chose option $choice"
+        fi
         if ! [[ $choice =~ '^[0-2]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
         elif ! [[ $choice =~ '^[3]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
+            success "Audio signal will be forcefully sent to HDMI!"
         else
             warning "Invalid option!"
             newline && route_audio
@@ -275,7 +279,8 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $bcm2835off == "no" ]; then
-        route_audio
+        newline
+        route_audio && newline
     else
         newline
         warning "Default sound driver currently not loaded"
