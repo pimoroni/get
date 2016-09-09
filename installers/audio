@@ -211,6 +211,7 @@ route_audio() {
         fi
         if [[ $choice =~ '^[0-2]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
+            echo "firing the main option"
         elif [[ $choice =~ '^[3]$' ]]; then
             amixer cset numid=3 $choice  > /dev/null
             force_hdmi
