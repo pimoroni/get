@@ -183,6 +183,13 @@ force_hdmi() {
     fi
 }
 
+hotplug_hdmi() {
+    if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
+        sudo sed -i "s|^hdmi_force_hotplug=1|#hdmi_force_hotplug=1|" $CONFIG &> /dev/null
+        ASK_TO_REBOOT=true
+    fi
+}
+
 route_audio() {
     if [ $debugmode == "yes" ]; then
         warning "passed parameter is $FORCE"
@@ -190,13 +197,15 @@ route_audio() {
     if [ "$FORCE" == '1' ]; then
         amixer cset numid=3 1 > /dev/null
         success "Audio output mode changed to Analog!"
+        hotplug_hdmi
     elif [ "$FORCE" == '2' ]; then
         amixer cset numid=3 2 > /dev/null
         success "Audio output mode changed to HDMI!"
+        hotplug_hdmi
     elif [ "$FORCE" == '3' ]; then
         amixer cset numid=3 2 > /dev/null
-        force_hdmi
         success "Audio signal will be forcefully sent to HDMI!"
+        force_hdmi
     else
         newline
         echo "Please choose an audio output mode:" && newline
@@ -212,11 +221,12 @@ route_audio() {
         if [[ $choice =~ ^(0|1|2)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             success "Audio output mode changed!"
+            hotplug_hdmi
             test_audio
         elif [[ $choice =~ ^(3)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
-            force_hdmi
             success "Audio signal will be forcefully sent to HDMI!"
+            force_hdmi
             test_audio
         else
             warning "Invalid option!"
