@@ -106,8 +106,7 @@ sysreboot() {
     warning "your computer to reboot to take effect."
     newline
     if prompt "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+        sync && sudo reboot
     fi
 }
 
@@ -242,18 +241,15 @@ dt_check
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
