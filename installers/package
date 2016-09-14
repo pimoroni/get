@@ -108,8 +108,7 @@ sysreboot() {
     warning "your computer to reboot to take effect."
     newline
     if prompt "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+        sync && sudo reboot
     fi
 }
 
@@ -188,18 +187,15 @@ os_check
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $raspbianonly == "yes" ]; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 elif ! $IS_SUPPORTED; then
     warning "Your operating system is not supported, sorry!"
-    newline
-    exit 1
+    newline && exit 1
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -211,8 +207,7 @@ PKG_OK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok insta
 echo "Checking for $1..."
 
 if [ "" == "$PKG_OK" ]; then
-    echo "$1 required. Installing."
-    newline
+    echo "$1 required. Installing." && newline
     sudo apt-get --yes install $1
     STATUS=$?
     newline
