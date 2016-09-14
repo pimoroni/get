@@ -815,9 +815,10 @@ if confirm "Do you wish to continue?"; then
             if ! sudo pip install autopy; then
                 warning "installing autopy failed!"
             fi
-            if ! sudo $PIP3_BIN install autopy; then
-                warning "installing autopy failed!"
-            fi
+        #    disabling pip3 autopy install as non functional
+        #    if ! sudo $PIP3_BIN install autopy; then
+        #        warning "installing autopy failed!"
+        #    fi
         else
             newline
             success "All done!"
