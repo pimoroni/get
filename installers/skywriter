@@ -810,13 +810,19 @@ if confirm "Do you wish to continue?"; then
         newline
         echo "Finalising Install..."
         if ! $MIN_INSTALL && [ "$DISPLAY" ]; then
-            apt_pkg_install libx11-dev
+            apt_pkg_install libx11-dev libxtst-dev
             if ! sudo pip install autopy; then
                 warning "installing autopy failed!"
             fi
             if ! sudo $PIP3_BIN install autopy; then
                 warning "installing autopy failed!"
             fi
+        else
+            newline
+            success "All done!"
+            newline
+            echo "Enjoy your $productname!"
+            newline        
         fi
     fi
 
