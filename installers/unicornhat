@@ -316,7 +316,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return false; }
+    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 0; }
     newline
 }
 
