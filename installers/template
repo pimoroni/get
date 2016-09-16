@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609162020
+# template 1609162045
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -406,7 +406,6 @@ fi
 arch_check
 os_check
 home_dir
-check_network
 space_chk
 
 if [ $debugmode != "no" ]; then
@@ -475,6 +474,7 @@ if confirm "Do you wish to continue?"; then
 # basic environment preparation
 
     newline && echo "Checking environment..."
+    check_network
 
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
@@ -497,10 +497,10 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..." && newline
         if apt_pkg_req "python-rpi.gpio" && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            sudo $PIP2_BIN install RPi.GPIO -U
+            sudo $PIP2_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
         if apt_pkg_req "python3-rpi.gpio" && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            sudo $PIP3_BIN install RPi.GPIO -U
+            sudo $PIP3_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
     fi
 
@@ -552,10 +552,10 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by SPI interface..." && newline
         if apt_pkg_req "python-spidev" && ! apt_pkg_install "python-spidev" &> /dev/null; then
-            sudo $PIP2_BIN install spidev -U
+            sudo $PIP2_BIN install spidev -U && FAILED_PKG=false
         fi
         if apt_pkg_req "python3-spidev" && ! apt_pkg_install "python3-spidev" &> /dev/null; then
-            sudo $PIP3_BIN install spidev -U
+            sudo $PIP3_BIN install spidev -U && FAILED_PKG=false
         fi
     fi
 
