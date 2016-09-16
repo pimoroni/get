@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609162125
+# template 1609162135
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -316,7 +316,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true; }
+    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return false; }
     newline
 }
 
