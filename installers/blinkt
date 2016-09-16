@@ -70,7 +70,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609161340
+# template 1609161530
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -251,12 +251,6 @@ servd_trig() {
     fi
 }
 
-servd_trig() {
-    if command -v service > /dev/null; then
-        sudo service $1 $2
-    fi
-}
-
 get_init_sys() {
     if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
         SYSTEMD=1
@@ -406,13 +400,10 @@ arch_check
 os_check
 home_dir
 check_network
+space_chk
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-fi
-
-if [ "$FORCE" != '-y' ]; then
-    space_chk
 fi
 
 if ! $IS_ARMHF; then
@@ -473,7 +464,24 @@ if [ $uartreq == "yes" ]; then
 fi
 
 if confirm "Do you wish to continue?"; then
+
+# basic environment preparation
+
+    newline && echo "Checking environment..."
+
+    if ! command -v curl > /dev/null; then
+        apt_pkg_install "curl"
+    fi
+    if ! command -v apt-cache > /dev/null; then
+        apt_pkg_install "apt-cache"
+    fi
     sysupdate
+    
+    if ! command -v pip > /dev/null; then
+        apt_pkg_install "python-pip"
+        apt_pkg_install "python3-pip"
+    fi
+    pip2_chk && pip3_chk
 
 # hardware setup
 
@@ -482,10 +490,10 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..." && newline
         if apt_pkg_req "python-rpi.gpio" && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            pip2_chk && sudo $PIP2_BIN install RPi.GPIO -U
+            sudo $PIP2_BIN install RPi.GPIO -U
         fi
         if apt_pkg_req "python3-rpi.gpio" && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            pip3_chk && sudo $PIP3_BIN install RPi.GPIO -U
+            sudo $PIP3_BIN install RPi.GPIO -U
         fi
     fi
 
@@ -535,6 +543,13 @@ if confirm "Do you wish to continue?"; then
             \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
+        newline && echo "Checking packages required by SPI interface..." && newline
+        if apt_pkg_req "python-spidev" && ! apt_pkg_install "python-spidev" &> /dev/null; then
+            sudo $PIP2_BIN install spidev -U
+        fi
+        if apt_pkg_req "python3-spidev" && ! apt_pkg_install "python3-spidev" &> /dev/null; then
+            sudo $PIP3_BIN install spidev -U
+        fi
     fi
 
     if [ $uartreq == "yes" ]; then
@@ -574,33 +589,30 @@ if confirm "Do you wish to continue?"; then
 
     echo "Checking install requirements..."
 
-    if command -v apt-get > /dev/null; then
-        newline && echo "Updating package indexes..."
-        newline && echo "Checking for dependencies..."
+    newline && echo "Updating package indexes..."
+    newline && echo "Checking for dependencies..."
 
-        if $REMOVE_PKG; then
-            for pkgrm in ${pkgaptremove[@]}; do
-                warning "Installed package conflicts with requirements"
-                sudo apt-get remove "$pkgrm"
-            done
-        fi
-
-        pkgdeplist=( "${pkgdeplist1[@]}" "${pkgdeplist2[@]}" "${pkgdeplist3[@]}" )
-
-        for pkgdep in ${pkgdeplist[@]}; do
-            if apt_pkg_req "$pkgdep"; then
-                apt_pkg_install "$pkgdep"
-            fi
+    if $REMOVE_PKG; then
+        for pkgrm in ${pkgaptremove[@]}; do
+            warning "Installed package conflicts with requirements"
+            sudo apt-get remove "$pkgrm"
         done
-        if [ $debpackage != "na" ]; then
-            apt_pkg_install "$debpackage"
+    fi
+
+    pkgdeplist=( "${pkgdeplist1[@]}" "${pkgdeplist2[@]}" "${pkgdeplist3[@]}" )
+
+    for pkgdep in ${pkgdeplist[@]}; do
+        if apt_pkg_req "$pkgdep"; then
+            apt_pkg_install "$pkgdep"
         fi
+    done
+    if [ $debpackage != "na" ]; then
+        apt_pkg_install "$debpackage"
     fi
 
 # pypi repo install
 
     if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
-        pip2_chk
         for pipdep in ${pipdeplist[@]}; do
             if pip2_pkg_req "$pipdep"; then
                 sudo -H $PIP2_BIN install "$pipdep"
@@ -617,7 +629,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
-        pip3_chk
         for pipdep in ${pipdeplist[@]}; do
             if pip3_pkg_req "$pipdep"; then
                 sudo -H $PIP3_BIN install "$pipdep"
