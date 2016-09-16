@@ -66,8 +66,6 @@ pkgaptremove=() # list of conflicting apt packages to remove
 pkgdeplist1=() # list core dependencies
 pkgdeplist2=( "python-pip" "python-dev" ) # list python 2 dependencies
 pkgdeplist3=( "python3-pip" "python3-dev" ) # list python 3 dependencies
-pkgdeplist7=() # list dependencies for Wheezy only
-pkgdeplist8=() # list dependencies for Jessie only
 moreaptdep=( "git" "python-numpy" "python3-numpy" "python-flask" "python3-flask" ) # list of all the additional apt dependencies
 morepipdep=() # list of all the additional pip dependencies
 spacereq=150 # minimum size required on root partition in MB
@@ -577,19 +575,6 @@ if confirm "Do you wish to continue?"; then
                 apt_pkg_install "$pkgdep"
             fi
         done
-        if raspbian_old; then
-            for pkgdep in ${pkgdeplist7[@]}; do
-                if apt_pkg_req "$pkgdep"; then
-                    apt_pkg_install "$pkgdep"
-                fi
-            done
-        else
-            for pkgdep in ${pkgdeplist8[@]}; do
-                if apt_pkg_req "$pkgdep"; then
-                    apt_pkg_install "$pkgdep"
-                fi
-            done
-        fi
         if [ $debpackage != "na" ]; then
             apt_pkg_install "$debpackage"
         fi
