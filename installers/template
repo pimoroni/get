@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609162230
+# template 1609162240
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -521,6 +521,9 @@ if confirm "Do you wish to continue?"; then
                 sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
             fi
         fi
+        if $PIP2_BIN list | grep "smbus" > /dev/null; then
+            FAILED_PKG=true
+        fi
         if apt_pkg_req "python3-smbus"; then
             if ! apt_pkg_install "python3-smbus"; then
                 if python3 --version | grep "3.4" > /dev/null; then
@@ -540,6 +543,9 @@ if confirm "Do you wish to continue?"; then
                     FAILED_PKG=true
                 fi
             fi
+        fi
+        if $PIP3_BIN list | grep "smbus" > /dev/null; then
+            FAILED_PKG=true
         fi
     fi
 
