@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-flask" "python3-flask" ) # l
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609162135
+# template 1609162140
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -316,7 +316,7 @@ apt_pkg_req() {
 }
 
 apt_pkg_install() {
-    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 0; }
+    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && false; }
     newline
 }
 
