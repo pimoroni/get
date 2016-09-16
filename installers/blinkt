@@ -42,6 +42,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" "Debian" "Kali" "Mate" "Ubuntu" ) # list all the os-releases supported
+oswarning=( "Debian" "Kali" "Ubuntu" ) # list experimental os-releases
 squeezesupport="no" # whether Squeeze is supported
 wheezysupport="yes" # whether Wheezy is supported
 jessiesupport="yes" # whether Jessie is supported
@@ -70,7 +71,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609161600
+# template 1609161925
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -177,7 +178,8 @@ os_check() {
     IS_RASPBIAN=false
     IS_MACOSX=false
     IS_SUPPORTED=false
-
+    IS_EXPERIMENTAL=false
+    
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
@@ -186,6 +188,11 @@ os_check() {
             for os in ${osreleases[@]}; do
                 if cat /etc/os-release | grep "$os" > /dev/null; then
                     IS_SUPPORTED=true
+                fi
+            done
+            for os in ${oswarning[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_EXPERIMENTAL=true
                 fi
             done
         fi
@@ -785,6 +792,12 @@ if confirm "Do you wish to continue?"; then
 
     if $FAILED_PKG; then
         warning "Some packages could not be installed, review the output for details!"
+        newline
+    fi
+    if $IS_EXPERIMENTAL; then
+        warning "Support for your operating system is experimental."
+        warning "Please visit forums.pimoroni.com for support"
+        warning "if you experience issues with this product."
         newline
     fi
 
