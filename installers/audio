@@ -29,7 +29,7 @@ promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
-osreleases=( "Raspbian" "Ubuntu" "Debian" ) # list all the os-releases supported
+osreleases=( "Raspbian" "Debian" "Ubuntu" ) # list all the os-releases supported
 
 FORCE=$1
 DEVICE_TREE=true
@@ -180,7 +180,7 @@ force_hdmi() {
     if [ -e $CONFIG ] && ! grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
         if grep -q "^#hdmi_force_hotplug=1$" $CONFIG; then
             sudo sed -i "s|^#hdmi_force_hotplug=1|hdmi_force_hotplug=1|" $CONFIG &> /dev/null
-        else    
+        else
             echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
         fi
         ASK_TO_REBOOT=true
@@ -217,7 +217,7 @@ route_audio() {
         echo "1 : Output to analogue (headphone/speaker jack)"
         echo "2 : Output to digital (HDMI port)"
         echo "3 : Force route to digital (HDMI hotplug disabled)"
-        newline        
+        newline
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if [ $debugmode == "yes" ]; then
             echo "User chose option $choice"
