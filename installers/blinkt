@@ -429,7 +429,7 @@ if $IS_RASPBIAN; then
         newline && exit 1
     fi
 else
-    if [ $raspbianonly == "yes" ] || ! $IS_SUPPORTED || ! $IS_EXPERIMENTAL; then
+    if [ $raspbianonly == "yes" ] || ! $IS_EXPERIMENTAL || ! $IS_SUPPORTED; then
         warning "Your operating system is not supported, sorry!"
         newline && exit 1
     fi
