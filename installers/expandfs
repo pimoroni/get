@@ -85,6 +85,15 @@ confirm() {
     fi
 }
 
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+}
+
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
 }
@@ -110,7 +119,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -123,34 +135,50 @@ sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
     newline
-    if confirm "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+    if prompt "Would you like to reboot now?"; then
+        sync && sudo reboot
     fi
 }
 
 arch_check() {
+    IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv6l" > /dev/null; then
-        IS_ARMv6=true
+    if uname -m | grep "armv.l" > /dev/null; then
+        IS_ARMHF=true
+        if uname -m | grep "armv6l" > /dev/null; then
+            IS_ARMv6=true
+        fi
     fi
 }
 
 os_check() {
     IS_RASPBIAN=false
     IS_MACOSX=false
-    IS_X86_64=false
-    IS_X86_32=false
-
-    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
-        IS_RASPBIAN=true
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
+    
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+            IS_RASPBIAN=true && IS_SUPPORTED=true
+        fi
+        if command -v apt-get > /dev/null; then
+            for os in ${osreleases[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_SUPPORTED=true
+                fi
+            done
+            for os in ${oswarning[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_EXPERIMENTAL=true
+                fi
+            done
+        fi
     elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-    elif uname -m | grep "x86_64" > /dev/null; then
-        IS_X86_64=true
-    else
-        IS_X86_32=true
+        if [ $macosxsupport == "yes" ]; then
+            IS_SUPPORTED=true
+        fi
     fi
 }
 
@@ -178,6 +206,33 @@ raspbian_old() {
         true
     else
         false
+    fi
+}
+
+home_dir() {
+    if ! $IS_MACOSX; then
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        else
+            if [ $SUDO_USER ]; then
+                USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+            else
+                warning "Running as root and no other sudo user available"
+                exit 1
+            fi
+        fi
+    else
+        if [ $EUID -ne 0 ]; then
+            USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
+        else
+            USER_HOME=$(dscl . -read /Users/$SUDO_USER NFSHomeDirectory | cut -d: -f2)
+        fi
+    fi
+}
+
+servd_trig() {
+    if command -v service > /dev/null; then
+        sudo service $1 $2
     fi
 }
 
