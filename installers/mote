@@ -23,6 +23,7 @@ DISCLAIMER
 
 productname="Mote" # the name of the product to install
 scriptname="mote" # the name of this script
+spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
@@ -61,14 +62,13 @@ repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" "python" ) # subdirectories to copy from repo
+pkgaptremove=() # list of conflicting packages to remove
+pkgdeplist1=() # list of core dependencies
+pkgdeplist2=( "python-serial" ) # list of python 2 dependencies
+pkgdeplist3=( "python3-serial" ) # list of python 3 dependencies
+moreaptdep=( "python-requests" "python3-requests" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
-pkgaptremove=() # list of conflicting apt packages to remove
-pkgdeplist1=() # list core dependencies
-pkgdeplist2=( "python-pip" "python-serial" ) # list python 2 dependencies
-pkgdeplist3=( "python3-pip" "python3-serial" ) # list python 3 dependencies
-moreaptdep=( "git" "python-requests" "python3-requests" ) # list of all the additional apt dependencies
-morepipdep=() # list of all the additional pip dependencies
-spacereq=250 # minimum size required on root partition in MB
+morepipdep=() # list of additional pip dependencies
 
 # template 1609071650
 
