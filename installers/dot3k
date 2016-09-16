@@ -71,7 +71,7 @@ moreaptdep=( "python-psutil" "python3-psutil" "libudev-dev" "vlc" ) # list of ad
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=( "python-uinput" "wifi" ) # list of additional pip dependencies
 
-# template 1609162155
+# template 1609162220
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -475,15 +475,13 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
     check_network
-
+    sysupdate
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
-    if ! command -v apt-cache > /dev/null; then
-        apt_pkg_install "apt-cache"
+    if ! command -v wget > /dev/null; then
+        apt_pkg_install "wget"
     fi
-    sysupdate
-    
     if ! command -v pip > /dev/null; then
         apt_pkg_install "python-pip"
         apt_pkg_install "python3-pip"
@@ -536,6 +534,7 @@ if confirm "Do you wish to continue?"; then
                     sudo dpkg -i $DEBDIR/python3-smbus1_1.1+35dbg-1_armhf.deb
                 else
                     warning "Unable to install compatible python3-smbus!"
+                    FAILED_PKG=true
                 fi
             fi
         fi
