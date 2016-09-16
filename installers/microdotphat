@@ -29,24 +29,26 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
-i2creq="yes" # whether i2c interface is required or not
-spireq="no" # whether spi interface is required or not
-uartreq="no" # whether uart communication is required or not
+gpioreq="no" # whether low-level gpio access is required
+i2creq="yes" # whether the i2c interface is required
+i2sreq="no" # whether the i2s interface is required
+spireq="no" # whether the spi interface is required
+uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
-armv6="yes" # whether armv6 processors is supported or not
-armv7="yes" # whether armv7 processors is supported or not
-armv8="yes" # whether armv8 processors is supported or not
+armv6="yes" # whether armv6 processors are supported
+armv7="yes" # whether armv7 processors are supported
+armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
-osreleases=( "Raspbian" "Ubuntu" "Debian" ) # list all the os-releases supported
-squeezesupport="no" # whether Squeeze is supported or not
-wheezysupport="yes" # whether Wheezy is supported or not
-jessiesupport="yes" # whether Jessie is supported or not
+osreleases=( "Raspbian" "Debian" "Ubuntu" ) # list all the os-releases supported
+squeezesupport="no" # whether Squeeze is supported
+wheezysupport="yes" # whether Wheezy is supported
+jessiesupport="yes" # whether Jessie is supported
 debpackage="na" # the name of the package in apt repo
 piplibname="microdotphat" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported or not
-pip3support="yes" # whether python3 is supported or not
+pip2support="yes" # whether python2 is supported
+pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="microdotphat" # the name of the dir for copy of examples
 gitreponame="microdot-phat" # the name of the git project repo
@@ -527,7 +529,7 @@ if confirm "Do you wish to continue?"; then
         if apt_pkg_req "python-smbus" || apt_pkg_req "python3-smbus"; then
             sysupdate
             if apt_pkg_req "python-smbus"; then
-                if ! apt_pkg_install "python-smbus"  && python3 --version | grep "2.7" > /dev/null; then            
+                if ! apt_pkg_install "python-smbus"  && python3 --version | grep "2.7" > /dev/null; then
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                     cd $DEBDIR
                     wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
@@ -535,7 +537,7 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
             if apt_pkg_req "python3-smbus"; then
-                if ! apt_pkg_install "python3-smbus" && python3 --version | grep "3.4" > /dev/null; then            
+                if ! apt_pkg_install "python3-smbus" && python3 --version | grep "3.4" > /dev/null; then
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
                     cd $DEBDIR
                     wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null

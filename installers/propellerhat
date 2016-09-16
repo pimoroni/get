@@ -29,21 +29,26 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-i2creq="no" # whether i2c interface is required or not
-spireq="no" # whether spi interface is required or not
-uartreq="yes" # whether uart communication is required or not
-armv6="no" # whether armv6 processors is supported or not
-armv7="yes" # whether armv7 processors is supported or not
-armv8="yes" # whether armv8 processors is supported or not
+gpioreq="yes" # whether low-level gpio access is required
+i2creq="no" # whether the i2c interface is required
+i2sreq="no" # whether the i2s interface is required
+spireq="no" # whether the spi interface is required
+uartreq="yes" # whether uart communication is required
+armhfonly="yes" # whether the script is allowed to run on other arch
+armv6="no" # whether armv6 processors are supported
+armv7="yes" # whether armv7 processors are supported
+armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
-squeezesupport="no" # whether Squeeze is supported or not
-wheezysupport="no" # whether Wheezy is supported or not
-jessiesupport="yes" # whether Jessie is supported or not
+macosxsupport="no" # whether Mac OS X is supported by the script
+osreleases=( "Raspbian" ) # list all the os-releases supported
+squeezesupport="no" # whether Squeeze is supported
+wheezysupport="no" # whether Wheezy is supported
+jessiesupport="yes" # whether Jessie is supported
 debpackage="na" # the name of the package in apt repo
 piplibname="p1" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported or not
-pip3support="yes" # whether python3 is supported or not
+pip2support="yes" # whether python2 is supported
+pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="propellerhat" # the name of the dir for copy of examples
 gitreponame="propeller-hat" # the name of the git project repo
@@ -455,7 +460,7 @@ elif $IS_ARMv6 && [ $armv6 == "no" ]; then
     warning "Sorry, your CPU is not supported by this installer"
     newline
     exit 1
-fi    
+fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
@@ -655,7 +660,7 @@ if confirm "Do you wish to continue?"; then
             if [ $debugmode != "no" ]; then
                 echo "git user name is $gitusername"
                 echo "git repo name is $gitreponame"
-            fi        
+            fi
             if [ $gitrepobranch != "master" ]; then
                 git clone https://github.com/$gitusername/$gitreponame $gitclonedir -b $gitrepobranch
             else
