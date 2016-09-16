@@ -28,6 +28,7 @@ forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="yes" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="no" # whether the script is allowed to run on other OSes
+oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 
 FORCE=$1
 DEVICE_TREE=true

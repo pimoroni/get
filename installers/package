@@ -29,7 +29,7 @@ promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
-osreleases=( "Raspbian" "Debian" "Kali" "Mate" "Ubuntu" ) # list all the os-releases supported
+osreleases=( "Raspbian" "Debian" "Kali" "Mate" "Ubuntu" ) # list os-releases supported
 
 FORCE=$1
 DEVICE_TREE=true
