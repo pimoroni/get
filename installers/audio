@@ -35,7 +35,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" "Kali" "Mate" ) # list experimental os-releases
+oswarning=( "Debian" "Ubuntu" "Mate" ) # list experimental os-releases
 squeezesupport="no" # whether Squeeze is supported
 wheezysupport="yes" # whether Wheezy is supported
 jessiesupport="yes" # whether Jessie is supported
@@ -274,6 +274,7 @@ os_check
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
+    warning "Config files have been left untouched"
     newline && exit 1
 fi
 
@@ -293,6 +294,7 @@ elif [ $raspbianonly == "yes" ];then
 else
     if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         warning "Your operating system is not supported, sorry!"
+        warning "Config files have been left untouched"
         newline && exit 1
     fi
 fi
