@@ -36,7 +36,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" "Kali" "Mate" ) # list experimental os-releases
-squeezesupport="no" # whether Squeeze is supported
+squeezesupport="yes" # whether Squeeze is supported
 wheezysupport="yes" # whether Wheezy is supported
 jessiesupport="yes" # whether Jessie is supported
 
