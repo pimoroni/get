@@ -52,7 +52,7 @@ pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="localdir" # the name of the dir for copy of examples
+localdir="localdir" # the name of the dir for copy of resources
 gitreponame="gitreponame" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609170015
+# template 1609212015
 
 FORCE=$1
 ASK_TO_REBOOT=false
