@@ -810,6 +810,7 @@ if confirm "Do you wish to continue?"; then
         \curl -sS https://get.pimoroni.com/microdotphat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/mote | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/pianohat | bash -s - "-y"
+        \curl -sS https://get.pimoroni.com/pibrella | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/piglow | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/scrollphat | bash -s - "-y"
         \curl -sS https://get.pimoroni.com/skywriter | bash -s - "-y"
