@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609232030
+# template 1609232155
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -181,7 +181,7 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
