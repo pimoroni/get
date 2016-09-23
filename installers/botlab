@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609232030
+# template 1609232210
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -141,11 +141,9 @@ sysclean() {
 }
 
 sysupdate() {
-    if [ "$FORCE" != '-y' ]; then
-        if ! $UPDATE_DB; then
-            sudo apt-get update
-            UPDATE_DB=true
-        fi
+    if ! $UPDATE_DB; then
+        sudo apt-get update
+        UPDATE_DB=true
     fi
 }
 
@@ -181,7 +179,7 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
@@ -481,7 +479,9 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
     check_network
-    sysupdate
+    if [ "$FORCE" != '-y' ]; then
+        sysupdate
+    fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
@@ -829,8 +829,10 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot && newline
+    if [ "$FORCE" != '-y' ]; then
+        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+            sysreboot && newline
+        fi
     fi
 else
     newline && echo "Aborting..." && newline
