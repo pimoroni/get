@@ -71,7 +71,7 @@ moreaptdep=( "python-pil" "python-psutil" "python-feedparser" "python3-pil" "pyt
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609170000
+# template 1609271550
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -179,7 +179,7 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
@@ -301,6 +301,10 @@ space_chk() {
     fi
 }
 
+timestamp() {
+    date +%Y%m%d-%H%M
+}
+
 check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
 }
@@ -417,6 +421,17 @@ if ! $IS_ARMHF; then
     newline && exit 1
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+fi
+
 if $IS_RASPBIAN; then
     raspbian_check
     if [ $wheezysupport == "no" ] && raspbian_old; then
@@ -437,15 +452,10 @@ else
     fi
 fi
 
-if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
-elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
-elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -475,7 +485,9 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
     check_network
-    sysupdate
+    if [ "$FORCE" != '-y' ]; then
+        sysupdate
+    fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
@@ -554,7 +566,7 @@ if confirm "Do you wish to continue?"; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $GETPOOL/python3-smbus1_1.1+35dbg-1_armhf.deb &> /dev/null
+                    wget $GETPOOL/resources/python3-smbus1_1.1+35dbg-1_armhf.deb &> /dev/null
                     sudo dpkg -i $DEBDIR/python3-smbus1_1.1+35dbg-1_armhf.deb
                 else
                     warning "Unable to install compatible python3-smbus!"
@@ -604,7 +616,6 @@ if confirm "Do you wish to continue?"; then
 
     echo "Checking install requirements..."
 
-    newline && echo "Updating package indexes..."
     newline && echo "Checking for dependencies..."
 
     if $REMOVE_PKG; then
@@ -808,8 +819,10 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot && newline
+    if [ "$FORCE" != '-y' ]; then
+        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+            sysreboot && newline
+        fi
     fi
 else
     newline && echo "Aborting..." && newline
