@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609271700
+# template 1609271710
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -559,20 +559,22 @@ if confirm "Do you wish to continue?"; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         fi
-        if apt_pkg_req "python3-smbus" && ! apt_pkg_install "python3-smbus" /dev/null; then
-            if python3 --version | grep "3.4" > /dev/null; then
-                echo "python3-smbus can't be found, fetching from alternative location..."
-                FAILED_PKG=false
-                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
-                sudo dpkg -i $DEBDIR/$SMBUS3
-            elif python3 --version | grep "3.5" > /dev/null; then
-                if apt_pkg_req "python3-smbus1"; then
+        if apt_pkg_req "python3-smbus" && apt_pkg_req "python3-smbus1"; then
+            if ! apt_pkg_install "python3-smbus" /dev/null; then
+                if python3 --version | grep "3.4" > /dev/null; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $GETPOOL/resources/$SMBUS1 &> /dev/null
-                    sudo dpkg -i $DEBDIR/$SMBUS1
+                    wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                    sudo dpkg -i $DEBDIR/$SMBUS3
+                elif python3 --version | grep "3.5" > /dev/null; then
+                    if apt_pkg_req "python3-smbus1"; then
+                        echo "python3-smbus can't be found, fetching from alternative location..."
+                        FAILED_PKG=false
+                        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                        wget $GETPOOL/resources/$SMBUS1 &> /dev/null
+                        sudo dpkg -i $DEBDIR/$SMBUS1
+                    fi
                 fi
             fi
         fi
