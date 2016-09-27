@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609271710
+# template 1609271805
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -191,20 +191,24 @@ os_check() {
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
                 if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_SUPPORTED=true
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
                 if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_EXPERIMENTAL=true
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                 fi
             done
         fi
-    elif uname -s | grep "Darwin" > /dev/null; then
+    fi
+    if [ -d "~/.config/ubuntu-mate" ]; then
+        IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+    fi
+    if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
         if [ $macosxsupport == "yes" ]; then
-            IS_SUPPORTED=true
-        fi
+        IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+    fi
     fi
 }
 
