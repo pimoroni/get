@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609271635
+# template 1609271645
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -546,8 +546,8 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by I2C interface..." && newline
-        if apt_pkg_req "python-smbus"; then
-            if ! apt_pkg_install "python-smbus" && python --version | grep "2.7" > /dev/null; then
+        if apt_pkg_req "python-smbus" && ! apt_pkg_install "python-smbus" /dev/null; then
+            if python --version | grep "2.7" > /dev/null; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
@@ -558,26 +558,22 @@ if confirm "Do you wish to continue?"; then
         if ! $PIP2_BIN list | grep "smbus" > /dev/null; then
             FAILED_PKG=true
         fi
-        if apt_pkg_req "python3-smbus"; then
-            if ! apt_pkg_install "python3-smbus"; then
-                if python3 --version | grep "3.4" > /dev/null; then
-                    echo "python3-smbus can't be found, fetching from alternative location..."
-                    FAILED_PKG=false
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
-                    sudo dpkg -i $DEBDIR/$SMBUS3
-                elif python3 --version | grep "3.5" > /dev/null; then
-                    if apt-cache show python3-smbus1 | grep > /dev/null; then
-                        echo "python3-smbus can't be found, fetching from alternative location..."
-                        FAILED_PKG=false
-                        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                        wget $GETPOOL/resources/$SMBUS1 &> /dev/null
-                        sudo dpkg -i $DEBDIR/$SMBUS1
-                    fi
-                else
-                    warning "Unable to install compatible python3-smbus!"
-                    FAILED_PKG=true
-                fi
+        if apt_pkg_req "python3-smbus" && ! apt_pkg_install "python3-smbus" /dev/null; then
+            if python3 --version | grep "3.4" > /dev/null; then
+                echo "python3-smbus can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SMBUS3
+            elif apt_pkg_req "python3-smbus1" && python3 --version | grep "3.5" > /dev/null; then
+                echo "python3-smbus can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $GETPOOL/resources/$SMBUS1 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SMBUS1
+            else
+                warning "Unable to install compatible python3-smbus!"
+                FAILED_PKG=true
             fi
         fi
         if ! $PIP3_BIN list | grep "smbus" > /dev/null; then
