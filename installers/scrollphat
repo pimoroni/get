@@ -71,7 +71,7 @@ moreaptdep=( "python-pil" "python-psutil" "python-feedparser" "python3-pil" "pyt
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609271550
+# template 1609271635
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -88,9 +88,13 @@ INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
+RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
-RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+
+SMBUS1="python3-smbus1_1.1+35dbg-1_armhf.deb"
+SMBUS2="python-smbus_3.1.1+svn-2_armhf.deb"
+SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 
 # function define
 
@@ -547,8 +551,8 @@ if confirm "Do you wish to continue?"; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
         if ! $PIP2_BIN list | grep "smbus" > /dev/null; then
@@ -560,14 +564,16 @@ if confirm "Do you wish to continue?"; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
+                    wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                    sudo dpkg -i $DEBDIR/$SMBUS3
                 elif python3 --version | grep "3.5" > /dev/null; then
-                    echo "python3-smbus can't be found, fetching from alternative location..."
-                    FAILED_PKG=false
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $GETPOOL/resources/python3-smbus1_1.1+35dbg-1_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python3-smbus1_1.1+35dbg-1_armhf.deb
+                    if apt-cache show python3-smbus1 | grep > /dev/null;
+                        echo "python3-smbus can't be found, fetching from alternative location..."
+                        FAILED_PKG=false
+                        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                        wget $GETPOOL/resources/$SMBUS1 &> /dev/null
+                        sudo dpkg -i $DEBDIR/$SMBUS1
+                    fi
                 else
                     warning "Unable to install compatible python3-smbus!"
                     FAILED_PKG=true
