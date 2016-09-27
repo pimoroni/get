@@ -567,7 +567,7 @@ if confirm "Do you wish to continue?"; then
                     wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                     sudo dpkg -i $DEBDIR/$SMBUS3
                 elif python3 --version | grep "3.5" > /dev/null; then
-                    if apt-cache show python3-smbus1 | grep > /dev/null;
+                    if apt-cache show python3-smbus1 | grep > /dev/null; then
                         echo "python3-smbus can't be found, fetching from alternative location..."
                         FAILED_PKG=false
                         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
