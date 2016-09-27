@@ -201,7 +201,7 @@ os_check() {
             done
         fi
     fi
-    if [ -d "~/.config/ubuntu-mate" ]; then
+    if [ -d ~/.config/ubuntu-mate ]; then
         IS_SUPPORTED=true && IS_EXPERIMENTAL=false
     fi
     if uname -s | grep "Darwin" > /dev/null; then
