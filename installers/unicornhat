@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-flask" "python3-flask" ) # l
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609282140
+# template 1609282145
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -479,7 +479,9 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline && exit 1
     fi
-elif ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         warning "Your operating system is not supported, sorry!"
         newline && exit 1
 fi
