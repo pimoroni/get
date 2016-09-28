@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) #
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609282335
+# template 1609290000
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -828,7 +828,8 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         done
-        newline && success "Resources for your $productname were copied to $installdir"
+        newline && success "Resources for your $productname were copied to"
+        success "$installdir"
         rm -rf $TMPDIR
     fi
 
