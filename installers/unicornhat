@@ -220,8 +220,10 @@ os_check() {
         warning "this is MATE"
         for os in ${osdeny[@]}; do
             if [ $os == "Mate" ]; then
+                warning "MATE is denied"
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
             else
+                success "MATE is allowed"
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
         done
