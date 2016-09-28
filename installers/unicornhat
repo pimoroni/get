@@ -207,6 +207,7 @@ os_check() {
         fi
     fi
     if [ -f ~/.pt-dashboard-config ]; then
+        IS_RASPBIAN=false
         for os in ${osdeny[@]}; do
             if [ $os == "PiTop" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
