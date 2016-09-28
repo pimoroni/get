@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-flask" "python3-flask" ) # l
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609282300
+# template 1609282325
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -217,6 +217,7 @@ os_check() {
         done
     fi
     if [ -d ~/.config/ubuntu-mate ]; then
+        warning "this is MATE"
         for os in ${osdeny[@]}; do
             if [ $os == "Mate" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -224,6 +225,8 @@ os_check() {
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
         done
+        warning "IS_SUPPORTED is $IS_SUPPORTED"
+        warning "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     fi
     if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
@@ -451,6 +454,7 @@ if [ $debugmode != "no" ]; then
     echo "IS_MACOSX is $IS_MACOSX"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    newline
 fi
 
 if ! $IS_ARMHF; then
