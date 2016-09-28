@@ -40,9 +40,9 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Kali" "Mate" "Ubuntu" ) # list experimental os-releases
+oswarning=( "Debian" "Kali" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" ) # list os-releases specifically disallowed
 squeezesupport="no" # whether Squeeze is supported
 wheezysupport="yes" # whether Wheezy is supported
 jessiesupport="yes" # whether Jessie is supported
@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609170015
+# template 1609282120
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -88,9 +88,13 @@ INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
+RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
-RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+
+SMBUS1="python3-smbus1_1.1+35dbg-1_armhf.deb"
+SMBUS2="python-smbus_3.1.1+svn-2_armhf.deb"
+SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 
 # function define
 
@@ -179,28 +183,56 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
             IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_SUPPORTED=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_EXPERIMENTAL=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osdeny[@]}; do
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
         fi
-    elif uname -s | grep "Darwin" > /dev/null; then
+    fi
+    if [ -d ~/.pt-dashboard-config ]; then
+        for os in ${osdeny[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            else
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+    fi
+    if [ -d ~/.config/ubuntu-mate ]; then
+        for os in ${osdeny[@]}; do
+            if [ $os == "Mate" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            else
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+    fi
+    if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-        if [ $macosxsupport == "yes" ]; then
-            IS_SUPPORTED=true
-        fi
+        for os in ${osdeny[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            else
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
     fi
 }
 
@@ -421,6 +453,17 @@ if ! $IS_ARMHF; then
     newline && exit 1
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+fi
+
 if $IS_RASPBIAN; then
     raspbian_check
     if [ $wheezysupport == "no" ] && raspbian_old; then
@@ -441,15 +484,10 @@ else
     fi
 fi
 
-if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
-elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
-elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -479,7 +517,9 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
     check_network
-    sysupdate
+    if [ "$FORCE" != '-y' ]; then
+        sysupdate
+    fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
@@ -534,39 +574,40 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by I2C interface..." && newline
-        if apt_pkg_req "python-smbus"; then
-            if ! apt_pkg_install "python-smbus" && python --version | grep "2.7" > /dev/null; then
+        if apt_pkg_req "python-smbus" && ! apt_pkg_install "python-smbus" /dev/null; then
+            if python --version | grep "2.7" > /dev/null; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/python-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                sudo dpkg -i $DEBDIR/python-smbus_3.1.1+svn-2_armhf.deb
+                wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
         if ! $PIP2_BIN list | grep "smbus" > /dev/null; then
+            warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         fi
-        if apt_pkg_req "python3-smbus"; then
-            if ! apt_pkg_install "python3-smbus"; then
+        if apt_pkg_req "python3-smbus" && apt_pkg_req "python3-smbus1"; then
+            if ! apt_pkg_install "python3-smbus" /dev/null; then
                 if python3 --version | grep "3.4" > /dev/null; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $RASPOOL/main/i/i2c-tools/python3-smbus_3.1.1+svn-2_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python3-smbus_3.1.1+svn-2_armhf.deb
+                    wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                    sudo dpkg -i $DEBDIR/$SMBUS3
                 elif python3 --version | grep "3.5" > /dev/null; then
-                    echo "python3-smbus can't be found, fetching from alternative location..."
-                    FAILED_PKG=false
-                    DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $GETPOOL/python3-smbus1_1.1+35dbg-1_armhf.deb &> /dev/null
-                    sudo dpkg -i $DEBDIR/python3-smbus1_1.1+35dbg-1_armhf.deb
-                else
-                    warning "Unable to install compatible python3-smbus!"
-                    FAILED_PKG=true
+                    if apt_pkg_req "python3-smbus1"; then
+                        echo "python3-smbus can't be found, fetching from alternative location..."
+                        FAILED_PKG=false
+                        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                        wget $GETPOOL/resources/$SMBUS1 &> /dev/null
+                        sudo dpkg -i $DEBDIR/$SMBUS1
+                    fi
                 fi
             fi
         fi
         if ! $PIP3_BIN list | grep "smbus" > /dev/null; then
+            warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
         fi
     fi
@@ -608,7 +649,6 @@ if confirm "Do you wish to continue?"; then
 
     echo "Checking install requirements..."
 
-    newline && echo "Updating package indexes..."
     newline && echo "Checking for dependencies..."
 
     if $REMOVE_PKG; then
@@ -812,8 +852,10 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
-    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot && newline
+    if [ "$FORCE" != '-y' ]; then
+        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+            sysreboot && newline
+        fi
     fi
 else
     newline && echo "Aborting..." && newline
