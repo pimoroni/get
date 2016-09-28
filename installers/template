@@ -71,7 +71,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609282325
+# template 1609282330
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -211,8 +211,6 @@ os_check() {
         for os in ${osdeny[@]}; do
             if [ $os == "PiTop" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            else
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
         done
     fi
@@ -221,8 +219,6 @@ os_check() {
         for os in ${osdeny[@]}; do
             if [ $os == "Mate" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            else
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
         done
         warning "IS_SUPPORTED is $IS_SUPPORTED"
@@ -233,8 +229,6 @@ os_check() {
         for os in ${osdeny[@]}; do
             if [ $os == "Darwin" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            else
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
         done
     fi
