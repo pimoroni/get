@@ -24,7 +24,7 @@ DISCLAIMER
 productname="Unicorn HAT/pHAT" # the name of the product to install
 scriptname="unicornhat" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
-debugmode="yes" # whether the script should use debug routines
+debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
@@ -71,7 +71,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-flask" "python3-flask" ) # l
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609282155
+# template 1609282200
 
 FORCE=$1
 ASK_TO_REBOOT=false
