@@ -71,7 +71,7 @@ moreaptdep=( "python-pygame" "python3-pygame" ) # list of additional apt depende
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609290010
+# template 1609301205
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -208,6 +208,11 @@ os_check() {
     fi
     if [ -f ~/.pt-dashboard-config ]; then
         IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
         for os in ${osdeny[@]}; do
             if [ $os == "PiTop" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -518,7 +523,7 @@ if confirm "Do you wish to continue?"; then
 # basic environment preparation
 
     newline && echo "Checking environment..."
-    
+
     if ! check_network; then
         warning "We can't connect to the Internet, check your network!" && exit 1
     fi
