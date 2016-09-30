@@ -63,7 +63,7 @@ imgur_upload() {
     # upload the image
     response=$(curl -F "key=$apikey" -H "Expect: " -F "image=@$file" \
     http://imgur.com/api/upload.xml 2>/dev/null)
-    # the "Expect: " header is to get around a problem when using this through 
+    # the "Expect: " header is to get around a problem when using this through
     # the Squid proxy. Not sure if it's a Squid bug or what.
     if [ $? -ne 0 ]; then
         echo "Upload failed" >&2

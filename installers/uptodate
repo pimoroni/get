@@ -21,13 +21,24 @@ DISCLAIMER
 
 productname="na" # the name of the product to install
 scriptname="uptodate" # the name of this script
+spacereq=1 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="yes" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
+armhfonly="yes" # whether the script is allowed to run on other arch
+armv6="yes" # whether armv6 processors are supported
+armv7="yes" # whether armv7 processors are supported
+armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
+macosxsupport="no" # whether Mac OS X is supported by the script
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Ubuntu" "Kali" "Mate" ) # list experimental os-releases
+squeezesupport="no" # whether Squeeze is supported
+wheezysupport="yes" # whether Wheezy is supported
+jessiesupport="yes" # whether Jessie is supported
 
 FORCE=$1
 DEVICE_TREE=true
@@ -109,17 +120,30 @@ arch_check() {
 os_check() {
     IS_RASPBIAN=false
     IS_MACOSX=false
-    IS_X86_64=false
-    IS_X86_32=false
-
-    if [ -f /etc/os-release ] && cat /etc/os-release | grep "Raspbian" > /dev/null; then
-        IS_RASPBIAN=true
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
+    
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+            IS_RASPBIAN=true && IS_SUPPORTED=true
+        fi
+        if command -v apt-get > /dev/null; then
+            for os in ${osreleases[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_SUPPORTED=true
+                fi
+            done
+            for os in ${oswarning[@]}; do
+                if cat /etc/os-release | grep "$os" > /dev/null; then
+                    IS_EXPERIMENTAL=true
+                fi
+            done
+        fi
     elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-    elif uname -m | grep "x86_64" > /dev/null; then
-        IS_X86_64=true
-    else
-        IS_X86_32=true
+        if [ $macosxsupport == "yes" ]; then
+            IS_SUPPORTED=true
+        fi
     fi
 }
 
@@ -160,19 +184,28 @@ MAINSTART
 arch_check
 os_check
 
+if ! $IS_ARMHF; then
+    warning "This hardware is not supported, sorry!"
+    newline && exit 1
+fi
+
 if $IS_RASPBIAN; then
-    raspbian_check # insert any flavour specific routine in this scope
-elif ! $IS_RASPBIAN && [ $raspbianonly == "yes" ]; then
-    warning "Warning!"
-    echo "Please only run this script on Raspbian on your Raspberry Pi"
-    exit 1
+    raspbian_check
+    if [ $wheezysupport == "no" ] && raspbian_old; then
+        newline && warning "--- Warning ---" && newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/$gitusername/$gitreponame"
+        echo "for additional information and support"
+        newline && exit 1
+    fi
+elif [ $raspbianonly == "yes" ];then
+        warning "This script is intended for Raspbian on a Raspberry Pi!"
+        newline && exit 1
 else
-    if [ $debugmode == "yes" ]; then
-        newline
-        echo "IS_RASPBIAN is $IS_RASPBIAN"
-        echo "IS_MACOSX is $IS_MACOSX"
-        echo "IS_X86_64 is $IS_X86_64"
-        echo "IS_X86_32 is $IS_X86_32"
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+        warning "Your operating system is not supported, sorry!"
+        newline && exit 1
     fi
 fi
 
