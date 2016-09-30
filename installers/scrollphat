@@ -71,7 +71,7 @@ moreaptdep=( "python-pil" "python-psutil" "python-feedparser" "python3-pil" "pyt
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609301200
+# template 1609301205
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -208,7 +208,7 @@ os_check() {
     fi
     if [ -f ~/.pt-dashboard-config ]; then
         IS_RASPBIAN=false
-        for os in ${oswarn[@]}; do
+        for os in ${oswarning[@]}; do
             if [ $os == "PiTop" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=true
             fi
