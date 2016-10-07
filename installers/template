@@ -43,9 +43,6 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-squeezesupport="no" # whether Squeeze is supported
-wheezysupport="yes" # whether Wheezy is supported
-jessiesupport="yes" # whether Jessie is supported
 debpackage="aptdebname" # the name of the package in apt repo
 piplibname="piplibname" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -71,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1609301205
+# template 1610071930
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -186,7 +183,7 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
+            IS_RASPBIAN=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
@@ -237,29 +234,21 @@ os_check() {
 }
 
 raspbian_check() {
-    IS_SQUEEZE=false
-    IS_WHEEZY=false
-    IS_JESSIE=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "jessie" > /dev/null; then
-            IS_JESSIE=true
+        if cat /etc/os-release | grep "/sid" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
-            IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
-            IS_SQUEEZE=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
-            echo "Unsupported distribution"
-            exit 1
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
         fi
-    fi
-}
-
-raspbian_old() {
-    if $IS_SQUEEZE || $IS_WHEEZY ;then
-        true
-    else
-        false
     fi
 }
 
@@ -476,7 +465,7 @@ fi
 
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $wheezysupport == "no" ] && raspbian_old; then
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         newline && warning "--- Warning ---" && newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
