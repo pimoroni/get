@@ -19,22 +19,35 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="Pimstaller" # the name of the product to install
-prodversion="2016-07-26" # version of the present implementation
+prodversion="2016-10-19" # version of the present implementation
 scriptname="pimstaller" # the name of this script
+spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
+armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-squeezesupport="no" # whether Squeeze is supported
-wheezysupport="yes" # whether Wheezy is supported
-jessiesupport="yes" # whether Jessie is supported
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
+
+# setup variables
+
+DESKTOP_FILE="~/Desktop/pimstaller.desktop"
+DESKTOP_APP_FILE="/usr/share/applications/pimstaller.desktop"
+DESKTOP_ICON="/usr/share/pixmaps/pimstaller.png"
+DASHBOARD_SCRIPT="/usr/bin/pimstaller"
+
+# function define
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -84,7 +97,7 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update
+        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
     fi
 }
@@ -121,55 +134,75 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
+            IS_RASPBIAN=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_SUPPORTED=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_EXPERIMENTAL=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osdeny[@]}; do
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
         fi
-    elif uname -s | grep "Darwin" > /dev/null; then
+    fi
+    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if [ -d ~/.config/ubuntu-mate ]; then
+        for os in ${osdeny[@]}; do
+            if [ $os == "Mate" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-        if [ $macosxsupport == "yes" ]; then
-            IS_SUPPORTED=true
-        fi
+        for os in ${osdeny[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
 }
 
 raspbian_check() {
-    IS_SQUEEZE=false
-    IS_WHEEZY=false
-    IS_JESSIE=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "jessie" > /dev/null; then
-            IS_JESSIE=true
+        if cat /etc/os-release | grep "/sid" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
-            IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
-            IS_SQUEEZE=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
-            echo "Unsupported distribution"
-            exit 1
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
         fi
-    fi
-}
-
-raspbian_old() {
-    if $IS_SQUEEZE || $IS_WHEEZY ;then
-        true
-    else
-        false
     fi
 }
 
@@ -194,12 +227,27 @@ home_dir() {
     fi
 }
 
-check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
+space_chk() {
+    if command -v stat > /dev/null && ! $IS_MACOSX; then
+        if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+            newline
+            warning  "There is not enough space left to proceed with  installation"
+            if confirm "Would you like to attempt to expand your filesystem?"; then
+                \curl -sS $GETPOOL/expandfs | sudo bash
+                exit 1
+            else
+                newline && exit 1
+            fi
+        fi
+    fi
 }
 
 timestamp() {
     date +%Y%m%d-%H%M
+}
+
+check_network() {
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` &> /dev/null && return 0 || return 1
 }
 
 apt_pkg_req() {
@@ -212,21 +260,58 @@ apt_pkg_req() {
     fi
 }
 
-self_update() {
-    if check_network; then
-        echo "Updating..."
-        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        curl -sS https://get.pimoroni.com/pimstaller >> $TMPDIR/pimstaller
-        sudo cp $TMPDIR/pimstaller $DASHBOARD_SCRIPT
-        rm -rf $TMPDIR
-        pimstaller
-        exit 0
+apt_pkg_install() {
+    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    newline
+}
+
+pip2_chk() {
+    if command -v pip2 > /dev/null; then
+        PIP2_BIN="pip2"
+    elif command -v pip-2.7 > /dev/null; then
+        PIP2_BIN="pip-2.7"
+    elif command -v pip-2.6 > /dev/null; then
+        PIP2_BIN="pip-2.6"
+    else
+        PIP2_BIN="pip"
+    fi
+}
+
+pip2_pkg_req() {
+    PIP2_CHK=$($PIP2_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP2_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip3_chk() {
+    if command -v pip3 > /dev/null; then
+        PIP3_BIN="pip3"
+    elif command -v pip-3.3 > /dev/null; then
+        PIP3_BIN="pip-3.3"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip-3.2"
+    else
+        PIP3_BIN="pip"
+    fi
+}
+
+pip3_pkg_req() {
+    PIP3_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP3_CHK" ]; then
+        true
+    else
+        false
     fi
 }
 
 get_install() {
-    check_network || (whip_msgbox "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    \curl -sS https://get.pimoroni.com/$1 | bash
+    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    \curl -sS get.pimoroni.com/$1 | bash
     read -p "Press Enter to continue..." < /dev/tty
 }
 
@@ -234,78 +319,318 @@ save_stdout() {
     savename=$(timestamp)-info.txt
     get_install $1 2>&1 | tee ~/Desktop/$savename
     sed -i "/Press Enter/d" ~/Desktop/$savename
-    whip_msgbox "Success, your system info has been saved to the Desktop!"
+    info_msgbox "Success, your system info has been saved to the Desktop!"
 }
 
 save_snap() {
     if ! command -v scrot > /dev/null; then
         warning "scrot is not installed"
         echo "try: sudo apt-get install scrot"
-    elif ! [ "$DISPLAY" ]; then
-        whip_msgbox "X is not running, we can't take screenshots, sorry!"
+    elif [ -z "$DISPLAY" ]; then
+        error_box "X is not running, we can't take screenshots, sorry!"
     else
-        whip_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nThis screenshot will be stored on your desktop, from where you can share it with us or with the world!"
+        info_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nThis screenshot will be stored on your desktop, from where you can share it with us or with the world!"
         echo "Taking screenshot..."
         echo "Draw a rectangle around your subject."
         scrot -s ~/Desktop/%Y%m%d-%H%M-snap.png
-        whip_msgbox "Success, your screenshot has been saved to the Desktop!"
+        info_box "Success, your screenshot has been saved to the Desktop!"
+    fi
+}
+
+self_update() {
+    if check_network; then
+        echo "Updating..."
+        export TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        curl -sS get.pimoroni.com/pimstaller >> $TMPDIR/pimstaller
+        sudo cp $TMPDIR/pimstaller $DASHBOARD_SCRIPT
+        rm -rf $TMPDIR
+        pimstaller
+        exit 0
     fi
 }
 
 about_box() {
-    whip_msgbox "$productname $prodversion"
-}
-
-whip_confirm() {
-    whiptail --yesno "$1" $WT_HEIGHT $(($WT_WIDTH-20))
-}
-
-whip_msgbox() {
-    whiptail --msgbox "$1" $WT_HEIGHT $(($WT_WIDTH-20))
-}
-
-whip_size() {
-    WT_HEIGHT=17
-    WT_WIDTH=$(tput cols)
-    if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 60 ]; then
-        WT_WIDTH=80
+    if [ -n "$xdisplay" ]; then
+        zenity --width=512 --height=128 --info --text "$productname $prodversion"
+    else
+        whiptail --msgbox "$productname $prodversion" $BOXHEIGHT $(($BOXWIDTH-10))
     fi
-    if [ "$WT_WIDTH" -gt 178 ]; then
-        WT_WIDTH=120
-    fi
-    WT_MENU_HEIGHT=$(($WT_HEIGHT-7))
 }
+
+confirm_box() {
+    if [ -n "$xdisplay" ]; then
+        zenity --width=512 --height=128 --question --text "$1"
+    else
+        whiptail --yesno "$1" $BOXHEIGHT $(($BOXWIDTH-10))
+    fi
+}
+
+info_box() {
+    if [ -n "$xdisplay" ]; then
+        zenity --width=512 --height=128 --info --text "$1"
+    else
+        whiptail --msgbox "$1" $BOXHEIGHT $(($BOXWIDTH-10))
+    fi
+}
+
+error_box() {
+    if [ -n "$xdisplay" ]; then
+        zenity --width=512 --height=128 --error --text "$1"
+    else
+        whiptail --msgbox "$1" $BOXHEIGHT $(($BOXWIDTH-10))
+    fi
+}
+
+box_size() {
+    if [ -n "$xdisplay" ]; then
+        BOXHEIGHT=320
+        BOXWIDTH=512
+        BOX_MENU_HEIGHT=""
+    else
+        BOXHEIGHT=17
+        BOXWIDTH=$(tput cols)
+        if [ -z "$BOXWIDTH" ] || [ "$BOXWIDTH" -lt 60 ]; then
+            BOXWIDTH=80
+        fi
+        if [ "$BOXWIDTH" -gt 178 ]; then
+            BOXWIDTH=120
+        fi
+        BOX_MENU_HEIGHT=$(($BOXHEIGHT-7))
+    fi
+}
+
+# menu define
+
+main_menu() {
+
+TITLE="Pimoroni Software Installer"
+MAINLIST="\
+1/my Pimoroni product is a HAT/\
+2/my Pimoroni product is a pHAT/\
+3/my product is something else/\
+4/I have a problem and need help"
+
+    if [ -n "$xdisplay" ]; then
+        MAIN=$(zenity --title="$TITLE" --list \
+            --column="Option" --column="Description" \
+            --cancel-label=Quit --ok-label=Select \
+            --height=$BOXHEIGHT --width=$BOXWIDTH \
+            $MAINLIST
+        )
+    else
+        MAIN=$(whiptail --title "$TITLE" --menu "" \
+            --cancel-button Quit --ok-button Select \
+            $BOXHEIGHT $(($BOXWIDTH-10)) $BOX_MENU_HEIGHT \
+            $MAINLIST 3>&1 1>&2 2>&3
+        )
+    fi
+
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        exit 1
+    elif [ $RETURN -eq 0 ]; then
+        case "$MAIN" in
+            '')exit 0 ;;
+            1) hat_menu ;;
+            2) phat_menu ;;
+            3) board_menu ;;
+            4) util_menu ;;
+            *) error_box "Error: unrecognized option";;
+        esac ||error_box "There was an error running option $MAIN"
+    fi
+}
+
+hat_menu() {
+
+TITLE="Pimoroni Software Installer"
+MAINLIST="\
+1/Automation HAT/\
+2/Display-o-Tron HAT/\
+3/Explorer pHAT/\
+4/Explorer HAT/\
+5/Piano HAT/\
+6/Skywriter HAT/\
+7/Unicorn HAT"
+
+    if [ -n "$xdisplay" ]; then
+        HAT=$(zenity --title="$TITLE" --list \
+            --column="Option" --column="Description" \
+            --cancel-label=Back --ok-label=Select \
+            --height=$BOXHEIGHT --width=$BOXWIDTH \
+            $MAINLIST
+        )
+    else
+        HAT=$(whiptail --title "$TITLE" --menu "" \
+            --cancel-button Back --ok-button Select \
+            $BOXHEIGHT $(($BOXWIDTH-10)) $BOX_MENU_HEIGHT \
+            $MAINLIST 3>&1 1>&2 2>&3
+        )
+    fi
+
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        return 0
+    elif [ $RETURN -eq 0 ]; then
+        case "$HAT" in
+            1) get_install automationhat ;;
+            2) get_install displayotron ;;
+            3) get_install drumhat ;;
+            4) get_install explorerhat ;;
+            5) get_install pianohat ;;
+            6) get_install skywriter ;;
+            7) get_install unicornhat ;;
+            *) error_box "Error: unrecognized option";;
+        esac ||error_box "There was an error running option $HAT"
+    fi
+}
+
+phat_menu() {
+
+TITLE="Pimoroni Software Installer"
+MAINLIST="\
+1/Enviro pHAT/\
+2/ESP IoT pHAT/\
+3/Drum HAT/\
+4/Micro Dot pHAT/\
+5/pHAT DAC/\
+6/Scroll pHAT/\
+7/Unicorn pHAT"
+
+    if [ -n "$xdisplay" ]; then
+        PHAT=$(zenity --title="$TITLE" --list \
+            --column="Option" --column="Description" \
+            --cancel-label=Back --ok-label=Select \
+            --height=$BOXHEIGHT --width=$BOXWIDTH \
+            $MAINLIST
+        )
+    else
+        PHAT=$(whiptail --title "$TITLE" --menu "" \
+            --cancel-button Back --ok-button Select \
+            $BOXHEIGHT $(($BOXWIDTH-10)) $BOX_MENU_HEIGHT \
+            $MAINLIST 3>&1 1>&2 2>&3
+        )
+    fi
+
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        return 0
+    elif [ $RETURN -eq 0 ]; then
+        case "$PHAT" in
+            1) get_install envirophat ;;
+            2) get_install iotphat ;;
+            3) get_install explorerhat ;;
+            4) get_install microdotphat ;;
+            5) get_install phatdac ;;
+            6) get_install scrollphat ;;
+            7) get_install unicornhat ;;
+            *) error_box "Error: unrecognized option";;
+        esac ||error_box "There was an error running option $PHAT"
+    fi
+}
+
+board_menu() {
+
+TITLE="Pimoroni Software Installer"
+MAINLIST="\
+1/Blinkt!/\
+2/Display-o-Tron 3000/\
+3/Flotilla/\
+4/Mote/\
+5/Pibrella/\
+6/Piglow/\
+7/Skywriter"
+
+    if [ -n "$xdisplay" ]; then
+        BOARD=$(zenity --title="$TITLE" --list \
+            --column="Option" --column="Description" \
+            --cancel-label=Back --ok-label=Select \
+            --height=$BOXHEIGHT --width=$BOXWIDTH \
+            $MAINLIST
+        )
+    else
+        BOARD=$(whiptail --title "$TITLE" --menu "" \
+            --cancel-button Back --ok-button Select \
+            $BOXHEIGHT $(($BOXWIDTH-10)) $BOX_MENU_HEIGHT \
+            $MAINLIST 3>&1 1>&2 2>&3
+        )
+    fi
+
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        return 0
+    elif [ $RETURN -eq 0 ]; then
+        case "$BOARD" in
+            1) get_install blinkt ;;
+            2) get_install dot3k ;;
+            3) get_install flotilla ;;
+            4) get_install mote ;;
+            5) get_install pibrella ;;
+            6) get_install piglow ;;
+            7) get_install skywriter ;;
+            *) error_box --text "Error: unrecognized option";;
+        esac ||error_box "There was an error running option $BOARD"
+    fi
+}
+
+util_menu() {
+
+TITLE="Pimoroni Software Installer"
+MAINLIST="\
+1/Gather System Info/\
+2/Take Screenshot/\
+3/Upgrade my Pi Software/\
+4/Update Product List/\
+5/About Pimstaller"
+
+    if [ -n "$xdisplay" ]; then
+        UTIL=$(zenity --title="$TITLE" --list \
+            --column="Option" --column="Description" \
+            --cancel-label=Back --ok-label=Select \
+            --height=$BOXHEIGHT --width=$BOXWIDTH \
+            $MAINLIST
+        )
+    else
+        UTIL=$(whiptail --title "$TITLE" --menu "" \
+            --cancel-button Back --ok-button Select \
+            $BOXHEIGHT $(($BOXWIDTH-10)) $BOX_MENU_HEIGHT \
+            $MAINLIST 3>&1 1>&2 2>&3
+        )
+    fi
+
+    RETURN=$?
+    if [ $RETURN -eq 1 ]; then
+        return 0
+    elif [ $RETURN -eq 0 ]; then
+        case "$UTIL" in
+            1) save_stdout cpuinfo ;;
+            2) save_snap ;;
+            3) get_install uptodate ;;
+            4) self_update ;;
+            5) about_box ;;
+            *) error_box "Error: unrecognized option";;
+        esac ||error_box "There was an error running option $UTIL"
+    fi
+}
+
+# checks and init
 
 arch_check
 os_check
+space_chk
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
+    echo "IS_RASPBIAN is $IS_RASPBIAN"
+    echo "IS_MACOSX is $IS_MACOSX"
+    echo "IS_SUPPORTED is $IS_SUPPORTED"
+    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    newline
 fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
+    warning "Config files have been left untouched"
     newline && exit 1
-fi
-
-if $IS_RASPBIAN; then
-    raspbian_check
-    if [ $wheezysupport == "no" ] && raspbian_old; then
-        newline && warning "--- Warning ---" && newline
-        echo "The $productname installer"
-        echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support"
-        newline && exit 1
-    fi
-elif [ $raspbianonly == "yes" ];then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
-else
-    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "Your operating system is not supported, sorry!"
-        newline && exit 1
-    fi
 fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
@@ -319,189 +644,59 @@ elif $IS_ARMv6 && [ $armv6 == "no" ]; then
     newline && exit 1
 fi
 
+if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
+        warning "This script is intended for Raspbian on a Raspberry Pi!"
+        newline && exit 1
+fi
+
+if $IS_RASPBIAN; then
+    raspbian_check
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+        newline && warning "--- Warning ---" && newline
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/$gitusername/$gitreponame"
+        echo "for additional information and support"
+        newline && exit 1
+    fi
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+        warning "Your operating system is not supported, sorry!"
+        newline && exit 1
+fi
+
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
+fi
+
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-home_dir
-
-WORKING_DIR="$USER_HOME/Pimoroni"
-DESKTOP_FILE="$USER_HOME/Desktop/pimstaller.desktop"
-DESKTOP_APP_FILE="/usr/share/applications/pimstaller.desktop"
-DESKTOP_ICON="/usr/share/pixmaps/pimstaller.png"
-DASHBOARD_SCRIPT="/usr/bin/pimstaller"
-
+home_dir && WORKING_DIR="$USER_HOME/Pimoroni"
 [ -d $WORKING_DIR ] || mkdir $WORKING_DIR
 cd $WORKING_DIR
 
-whip_size
+xdisplay="$DISPLAY"
+if [ $debugmode == "yes" ] && [ -n "$xdisplay" ]; then
+    xdisplay=""
+fi; box_size
 
-hat_menu() {
-    HAT=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-            "Display-o-Tron HAT" "" \
-            "Drum HAT" "" \
-            "Explorer HAT" "" \
-            "Piano HAT" "" \
-            "Skywriter HAT" "" \
-            "Unicorn HAT" "" \
-    3>&1 1>&2 2>&3)
+info_box "This handy tool will help you get started with Pimoroni products. \
+Simply pick the add-on board you want to set up from the list, hit select \
+and we'll walk you through the install process in a few easy steps. Enjoy!\n\n\
+The Pimoroni Crew"
 
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        return 0
-    elif [ $RETURN -eq 0 ]; then
-        case "$HAT" in
-            Display-o-Tron\ *) get_install displayotron ;;
-            Drum\ *) get_install drumhat ;;
-            Explorer\ *) get_install explorerhat ;;
-            Piano\ *) get_install pianohat ;;
-            Skywriter\ *) get_install skywriter ;;
-            Unicorn\ *) get_install unicornhat ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $HAT"
-    fi
-}
-
-phat_menu() {
-    PHAT=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-            "Enviro pHAT" "" \
-            "ESP IoT pHAT" "" \
-            "Explorer pHAT" "" \
-            "Micro Dot pHAT" "" \
-            "pHAT DAC" "" \
-            "Scroll pHAT" "" \
-            "Unicorn pHAT" "" \
-    3>&1 1>&2 2>&3)
-
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        return 0
-    elif [ $RETURN -eq 0 ]; then
-        case "$PHAT" in
-            Enviro\ *) get_install envirophat ;;
-            ESP\ *) get_install iotphat ;;
-            Explorer\ *) get_install explorerhat ;;
-            Micro\ *) get_install microdotphat ;;
-            pHAT\ *) get_install phatdac ;;
-            Scroll\ *) get_install scrollphat ;;
-            Unicorn\ *) get_install unicornhat ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $PHAT"
-    fi
-}
-
-flot_menu() {
-    FLOT=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-        "Flotilla Python API only" "" \
-        "Rockpool (and Flotilla API)" "" \
-    3>&1 1>&2 2>&3)
-
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        return 0
-    elif [ $RETURN -eq 0 ]; then
-        case "$FLOT" in
-            Flotilla\ *) get_install flotilla ;;
-            Rockpool\ *) get_install rockpool ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $FLOT"
-    fi
-}
-
-pim_menu() {
-    PIM=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-            "Blinkt! " "import blinkt" \
-            "Display-o-Tron 3000" "import dot3k" \
-            "Mote " "import mote" \
-            "Pibrella " "import pibrella" \
-            "Piglow " "import piglow" \
-            "Skywriter board" "import skywriter" \
-    3>&1 1>&2 2>&3)
-
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        return 0
-    elif [ $RETURN -eq 0 ]; then
-        case "$PIM" in
-            Blinkt!\ *) get_install blinkt ;;
-            Display-o-Tron\ *) get_install dot3k ;;
-            Mote\ *) get_install mote ;;
-            Pibrella\ *) get_install pibrella ;;
-            Piglow\ *) get_install piglow ;;
-            Skywriter\ *) get_install skywriter ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $PIM"
-    fi
-}
-
-util_menu() {
-    UTIL=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Back \
-    --ok-button Select \
-            "Gather System Info" "" \
-            "Take Screenshot" "" \
-            "Upgrade my Pi Software" "" \
-            "Update Product List" "" \
-            "About Pimstaller" "" \
-    3>&1 1>&2 2>&3)
-
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        return 0
-    elif [ $RETURN -eq 0 ]; then
-        case "$UTIL" in
-            Gather\ *) save_stdout cpuinfo ;;
-            Take\ *) save_snap ;;
-            Upgrade\ *) get_install uptodate ;;
-            Update\ *) self_update ;;
-            About\ *) about_box ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $UTIL"
-    fi
-}
-
-whip_msgbox "\
-    This handy tool will help you get started with Pimoroni products. Simply pick the add-on board you want to set up from the list, hit select and we'll walk you through the install process in a few easy steps.
-
-    Enjoy
-
-    - The Pimoroni Crew\
-"
+listIFS="$IFS";
+IFS="/"
 
 while true; do
-    MAIN=$(whiptail --title "Pimoroni Software Installer" --menu "Choose your add-on..." $WT_HEIGHT $(($WT_WIDTH-10)) $WT_MENU_HEIGHT \
-    --cancel-button Quit \
-    --ok-button Select \
-            "1 my Pimoroni product is a HAT" "" \
-            "2 my Pimoroni product is a pHAT" "" \
-            "3 my Pimoroni product is Flotilla" "" \
-            "4 my product is something else" "" \
-            "5 I have a problem and need help" "" \
-    3>&1 1>&2 2>&3)
-
-    RETURN=$?
-    if [ $RETURN -eq 1 ]; then
-        exit 1
-    elif [ $RETURN -eq 0 ]; then
-        case "$MAIN" in
-            1\ *) hat_menu ;;
-            2\ *) phat_menu ;;
-            3\ *) flot_menu ;;
-            4\ *) pim_menu ;;
-            5\ *) util_menu ;;
-            *) whip_msgbox "Error: unrecognized option";;
-        esac ||whip_msgbox "There was an error running option $MAIN"
-    else
-      exit 1
-    fi
+    main_menu
 done
+
+IFS=$listIFS
 
 exit 0
