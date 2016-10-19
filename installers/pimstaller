@@ -319,7 +319,7 @@ save_stdout() {
     savename=$(timestamp)-info.txt
     get_install $1 2>&1 | tee ~/Desktop/$savename
     sed -i "/Press Enter/d" ~/Desktop/$savename
-    info_msgbox "Success, your system info has been saved to the Desktop!"
+    info_box "Success, your system info has been saved to the Desktop!"
 }
 
 save_snap() {
@@ -329,7 +329,12 @@ save_snap() {
     elif [ -z "$DISPLAY" ]; then
         error_box "X is not running, we can't take screenshots, sorry!"
     else
-        info_msgbox "Please hit enter and then select the area you would like to screenshot by drawing a rectangle with your mouse.\n\nMake sure to move this window out of the way first!\n\nThis screenshot will be stored on your desktop, from where you can share it with us or with the world!"
+        info_box "\
+Please hit enter and then select the area you would like\n\
+to screenshot by drawing a rectangle with your mouse.\n\n\
+Make sure to move this window out of the way first!\n\n\
+This screenshot will be stored on your desktop,\n\
+from where you can share it with us or with the world!"
         echo "Taking screenshot..."
         echo "Draw a rectangle around your subject."
         scrot -s ~/Desktop/%Y%m%d-%H%M-snap.png
@@ -351,7 +356,7 @@ self_update() {
 
 about_box() {
     if [ -n "$xdisplay" ]; then
-        zenity --width=512 --height=128 --info --text "$productname $prodversion"
+        zenity --width=512 --height=128 --info --text "$productname $prodversion" 2> /dev/null
     else
         whiptail --msgbox "$productname $prodversion" $BOXHEIGHT $(($BOXWIDTH-10))
     fi
@@ -359,7 +364,7 @@ about_box() {
 
 confirm_box() {
     if [ -n "$xdisplay" ]; then
-        zenity --width=512 --height=128 --question --text "$1"
+        zenity --height=128 --width=512 --question --text "$1" 2> /dev/null
     else
         whiptail --yesno "$1" $BOXHEIGHT $(($BOXWIDTH-10))
     fi
@@ -367,7 +372,7 @@ confirm_box() {
 
 info_box() {
     if [ -n "$xdisplay" ]; then
-        zenity --width=512 --height=128 --info --text "$1"
+        zenity --info --text "$1" --height=$BOX_MIN_HEIGHT --width=$BOXWIDTH 2> /dev/null
     else
         whiptail --msgbox "$1" $BOXHEIGHT $(($BOXWIDTH-10))
     fi
@@ -375,7 +380,7 @@ info_box() {
 
 error_box() {
     if [ -n "$xdisplay" ]; then
-        zenity --width=512 --height=128 --error --text "$1"
+        zenity --height=128 --width=512 --error --text "$1" 2> /dev/null
     else
         whiptail --msgbox "$1" $BOXHEIGHT $(($BOXWIDTH-10))
     fi
@@ -385,7 +390,7 @@ box_size() {
     if [ -n "$xdisplay" ]; then
         BOXHEIGHT=320
         BOXWIDTH=512
-        BOX_MENU_HEIGHT=""
+        BOX_MIN_HEIGHT=64
     else
         BOXHEIGHT=17
         BOXWIDTH=$(tput cols)
@@ -415,7 +420,7 @@ MAINLIST="\
             --column="Option" --column="Description" \
             --cancel-label=Quit --ok-label=Select \
             --height=$BOXHEIGHT --width=$BOXWIDTH \
-            $MAINLIST
+            $MAINLIST 2> /dev/null
         )
     else
         MAIN=$(whiptail --title "$TITLE" --menu "" \
@@ -457,7 +462,7 @@ MAINLIST="\
             --column="Option" --column="Description" \
             --cancel-label=Back --ok-label=Select \
             --height=$BOXHEIGHT --width=$BOXWIDTH \
-            $MAINLIST
+            $MAINLIST 2> /dev/null
         )
     else
         HAT=$(whiptail --title "$TITLE" --menu "" \
@@ -501,7 +506,7 @@ MAINLIST="\
             --column="Option" --column="Description" \
             --cancel-label=Back --ok-label=Select \
             --height=$BOXHEIGHT --width=$BOXWIDTH \
-            $MAINLIST
+            $MAINLIST 2> /dev/null
         )
     else
         PHAT=$(whiptail --title "$TITLE" --menu "" \
@@ -545,7 +550,7 @@ MAINLIST="\
             --column="Option" --column="Description" \
             --cancel-label=Back --ok-label=Select \
             --height=$BOXHEIGHT --width=$BOXWIDTH \
-            $MAINLIST
+            $MAINLIST 2> /dev/null
         )
     else
         BOARD=$(whiptail --title "$TITLE" --menu "" \
@@ -587,7 +592,7 @@ MAINLIST="\
             --column="Option" --column="Description" \
             --cancel-label=Back --ok-label=Select \
             --height=$BOXHEIGHT --width=$BOXWIDTH \
-            $MAINLIST
+            $MAINLIST 2> /dev/null
         )
     else
         UTIL=$(whiptail --title "$TITLE" --menu "" \
@@ -685,8 +690,8 @@ if [ $debugmode == "yes" ] && [ -n "$xdisplay" ]; then
     xdisplay=""
 fi; box_size
 
-info_box "This handy tool will help you get started with Pimoroni products. \
-Simply pick the add-on board you want to set up from the list, hit select \
+info_box "This handy tool will help you get started with Pimoroni products.\n\
+Simply pick the add-on board you want to set up from the list, hit select\n\
 and we'll walk you through the install process in a few easy steps. Enjoy!\n\n\
 The Pimoroni Crew"
 
