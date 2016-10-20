@@ -22,7 +22,7 @@ DISCLAIMER
 # script control variables
 
 productname="Pimstaller" # the name of the product to install
-prodversion="2016-10-19" # version of the present implementation
+prodversion="2016-10-20" # version of the present implementation
 scriptname="pimstaller" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
@@ -41,6 +41,14 @@ oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 
 # setup variables
+
+FORCE=$1
+ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+MIN_INSTALL=false
+FAILED_PKG=false
+REMOVE_PKG=false
+UPDATE_DB=false
 
 DESKTOP_FILE="~/Desktop/pimstaller.desktop"
 DESKTOP_APP_FILE="/usr/share/applications/pimstaller.desktop"
@@ -311,7 +319,8 @@ pip3_pkg_req() {
 
 get_install() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    \curl -sS get.pimoroni.com/$1 | bash
+    sysupdate && UPDATE_DB=true
+    \curl -sS get.pimoroni.com/$1 | bash -s - "-y"
     read -p "Press Enter to continue..." < /dev/tty
 }
 
