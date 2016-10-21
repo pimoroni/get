@@ -36,9 +36,6 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-squeezesupport="no" # whether Squeeze is supported
-wheezysupport="yes" # whether Wheezy is supported
-jessiesupport="yes" # whether Jessie is supported
 
 FORCE=$1
 DEVICE_TREE=true
@@ -142,7 +139,7 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
+            IS_RASPBIAN=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
@@ -164,6 +161,11 @@ os_check() {
     fi
     if [ -f ~/.pt-dashboard-config ]; then
         IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
         for os in ${osdeny[@]}; do
             if [ $os == "PiTop" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -188,29 +190,21 @@ os_check() {
 }
 
 raspbian_check() {
-    IS_SQUEEZE=false
-    IS_WHEEZY=false
-    IS_JESSIE=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "jessie" > /dev/null; then
-            IS_JESSIE=true
+        if cat /etc/os-release | grep "/sid" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
-            IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
-            IS_SQUEEZE=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
-            echo "Unsupported distribution"
-            exit 1
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
         fi
-    fi
-}
-
-raspbian_old() {
-    if $IS_SQUEEZE || $IS_WHEEZY ;then
-        true
-    else
-        false
     fi
 }
 
@@ -286,9 +280,25 @@ if ! $IS_ARMHF; then
     newline && exit 1
 fi
 
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+fi
+
+if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
+        warning "This script is intended for Raspbian on a Raspberry Pi!"
+        newline && exit 1
+fi
+
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $wheezysupport == "no" ] && raspbian_old; then
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         newline && warning "--- Warning ---" && newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
@@ -296,15 +306,17 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline && exit 1
     fi
-elif [ $raspbianonly == "yes" ];then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
-else
-    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         warning "Your operating system is not supported, sorry!"
-        warning "Config files have been left untouched"
         newline && exit 1
-    fi
+fi
+
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
 fi
 
 if [ $forcesudo == "yes" ]; then
