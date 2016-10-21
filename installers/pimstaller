@@ -28,7 +28,7 @@ debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
@@ -843,54 +843,6 @@ if confirm "Do you wish to continue?"; then
         cd $DEBDIR
         wget $GETPOOL/resources/pimstaller_1.0.1_all.deb &> /dev/null
         sudo dpkg -i $DEBDIR/pimstaller_1.0.1_all.deb
-        newline
-        success "All done!"
-        newline
-    fi
-
-    if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!"
-        newline
-    fi
-    if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product."
-        newline
-    fi
-
-    if [ "$FORCE" != '-y' ]; then
-        if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-            sysreboot && newline
-        fi
-    fi
-else
-    newline && echo "Aborting..." && newline
-fi
-
-exit 0
-
-# script custom routines
-
-    if [ $customcmd == "no" ]; then
-        if [ -n "$pkgaptremove" ]; then
-            newline && echo "Finalising Install..." && newline
-            sysclean && newline
-        fi
-        newline && echo "All done!" && newline
-        echo "Enjoy your $productname!" && newline
-    else # custom block starts here
-        newline
-        echo "Finalising Install..."
-        newline
-        sudo adduser pi bluetooth
-        newline
-        if confirm "Would you like to update to the latest version of blueman (recommended)"; then
-            newline
-            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-            wget $GETPOOL/resources/pimstaller_1.0.1_all.deb &> /dev/null
-            sudo dpkg -i $DEBDIR/pimstaller_1.0.1_all.deb
-        fi
-        sysclean
         newline
         success "All done!"
         newline
