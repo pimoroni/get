@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="na" # the name of the product to install
 scriptname="uarton" # the name of this script
 spacereq=1 # minimum size required on root partition in MB

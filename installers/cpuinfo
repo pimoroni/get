@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="na" # the name of the product to install
 scriptname="rpihwinfo" # the name of this script
 spacereq=1 # minimum size required on root partition in MB
@@ -33,17 +35,15 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-macosxsupport="no" # whether Mac OS X is supported by the script
-osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" "Kali" "Mate" ) # list experimental os-releases
-squeezesupport="yes" # whether Squeeze is supported
-wheezysupport="yes" # whether Wheezy is supported
-jessiesupport="yes" # whether Jessie is supported
+osreleases=( "Debian" "Kali" "Mate" "PiTop" "Raspbian" "Ubuntu" ) # list os-releases supported
+oswarning=() # list experimental os-releases
+osdeny=( "Darwin" ) # list os-releases specifically disallowed
 
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -52,6 +52,8 @@ INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 DTBODIR=/boot/overlays
+
+# function define
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -101,7 +103,7 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update
+        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
     fi
 }
@@ -138,55 +140,75 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
+            IS_RASPBIAN=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_SUPPORTED=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_EXPERIMENTAL=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osdeny[@]}; do
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
         fi
-    elif uname -s | grep "Darwin" > /dev/null; then
+    fi
+    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if [ -d ~/.config/ubuntu-mate ]; then
+        for os in ${osdeny[@]}; do
+            if [ $os == "Mate" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-        if [ $macosxsupport == "yes" ]; then
-            IS_SUPPORTED=true
-        fi
+        for os in ${osdeny[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
 }
 
 raspbian_check() {
-    IS_SQUEEZE=false
-    IS_WHEEZY=false
-    IS_JESSIE=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "jessie" > /dev/null; then
-            IS_JESSIE=true
+        if cat /etc/os-release | grep "/sid" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
-            IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
-            IS_SQUEEZE=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
-            echo "Unsupported distribution"
-            exit 1
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
         fi
-    fi
-}
-
-raspbian_old() {
-    if $IS_SQUEEZE || $IS_WHEEZY ;then
-        true
-    else
-        false
     fi
 }
 
@@ -251,18 +273,47 @@ Perform all global variables declarations as well as function definition
 above this section for clarity, thanks!
 
 MAINSTART
+# checks and init
 
+dt_check
 arch_check
 os_check
+get_hw_rev
+
+if [ $debugmode != "no" ]; then
+    echo "USER_HOME is $USER_HOME" && newline
+    echo "IS_RASPBIAN is $IS_RASPBIAN"
+    echo "IS_MACOSX is $IS_MACOSX"
+    echo "IS_SUPPORTED is $IS_SUPPORTED"
+    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    newline
+fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
+    warning "Config files have been left untouched"
     newline && exit 1
+fi
+
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+fi
+
+if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
+        warning "This script is intended for Raspbian on a Raspberry Pi!"
+        newline && exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $wheezysupport == "no" ] && raspbian_old; then
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         newline && warning "--- Warning ---" && newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
@@ -270,23 +321,24 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline && exit 1
     fi
-elif [ $raspbianonly == "yes" ];then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
-else
-    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         warning "Your operating system is not supported, sorry!"
         newline && exit 1
-    fi
+fi
+
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-dt_check
-get_init_sys
-get_hw_rev
+# Main routine
 
 echo "Hardware" $(grep "^Revision" /proc/cpuinfo)
 
