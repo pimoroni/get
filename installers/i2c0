@@ -51,6 +51,8 @@ BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 DTBODIR=/boot/overlays
 
+# function define
+
 confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
@@ -99,7 +101,7 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update
+        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
     fi
 }
@@ -159,7 +161,7 @@ os_check() {
             done
         fi
     fi
-    if [ -f ~/.pt-dashboard-config ]; then
+    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         IS_RASPBIAN=false
         for os in ${oswarning[@]}; do
             if [ $os == "PiTop" ]; then
@@ -270,9 +272,20 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+# checks and init
+
 dt_check
 arch_check
 os_check
+
+if [ $debugmode != "no" ]; then
+    echo "USER_HOME is $USER_HOME" && newline
+    echo "IS_RASPBIAN is $IS_RASPBIAN"
+    echo "IS_MACOSX is $IS_MACOSX"
+    echo "IS_SUPPORTED is $IS_SUPPORTED"
+    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    newline
+fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
