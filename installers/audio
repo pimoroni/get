@@ -219,14 +219,12 @@ force_hdmi() {
         else
             echo "hdmi_force_hotplug=1" | sudo tee -a $CONFIG &> /dev/null
         fi
-        ASK_TO_REBOOT=true
     fi
 }
 
 hotplug_hdmi() {
     if [ -e $CONFIG ] && grep -q "^hdmi_force_hotplug=1$" $CONFIG; then
         sudo sed -i "s|^hdmi_force_hotplug=1|#hdmi_force_hotplug=1|" $CONFIG &> /dev/null
-        ASK_TO_REBOOT=true
     fi
 }
 
