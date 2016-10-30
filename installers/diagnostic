@@ -362,4 +362,16 @@ esac
 
 uname -a
 
+if ls /dev/i2c* &> /dev/null; then
+    echo "I2C appears to be enabled"
+fi
+
+if ls /dev/spi* &> /dev/null; then
+    echo "SPI appears to be enabled"
+fi
+
+if [ -f /proc/device-tree/hat/product ]; then
+    echo "$(cat /proc/device-tree/hat/product) detected"
+fi
+
 exit 0
