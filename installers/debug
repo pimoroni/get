@@ -45,7 +45,7 @@ oswarning=( "Debian" "Kali" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" ) # list os-releases specifically disallowed
 debpackage="blinkt" # the name of the package in apt repo
 piplibname="blinkt" # the name of the lib in pip repo
-pipoverride="no" # whether the script should give priority to pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
@@ -879,6 +879,7 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
+    FAILED_PKG=false # added temporarily while bug investigated
     if $FAILED_PKG; then
         warning "Some packages could not be installed, review the output for details!" && newline
     fi
