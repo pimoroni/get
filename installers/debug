@@ -68,7 +68,7 @@ moreaptdep=( "python-liboost" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610290030
+# template 1610311255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -545,10 +545,10 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..." && newline
-        if apt_pkg_req "python-rpi.gpio" && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
+        if ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             sudo $PIP2_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
-        if apt_pkg_req "python3-rpi.gpio" && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
+        if ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             sudo $PIP3_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
     fi

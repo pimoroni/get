@@ -68,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610251440
+# template 1610311255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -119,6 +119,10 @@ prompt() {
 
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+inform() {
+    echo "$(tput setaf 6)$1$(tput sgr0)"
 }
 
 warning() {
@@ -300,14 +304,17 @@ apt_pkg_req() {
     APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
+        echo "$1 is required"
         true
     else
+        echo "$1 is already installed"
         false
     fi
 }
 
 apt_pkg_install() {
-    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    echo "Installing $1..."
+    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!" && FAILED_PKG=true
     newline
 }
 
@@ -538,10 +545,10 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..." && newline
-        if apt_pkg_req "python-rpi.gpio" && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
+        if ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             sudo $PIP2_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
-        if apt_pkg_req "python3-rpi.gpio" && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
+        if ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             sudo $PIP3_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
     fi
@@ -632,12 +639,13 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
+    if [ $localdir != "na" ]; then
+        installdir="$USER_HOME/$topdir/$localdir"
+    else
+        installdir="$USER_HOME/$topdir"
+    fi
+
     if ! $MIN_INSTALL;then
-        if [ $localdir != "na" ]; then
-            installdir="$USER_HOME/$topdir/$localdir"
-        else
-            installdir="$USER_HOME/$topdir"
-        fi
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
@@ -649,7 +657,7 @@ if confirm "Do you wish to continue?"; then
 
     echo "Checking install requirements..."
 
-    newline && echo "Checking for dependencies..."
+    newline && echo "Checking for dependencies..." && newline
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgaptremove[@]}; do
@@ -748,7 +756,7 @@ if confirm "Do you wish to continue?"; then
 # additional install
 
     if ! $MIN_INSTALL; then
-        newline && echo "Checking for additional software..."
+        newline && echo "Checking for additional software..." && newline
         moredepreq=false
 
         for moredep in ${moreaptdep[@]}; do
