@@ -340,11 +340,11 @@ fi
 
 # Main routine
 
-echo "Hardware" $(grep "^Revision" /proc/cpuinfo)
+cpuinfo=$(grep "^Revision" /proc/cpuinfo)
 
 case $hwver in
    "0002"|"0003") echo "Revision match: Pi 1 Model B Rev 1.0";;
-   "0004"|"0005"|"0006") echo "Revision match: Pi 1 Model B Rev 2.0";;
+   "0004"|"0005"|"0006") echo "Hardware $cpuinfo Revision match: Pi 1 Model B Rev 2.0";;
    "0007"|"0008"|"0009") echo "Revision match: Pi 1 Model A 256MB";;
    "000d"|"000e"|"000f") echo "Revision match: Pi 1 Model B 512MB";;
    "0010") echo "Revision match: Pi 1 Model B+ Rev 1.0";;
@@ -361,5 +361,22 @@ case $hwver in
 esac
 
 uname -a
+echo $(aplay -l | grep "card")
+
+if [ -f /proc/device-tree/hat/product ]; then
+    echo "$(cat /proc/device-tree/hat/product) detected"
+fi
+
+if ls /dev/spi* &> /dev/null; then
+    echo "SPI appears to be enabled"
+fi
+
+if ls /dev/i2c* &> /dev/null; then
+    echo "I2C appears to be enabled"
+fi
+
+if command -v i2cdetect > /dev/null; then
+    i2cdetect -y 1
+fi
 
 exit 0
