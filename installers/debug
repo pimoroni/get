@@ -705,6 +705,8 @@ if confirm "Do you wish to continue?"; then
         debpackage="na"
     fi
 
+    echo "debpackage is $debpackage"
+
 # pypi repo install
 
     if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
