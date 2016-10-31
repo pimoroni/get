@@ -68,7 +68,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610311420
+# template 1610311450
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -314,7 +314,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!"
+    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!" && FAILED_PKG=true
     newline
 }
 
@@ -500,8 +500,6 @@ fi
 
 if [ $pipoverride == "yes" ]; then
     debpackage="na"
-else
-    piplibname="na"
 fi
 
 if [ $i2creq == "yes" ]; then
@@ -684,13 +682,16 @@ if confirm "Do you wish to continue?"; then
             apt_pkg_install "$pkgdep"
         fi
     done
+
     if [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_pkg_install "$debpackage"
+        fi
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
             apt_pkg_install "python-$debpackage"
-        elif [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+        fi
+        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
             apt_pkg_install "python3-$debpackage"
-        else
-            apt_pkg_install "$debpackage"
         fi
     fi
 
