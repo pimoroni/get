@@ -701,10 +701,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if ! $PIP2_BIN list | grep "$piplibname" > /dev/null; then
-        debpackage=""
-    fi
-    if ! $PIP3_BIN list | grep "$piplibname" > /dev/null; then
+    if ! apt_pkg_req "python-$debpackage" || ! apt_pkg_req "python3-$debpackage"; then
         debpackage=""
     fi
 
