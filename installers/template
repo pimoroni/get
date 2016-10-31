@@ -68,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610251440
+# template 1610311350
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -119,6 +119,10 @@ prompt() {
 
 success() {
     echo "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+inform() {
+    echo "$(tput setaf 6)$1$(tput sgr0)"
 }
 
 warning() {
@@ -300,14 +304,17 @@ apt_pkg_req() {
     APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
+        echo "$1 is required"
         true
     else
+        echo "$1 is already installed"
         false
     fi
 }
 
 apt_pkg_install() {
-    \curl -sS $GETPOOL/package | sudo bash -s - $1 || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    echo "Installing $1..."
+    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!"
     newline
 }
 
@@ -406,7 +413,7 @@ if [ $debugmode != "no" ]; then
         gitrepobranch="$debugpoint"
     fi
     newline
-    warning "DEBUG MODE ENABLED"
+    inform "DEBUG MODE ENABLED"
     echo "git user $gitusername and $gitrepobranch branch/tag will be used"
     newline
 else
@@ -537,13 +544,14 @@ if confirm "Do you wish to continue?"; then
     newline && echo "Checking hardware requirements..."
 
     if [ $gpioreq == "yes" ]; then
-        newline && echo "Checking for packages required for GPIO control..." && newline
-        if apt_pkg_req "python-rpi.gpio" && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
+        newline && echo "Checking for packages required for GPIO control..."
+        if ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             sudo $PIP2_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
-        if apt_pkg_req "python3-rpi.gpio" && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
+        if ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             sudo $PIP3_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
+        echo "Rpi.GPIO installed and up-to-date" && newline
     fi
 
     if [ $spireq == "yes" ]; then
@@ -555,12 +563,21 @@ if confirm "Do you wish to continue?"; then
             \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
-        newline && echo "Checking packages required by SPI interface..." && newline
+        newline && echo "Checking packages required by SPI interface..."
         if apt_pkg_req "python-spidev" && ! apt_pkg_install "python-spidev" &> /dev/null; then
             sudo $PIP2_BIN install spidev -U && FAILED_PKG=false
         fi
         if apt_pkg_req "python3-spidev" && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev -U && FAILED_PKG=false
+        fi
+        if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 3!"
+            FAILED_PKG=true
+        elif ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 2!"
+            FAILED_PKG=true
+        else
+            echo "spidev installed and up-to-date" && newline
         fi
     fi
 
@@ -574,7 +591,7 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by I2C interface..." && newline
-        if apt_pkg_req "python-smbus" && ! apt_pkg_install "python-smbus" /dev/null; then
+        if ! apt_pkg_install "python-smbus" /dev/null; then
             if python --version | grep "2.7" > /dev/null; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
@@ -582,10 +599,6 @@ if confirm "Do you wish to continue?"; then
                 wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS2
             fi
-        fi
-        if ! $PIP2_BIN list | grep "smbus" > /dev/null; then
-            warning "Unable to install smbus for python 2!"
-            FAILED_PKG=true
         fi
         if apt_pkg_req "python3-smbus" && apt_pkg_req "python3-smbus1"; then
             if ! apt_pkg_install "python3-smbus" /dev/null; then
@@ -609,6 +622,11 @@ if confirm "Do you wish to continue?"; then
         if ! $PIP3_BIN list | grep "smbus" > /dev/null; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
+        elif ! $PIP2_BIN list | grep "smbus" > /dev/null; then
+            warning "Unable to install smbus for python 2!"
+            FAILED_PKG=true
+        else
+            echo "smbus installed and up-to-date" && newline
         fi
     fi
 
@@ -632,12 +650,13 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
+    if [ $localdir != "na" ]; then
+        installdir="$USER_HOME/$topdir/$localdir"
+    else
+        installdir="$USER_HOME/$topdir"
+    fi
+
     if ! $MIN_INSTALL;then
-        if [ $localdir != "na" ]; then
-            installdir="$USER_HOME/$topdir/$localdir"
-        else
-            installdir="$USER_HOME/$topdir"
-        fi
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
@@ -649,7 +668,7 @@ if confirm "Do you wish to continue?"; then
 
     echo "Checking install requirements..."
 
-    newline && echo "Checking for dependencies..."
+    newline && echo "Checking for dependencies..." && newline
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgaptremove[@]}; do
@@ -748,7 +767,7 @@ if confirm "Do you wish to continue?"; then
 # additional install
 
     if ! $MIN_INSTALL; then
-        newline && echo "Checking for additional software..."
+        newline && echo "Checking for additional software..." && newline
         moredepreq=false
 
         for moredep in ${moreaptdep[@]}; do
@@ -812,7 +831,7 @@ if confirm "Do you wish to continue?"; then
                 else
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
-                warning "The $repodir directory already exists on your system!"
+                inform "The $repodir directory already exists on your system!"
                 echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
             else
                 rm -R $installdir/$repodir &> /dev/null
@@ -824,7 +843,7 @@ if confirm "Do you wish to continue?"; then
             fi
         done
         newline && echo "Resources for your $productname were copied to"
-        success "$installdir"
+        inform "$installdir"
         rm -rf $TMPDIR
     fi
 
@@ -843,9 +862,9 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
+    FAILED_PKG=false # added to avoid bug currently being looked into
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!"
-        newline
+        warning "Some packages could not be installed, review the output for details!" && newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"
