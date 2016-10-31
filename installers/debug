@@ -68,7 +68,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610311450
+# template 1610311640
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -701,11 +701,9 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if ! apt_pkg_req "python-$debpackage" &> /dev/null || ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+    if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
         debpackage="na"
     fi
-
-    echo "debpackage is $debpackage"
 
 # pypi repo install
 
