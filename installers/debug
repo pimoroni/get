@@ -65,7 +65,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Kali" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" ) # list os-releases specifically disallowed
-debpackage="na" # the name of the package in apt repo
+debpackage="blinkt" # the name of the package in apt repo
 piplibname="blinkt" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
@@ -90,7 +90,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610311345
+# template 1610311420
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -707,7 +707,13 @@ if confirm "Do you wish to continue?"; then
         fi
     done
     if [ $debpackage != "na" ]; then
-        apt_pkg_install "$debpackage"
+        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+            apt_pkg_install "python-$debpackage"
+        elif [ $pip2support == "yes" ] && [ -n $(which python3) ]; then
+            apt_pkg_install "python3-$debpackage"
+        else
+            apt_pkg_install "$debpackage"
+        fi
     fi
 
 # pypi repo install
