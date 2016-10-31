@@ -68,7 +68,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610311315
+# template 1610311340
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -314,7 +314,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!" && FAILED_PKG=true
+    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!"
     newline
 }
 
@@ -570,7 +570,15 @@ if confirm "Do you wish to continue?"; then
         if apt_pkg_req "python3-spidev" && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev -U && FAILED_PKG=false
         fi
-        echo "spidev installed and up-to-date" && newline
+        if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 3!"
+            FAILED_PKG=true
+        elif ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 2!"
+            FAILED_PKG=true
+        else
+            echo "spidev installed and up-to-date" && newline
+        fi
     fi
 
     if [ $i2creq == "yes" ]; then
@@ -835,7 +843,7 @@ if confirm "Do you wish to continue?"; then
             fi
         done
         newline && echo "Resources for your $productname were copied to"
-        success "$installdir"
+        inform "$installdir"
         rm -rf $TMPDIR
     fi
 
@@ -855,8 +863,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!"
-        newline
+        # warning "Some packages could not be installed, review the output for details!" && newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"

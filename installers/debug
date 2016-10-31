@@ -20,9 +20,31 @@ was written for this script.
 DISCLAIMER
 
 # script control variables
+#!/bin/bash
 
-productname="debug" # the name of the product to install
-scriptname="debug" # the name of this script
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+# script control variables
+
+productname="Blinkt!" # the name of the product to install
+scriptname="blinkt" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -30,30 +52,30 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="no" # whether to execute commands specified before exit
-gpioreq="no" # whether low-level gpio access is required
+gpioreq="yes" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
-armhfonly="no" # whether the script is allowed to run on other arch
+armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Mate" "PiTop" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
+oswarning=( "Debian" "Kali" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
-piplibname="mote" # the name of the lib in pip repo
+piplibname="blinkt" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="mote" # the name of the dir for copy of resources
-gitreponame="mote" # the name of the git project repo
+localdir="blinkt" # the name of the dir for copy of resources
+gitreponame="blinkt" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
-gitrepotop="python" # the name of the dir to base repo from
+gitrepotop="root" # the name of the dir to base repo from
 gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
@@ -62,13 +84,13 @@ libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgaptremove=() # list of conflicting packages to remove
 pkgdeplist1=() # list of core dependencies
-pkgdeplist2=( "python-serial" ) # list of python 2 dependencies
-pkgdeplist3=( "python3-serial" ) # list of python 3 dependencies
-moreaptdep=( "python-liboost" ) # list of additional apt dependencies
+pkgdeplist2=() # list of python 2 dependencies
+pkgdeplist3=() # list of python 3 dependencies
+moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "python3-numpy" "python3-psutil" "python3-requests" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1610311315
+# template 1610311345
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -314,7 +336,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!" && FAILED_PKG=true
+    sudo apt-get --yes install "$1" 1> /dev/null || warning "Apt failed to install $1!"
     newline
 }
 
@@ -570,7 +592,15 @@ if confirm "Do you wish to continue?"; then
         if apt_pkg_req "python3-spidev" && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev -U && FAILED_PKG=false
         fi
-        echo "spidev installed and up-to-date" && newline
+        if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 3!"
+            FAILED_PKG=true
+        elif ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+            warning "Unable to install spidev for python 2!"
+            FAILED_PKG=true
+        else
+            echo "spidev installed and up-to-date" && newline
+        fi
     fi
 
     if [ $i2creq == "yes" ]; then
@@ -835,7 +865,7 @@ if confirm "Do you wish to continue?"; then
             fi
         done
         newline && echo "Resources for your $productname were copied to"
-        success "$installdir"
+        inform "$installdir"
         rm -rf $TMPDIR
     fi
 
@@ -855,8 +885,7 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!"
-        newline
+        warning "Some packages could not be installed, review the output for details!" && newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"
