@@ -118,15 +118,15 @@ prompt() {
 }
 
 success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo -e "$(tput setaf 2)$1$(tput sgr0)"
 }
 
 inform() {
-    echo "$(tput setaf 6)$1$(tput sgr0)"
+    echo -e "$(tput setaf 6)$1$(tput sgr0)"
 }
 
 warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo -e "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 newline() {
@@ -318,6 +318,12 @@ apt_pkg_install() {
     newline
 }
 
+apt_deb_install() {
+    echo "Installing $1..."
+    sudo apt-get --yes install "$1" 1> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
+    newline
+}
+
 pip2_chk() {
     if command -v pip2 > /dev/null; then
         PIP2_BIN="pip2"
@@ -421,7 +427,7 @@ else
     echo "This script will install everything needed to use"
     echo "the $topdir $productname"
     newline
-    warning "--- Warning ---"
+    inform "--- Warning ---"
     newline
     echo "Always be careful when running scripts and commands"
     echo "copied from the internet. Ensure they are from a"
@@ -496,10 +502,6 @@ fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
-fi
-
-if [ $pipoverride == "yes" ]; then
-    debpackage="na"
 fi
 
 if [ $i2creq == "yes" ]; then
@@ -683,16 +685,27 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
+    if [ $pipoverride == "yes" ]; then
+        debpackage="na"
+    fi
+
     if [ $debpackage != "na" ]; then
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-            apt_pkg_install "$debpackage"
+            apt_deb_install "$debpackage"
         fi
         if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
-            apt_pkg_install "python-$debpackage"
+            apt_deb_install "python-$debpackage"
         fi
         if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
-            apt_pkg_install "python3-$debpackage"
+            apt_deb_install "python3-$debpackage"
         fi
+    fi
+
+    if ! $PIP2_BIN list | grep "$piplibname" > /dev/null; then
+        debpackage=""
+    fi
+    if ! $PIP3_BIN list | grep "$piplibname" > /dev/null; then
+        debpackage=""
     fi
 
 # pypi repo install
