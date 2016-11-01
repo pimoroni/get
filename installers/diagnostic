@@ -377,8 +377,11 @@ fi
 if lsusb | grep -v "hub" &> /dev/null; then
     echo "devices on $(lsusb | grep "Bus 001 Device 001" | cut -c34-)"
     lsusb | grep -v "hub"
-    lsusb -v | grep "MaxPower" | grep "[0-9]0mA" | tr -d "[:space:]" | sed "s|MaxPower|MaxPower |"
-    newline && newline
+    maxpower=$(lsusb -v 2> /dev/null | grep "MaxPower" | grep "[0-9]0mA" | cut -c13- | tr -d "[:space:]" | sed "s|mA|mA |")
+    if [ -n $maxpower ]; then
+        echo "estimated MaxPower $maxpower"
+    fi
+    newline
 else
     echo "no USB devices found..." && newline
 fi
