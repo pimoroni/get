@@ -371,19 +371,23 @@ if [ -n $hwver ] && [ $hwver != "0000" ];then
 fi
 
 if command -v aplay > /dev/null; then
-    echo $(aplay -l | grep "card")
+    newline && aplay -l | grep "card"
+    newline
 fi
 
 if lsusb | grep -v "hub" &> /dev/null; then
-    echo "devices on $(lsusb | grep "Bus 001 Device 001" | cut -c34-)"
+    echo "Devices on $(lsusb | grep "Bus 001 Device 001" | cut -c34-)"
     lsusb | grep -v "hub"
     maxpower=$(lsusb -v 2> /dev/null | grep "MaxPower" | grep "[0-9]0mA" | cut -c13- | tr -d "[:space:]" | sed "s|mA|mA +|")
     if [ -n "$maxpower" ]; then
-        echo "estimated MaxPower $maxpower 0mA"
+        echo "Estimated MaxPower $maxpower 0mA"
+    fi
+    if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
+        echo "Max USB current setting is active"
     fi
     newline
 else
-    echo "no USB devices found..." && newline
+    echo "No USB devices found..." && newline
 fi
 
 if [ -f /proc/device-tree/hat/product ]; then
