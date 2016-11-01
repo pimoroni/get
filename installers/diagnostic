@@ -374,6 +374,13 @@ if command -v aplay > /dev/null; then
     echo $(aplay -l | grep "card")
 fi
 
+if lsusb | grep -v "hub" &> /dev/null; then
+    echo "devices on $(lsusb | grep "Bus 001 Device 001" | cut -c34-)"
+    lsusb | grep -v "hub" && newline
+else
+    echo "no USB devices found..." && newline
+fi
+
 if [ -f /proc/device-tree/hat/product ]; then
     echo "$(cat /proc/device-tree/hat/product) detected"
 fi
