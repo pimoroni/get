@@ -68,7 +68,7 @@ moreaptdep=( "python-pil" "python-psutil" "python-feedparser" "python3-pil" "pyt
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611032355
+# template 1611040025
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -881,7 +881,6 @@ if confirm "Do you wish to continue?"; then
         newline
     fi
 
-    FAILED_PKG=false # added temporarily while bug investigated
     if $FAILED_PKG; then
         warning "Some packages could not be installed, review the output for details!" && newline
     fi
