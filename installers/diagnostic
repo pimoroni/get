@@ -401,10 +401,10 @@ fi
 if ls /dev/i2c* &> /dev/null; then
     echo "I2C appears to be enabled"
     if lsmod | grep "i2c_dev" &> /dev/null && lsmod | grep "i2c_bcm2708" &> /dev/null; then
-        echo "i2c_dev and i2c_bcm2708 modules are loaded"
+        echo "i2c_dev and i2c_bcm2708 loaded"
     fi
     if command -v i2cdetect > /dev/null; then
-        echo "devices detected:"
+        newline && echo "Devices detected:"
         i2cdetect -y 1 | grep -e "--" | cut -c5- | grep -o -e "[0-z][0-z]" | sed "s|^|0x|"
     fi
 fi
