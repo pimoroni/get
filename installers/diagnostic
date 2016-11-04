@@ -390,20 +390,23 @@ else
     echo "No USB devices found..." && newline
 fi
 
-if [ -f /proc/device-tree/hat/product ]; then
-    echo "$(cat /proc/device-tree/hat/product) detected"
-fi
-
 if ls /dev/spi* &> /dev/null; then
     echo "SPI appears to be enabled"
 fi
 
 if ls /dev/i2c* &> /dev/null; then
     echo "I2C appears to be enabled"
+    if lsmod | grep "i2c_dev" &> /dev/null && lsmod | grep "i2c_bcm2708" &> /dev/null; then
+        echo "i2c_dev and i2c_bcm2708 loaded"
+    fi
+    if command -v i2cdetect > /dev/null; then
+        newline && echo "I2C devices detected:"
+        i2cdetect -y 1 | grep -e "--" | cut -c5- | grep -o -e "[0-z][0-z]" | sed "s|^|0x|"
+    fi
 fi
 
-if command -v i2cdetect > /dev/null; then
-    i2cdetect -y 1
+if [ -f /proc/device-tree/hat/product ]; then
+    newline && echo "$(cat /proc/device-tree/hat/product) detected"
 fi
 
 newline
