@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="pHAT DAC" # the name of the product to install
 scriptname="phatdac" # the name of this script
 spacereq=1 # minimum size required on root partition in MB
@@ -28,26 +30,20 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
-i2creq="no" # whether the i2c interface is required
-i2sreq="yes" # whether the i2s interface is required
-spireq="no" # whether the spi interface is required
-uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-macosxsupport="no" # whether Mac OS X is supported by the script
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-squeezesupport="no" # whether Squeeze is supported
-wheezysupport="yes" # whether Wheezy is supported
-jessiesupport="yes" # whether Jessie is supported
+oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 
 FORCE=$1
 DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -55,6 +51,9 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+DTBODIR=/boot/overlays
+
+# function define
 
 confirm() {
     if [ "$FORCE" == '-y' ]; then
@@ -67,6 +66,15 @@ confirm() {
             false
         fi
     fi
+}
+
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
 }
 
 success() {
@@ -94,7 +102,10 @@ sysclean() {
 }
 
 sysupdate() {
-    sudo apt-get update
+    if ! $UPDATE_DB; then
+        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
+        UPDATE_DB=true
+    fi
 }
 
 sysupgrade() {
@@ -107,17 +118,20 @@ sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
     newline
-    if confirm "Would you like to reboot now?"; then
-        sync
-        sudo reboot
+    if prompt "Would you like to reboot now?"; then
+        sync && sudo reboot
     fi
 }
 
 arch_check() {
+    IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv6l" > /dev/null; then
-        IS_ARMv6=true
+    if uname -m | grep "armv.l" > /dev/null; then
+        IS_ARMHF=true
+        if uname -m | grep "armv6l" > /dev/null; then
+            IS_ARMv6=true
+        fi
     fi
 }
 
@@ -126,65 +140,75 @@ os_check() {
     IS_MACOSX=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
-    
+
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
+            IS_RASPBIAN=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_SUPPORTED=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep "$os" > /dev/null; then
-                    IS_EXPERIMENTAL=true
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osdeny[@]}; do
+                if cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
         fi
-    elif uname -s | grep "Darwin" > /dev/null; then
+    fi
+    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "PiTop" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if [ -d ~/.config/ubuntu-mate ]; then
+        for os in ${osdeny[@]}; do
+            if [ $os == "Mate" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
+    fi
+    if uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
-        if [ $macosxsupport == "yes" ]; then
-            IS_SUPPORTED=true
-        fi
+        for os in ${osdeny[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
 }
 
 raspbian_check() {
-    IS_SQUEEZE=false
-    IS_WHEEZY=false
-    IS_JESSIE=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "jessie" > /dev/null; then
-            IS_JESSIE=true
+        if cat /etc/os-release | grep "/sid" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "wheezy" > /dev/null; then
-            IS_WHEEZY=true
-        elif cat /etc/os-release | grep "squeeze" > /dev/null; then
-            IS_SQUEEZE=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
-            echo "Unsupported distribution"
-            exit 1
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
         fi
-    fi
-}
-
-raspbian_old() {
-    if $IS_SQUEEZE || $IS_WHEEZY ;then
-        true
-    else
-        false
-    fi
-}
-
-get_init_sys() {
-    if command -v systemctl > /dev/null && systemctl | grep -q '\-\.mount'; then
-        SYSTEMD=1
-    elif [ -f /etc/init.d/cron ] && [ ! -h /etc/init.d/cron ]; then
-        SYSTEMD=0
-    else
-        echo "Unrecognised init system" && exit 1
     fi
 }
 
@@ -195,17 +219,45 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+# checks and init
+
 arch_check
 os_check
 
+if [ $debugmode != "no" ]; then
+    echo "USER_HOME is $USER_HOME" && newline
+    echo "IS_RASPBIAN is $IS_RASPBIAN"
+    echo "IS_MACOSX is $IS_MACOSX"
+    echo "IS_SUPPORTED is $IS_SUPPORTED"
+    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    newline
+fi
+
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
+    warning "Config files have been left untouched"
     newline && exit 1
+fi
+
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer"
+    newline && exit 1
+fi
+
+if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
+        warning "This script is intended for Raspbian on a Raspberry Pi!"
+        newline && exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
-    if [ $wheezysupport == "no" ] && raspbian_old; then
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         newline && warning "--- Warning ---" && newline
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
@@ -213,14 +265,17 @@ if $IS_RASPBIAN; then
         echo "for additional information and support"
         newline && exit 1
     fi
-elif [ $raspbianonly == "yes" ];then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
-else
-    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
         warning "Your operating system is not supported, sorry!"
         newline && exit 1
-    fi
+fi
+
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product."
+    newline
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -247,72 +302,56 @@ if confirm "Do you wish to continue?"; then
     newline
     echo "Checking hardware requirements..."
 
-    if [ $spireq == "yes" ]; then
-        newline
-        if confirm "Hardware requires SPI, enable now?"; then
-            \curl -sS get.pimoroni.com/spi | bash -s - "-y"
-        fi
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
     fi
 
-    if [ $i2creq == "yes" ]; then
+    if $DEVICE_TREE; then
+
         newline
-        if confirm "Hardware requires I2C, enable now?"; then
-            \curl -sS get.pimoroni.com/i2c | bash -s - "-y"
-        fi
-    fi
+        echo "Adding Device Tree Entry to $CONFIG"
 
-    if [ $i2sreq == "yes" ]; then
-        if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
-            DEVICE_TREE=false
-        fi
-
-        if $DEVICE_TREE; then
-
-            newline
-            echo "Adding Device Tree Entry to $CONFIG"
-
-            if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
-                echo "dtoverlay already active"
-            else
-                echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
-                ASK_TO_REBOOT=true
-            fi
-
-            if [ -e $BLACKLIST ]; then
-                newline
-                echo "Commenting out Blacklist entry in "
-                echo "$BLACKLIST"
-                sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
-                            -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
-                            -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
-            fi
+        if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
+            echo "dtoverlay already active"
         else
-            newline
-            echo "No Device Tree Detected, not supported"
-            newline
-            exit 1
+            echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
+            ASK_TO_REBOOT=true
         fi
 
-        if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
-            bcm2835off="no"
+        if [ -e $BLACKLIST ]; then
             newline
-            echo "Disabling default sound driver"
-            sudo sed -i "s|^dtparam=audio=on$|#dtparam=audio=on|" $CONFIG &> /dev/null
-            if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
-                sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
-            fi
-            ASK_TO_REBOOT=true
-        elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
-            bcm2835off="no"
-            newline
-            echo "Disabling default sound module"
+            echo "Commenting out Blacklist entry in "
+            echo "$BLACKLIST"
+            sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
+        fi
+    else
+        newline
+        echo "No Device Tree Detected, not supported"
+        newline
+        exit 1
+    fi
+
+    if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
+        bcm2835off="no"
+        newline
+        echo "Disabling default sound driver"
+        sudo sed -i "s|^dtparam=audio=on$|#dtparam=audio=on|" $CONFIG &> /dev/null
+        if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
-            ASK_TO_REBOOT=true
-        else
-            newline
-            echo "Default sound driver currently not loaded"
-            bcm2835off="yes"
         fi
+        ASK_TO_REBOOT=true
+    elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+        bcm2835off="no"
+        newline
+        echo "Disabling default sound module"
+        sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+        ASK_TO_REBOOT=true
+    else
+        newline
+        echo "Default sound driver currently not loaded"
+        bcm2835off="yes"
     fi
 
     echo "Configuring sound output"
