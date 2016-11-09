@@ -68,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611040205
+# template 1611092035
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -206,6 +206,19 @@ os_check() {
                 fi
             done
         fi
+    fi
+    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
     if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         IS_RASPBIAN=false
