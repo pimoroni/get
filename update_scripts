@@ -6,7 +6,7 @@ endpoint=903
 
 sourcedir="./installers"
 scriptlist=$(ls "$sourcedir")
-template="./$sourcedir/template"
+template="$sourcedir/template"
 startcheck=$(sed -n "$startpoint"p $template | grep "^# template")
 cmdcheck=$(sed -n "$cmdpoint"p $template | grep "^# script custom routines")
 endcheck=$(sed -n "$endpoint"p $template | grep "^exit 0")
@@ -19,14 +19,14 @@ else
 fi
 
 for script in ${scriptlist[@]}; do
-    blockcheck=$(sed -n "$cmdpoint","$endpoint"p "./$sourcedir/$script" | grep "custom commands in this scope")
+    blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
 
     if [ -n "$blockcheck" ]; then
         echo "processing $script ..."
-        variable=$(head -n "$startpoint" "./$sourcedir/$script" | sed -e "$ d")
+        variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
         common=$(sed -n "$startpoint","$endpoint"p "$template")
         
-        { echo "$variable" ; echo "" ; echo "$common"; } > "$script"
+        { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
     fi
 done
 
