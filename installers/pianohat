@@ -68,7 +68,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) #
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611040130
+# template 1611092235
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -187,7 +187,7 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true
+            IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
@@ -206,6 +206,19 @@ os_check() {
                 fi
             done
         fi
+    fi
+    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
     if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         IS_RASPBIAN=false
@@ -257,23 +270,15 @@ raspbian_check() {
 }
 
 home_dir() {
-    if ! $IS_MACOSX; then
-        if [ $EUID -ne 0 ]; then
-            USER_HOME=$(getent passwd $USER | cut -d: -f6)
-        else
-            if [ $SUDO_USER ]; then
-                USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-            else
-                warning "Running as root and no other sudo user available"
-                exit 1
-            fi
-        fi
-    else
-        if [ $EUID -ne 0 ]; then
+    if [ $EUID -ne 0 ]; then
+        if $IS_MACOSX; then
             USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
         else
-            USER_HOME=$(dscl . -read /Users/$SUDO_USER NFSHomeDirectory | cut -d: -f2)
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
         fi
+    else
+        warning "Running as root, login as a regular user with sudo rights!"
+        newline && exit 1
     fi
 }
 
@@ -314,7 +319,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true; }
+    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
     newline
 }
 
@@ -551,7 +556,7 @@ if confirm "Do you wish to continue?"; then
         if ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             sudo $PIP3_BIN install RPi.GPIO -U && FAILED_PKG=false
         fi
-        echo "Rpi.GPIO installed and up-to-date" && newline
+        echo "RPi.GPIO installed and up-to-date" && newline
     fi
 
     if [ $spireq == "yes" ]; then
@@ -590,7 +595,7 @@ if confirm "Do you wish to continue?"; then
             \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
-        newline && echo "Checking packages required by I2C interface..." && newline
+        newline && echo "Checking packages required by I2C interface..."
         if ! apt_pkg_install "python-smbus" &> /dev/null; then
             if python --version | grep "2.7" > /dev/null; then
                 echo "python-smbus can't be found, fetching from alternative location..."

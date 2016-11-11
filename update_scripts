@@ -1,0 +1,33 @@
+#!/bin/bash
+
+startpoint=71
+cmdpoint=870
+endpoint=903
+
+sourcedir="./installers"
+scriptlist=$(ls "$sourcedir")
+template="$sourcedir/template"
+startcheck=$(sed -n "$startpoint"p $template | grep "^# template")
+cmdcheck=$(sed -n "$cmdpoint"p $template | grep "^# script custom routines")
+endcheck=$(sed -n "$endpoint"p $template | grep "^exit 0")
+
+if [ -n "$startcheck" ] && [ -n "$endcheck" ]; then
+    echo "lines specified match template expected patterns"
+else
+    echo "lines specified do not match template expected patterns"
+    exit 1
+fi
+
+for script in ${scriptlist[@]}; do
+    blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+
+    if [ -n "$blockcheck" ]; then
+        echo "processing $script ..."
+        variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
+        common=$(sed -n "$startpoint","$endpoint"p "$template")
+        
+        { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
+    fi
+done
+
+exit 0
