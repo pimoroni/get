@@ -68,7 +68,7 @@ moreaptdep=( "python-pygame" "python3-pygame" ) # list of additional apt depende
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611092235
+# template 1611112015
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -99,8 +99,8 @@ confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
     else
-        read -r -p "$1 [y/N] " response < /dev/tty
-        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+        read -r -p "$1 [Y/n] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y|)$ ]]; then
             true
         else
             false
@@ -109,8 +109,8 @@ confirm() {
 }
 
 prompt() {
-        read -r -p "$1 [y/N] " response < /dev/tty
-        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+        read -r -p "$1 [Y/n] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y|)$ ]]; then
             true
         else
             false
