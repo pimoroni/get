@@ -68,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611112015
+# template 1611112135
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -99,8 +99,8 @@ confirm() {
     if [ "$FORCE" == '-y' ]; then
         true
     else
-        read -r -p "$1 [Y/n] " response < /dev/tty
-        if [[ $response =~ ^(yes|y|Y|)$ ]]; then
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
             true
         else
             false
@@ -109,8 +109,8 @@ confirm() {
 }
 
 prompt() {
-        read -r -p "$1 [Y/n] " response < /dev/tty
-        if [[ $response =~ ^(yes|y|Y|)$ ]]; then
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
             true
         else
             false
@@ -531,16 +531,16 @@ if confirm "Do you wish to continue?"; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
         sysupdate
-        if ! command -v curl > /dev/null; then
-            apt_pkg_install "curl"
-        fi
-        if ! command -v wget > /dev/null; then
-            apt_pkg_install "wget"
-        fi
-        if ! command -v pip > /dev/null; then
-            apt_pkg_install "python-pip"
-            apt_pkg_install "python3-pip"
-        fi
+    fi
+    if ! command -v curl > /dev/null; then
+        apt_pkg_install "curl"
+    fi
+    if ! command -v wget > /dev/null; then
+        apt_pkg_install "wget"
+    fi
+    if ! command -v pip > /dev/null; then
+        apt_pkg_install "python-pip"
+        apt_pkg_install "python3-pip"
     fi
     pip2_chk && pip3_chk
 
