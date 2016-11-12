@@ -40,12 +40,12 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Mate" "PiTop" ) # list os-releases supported
+osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-debpackage="pantilthat" # the name of the package in apt repo
+debpackage="pantilthat_0.0.1_all.deb" # the name of the package in apt repo
 piplibname="pantilthat" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
+pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
@@ -68,7 +68,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611112135
+# template 1611121910
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -147,7 +147,8 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
+        echo "Updating apt indexes..."
+        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
     fi
 }
@@ -323,9 +324,20 @@ apt_pkg_install() {
     newline
 }
 
+apt_deb_chk() {
+    sudo apt-get --yes install "$1" 2> /dev/null | grep -e "$1 is already the newest" -e "Setting up $1" || return 1
+}
+
 apt_deb_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
+    if [[ "$1" != *".deb"* ]]; then
+        sudo apt-get --yes install "$1" | grep -e "$1 is already the newest" -e "Setting up $1" || inform "Apt failed to install $1!\nFalling back on pypi..."
+    else
+        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $DEBDIR
+        wget "$GETPOOL/resources/$1" &> /dev/null
+        sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
+    fi
     newline
 }
 
@@ -532,17 +544,21 @@ if confirm "Do you wish to continue?"; then
         fi
         sysupdate
     fi
+
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
     if ! command -v wget > /dev/null; then
         apt_pkg_install "wget"
     fi
-    if ! command -v pip > /dev/null; then
+
+    pip2_chk && pip3_chk
+    if ! command -v $PIP2_BIN > /dev/null; then
         apt_pkg_install "python-pip"
+    fi
+    if ! command -v $PIP3_BIN > /dev/null; then
         apt_pkg_install "python3-pip"
     fi
-    pip2_chk && pip3_chk
 
 # hardware setup
 
@@ -836,7 +852,7 @@ if confirm "Do you wish to continue?"; then
         newline && echo "Downloading examples and documentation..." && newline
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        git clone --depth=1 https://github.com/$gitusername/$gitreponame | grep -e "Cloning into"
         cd $installdir
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
