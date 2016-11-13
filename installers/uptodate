@@ -58,9 +58,12 @@ declare -A deblibpairs=( \
 # setup variables
 
 FORCE=$1
-DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+MIN_INSTALL=false
+FAILED_PKG=false
+REMOVE_PKG=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -68,6 +71,10 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+
+RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.debian.org/debian/pool"
+GETPOOL="https://get.pimoroni.com"
 
 # function define
 
