@@ -34,8 +34,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
-oswarning=() # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Kali" "Ubuntu" ) # list os-releases specifically disallowed
+oswarning=( "Debian" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Ubuntu" ) # list os-releases specifically disallowed
 
 declare -A deblibpairs=( \
 ["automationhat"]="automationhat" \
@@ -511,7 +511,10 @@ fi
 
 if confirm "Do you wish to continue?"; then
     echo -e "\nBringing your system up-to-date..."
-    lib_chk && sysupgrade
+    if [ "$FORCE" != '-y' ]; then
+        lib_chk
+    fi
+    sysupdate && sysupgrade
     success "\nAll done!\n"
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot && newline

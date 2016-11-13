@@ -1,8 +1,9 @@
 #!/bin/bash
 
 startpoint=71
-cmdpoint=870
-endpoint=903
+cmdpoint=894
+endpoint=927
+lenient="no"
 
 sourcedir="./installers"
 scriptlist=$(ls "$sourcedir")
@@ -19,13 +20,17 @@ else
 fi
 
 for script in ${scriptlist[@]}; do
-    blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+    if [ "$lenient" == "yes" ]; then
+        blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+    else
+        blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+    fi
 
     if [ -n "$blockcheck" ]; then
         echo "processing $script ..."
         variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
         common=$(sed -n "$startpoint","$endpoint"p "$template")
-        
+
         { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
     fi
 done
