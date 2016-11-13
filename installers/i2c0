@@ -36,7 +36,7 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 
 FORCE=$1
@@ -78,17 +78,29 @@ prompt() {
 }
 
 success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo -e "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+inform() {
+    echo -e "$(tput setaf 6)$1$(tput sgr0)"
 }
 
 warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo -e "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 newline() {
     echo ""
 }
 
+progress() {
+    count=0
+    until [ $count -eq $1 ]; do
+        echo -n "..." && sleep 1
+        ((count++))
+    done
+    echo
+}
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -103,13 +115,14 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
-        UPDATE_DB=true
+        echo "Updating apt indexes..." && progress 3 &
+        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
+        progress 3 UPDATE_DB=true
     fi
 }
 
 sysupgrade() {
-    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
     sudo apt-get -y autoremove &> /dev/null
 }
@@ -143,7 +156,7 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true
+            IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
@@ -162,6 +175,19 @@ os_check() {
                 fi
             done
         fi
+    fi
+    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
     if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         IS_RASPBIAN=false
