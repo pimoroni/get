@@ -26,21 +26,44 @@ debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 customcmd="yes" # whether to execute commands specified before exit
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Debian" "Kali" "Mate" "PiTop" "Raspbian" "Ubuntu" ) # list os-releases supported
+osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=() # list experimental os-releases
-osdeny=( "Darwin" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Debian" "Kali" "Ubuntu" ) # list os-releases specifically disallowed
+
+declare -A deblibpairs=( \
+["automationhat"]="automationhat" \
+["blinkt"]="blinkt" \
+["displayotron"]="dot3k" \
+["drumhat"]="drumhat" \
+["envirophat"]="envirophat" \
+["explorerhat"]="explorerhat" \
+["microdotphat"]="microdotphat" \
+["mote"]="mote" \
+["motephat"]="motephat" \
+["pianohat"]="pianohat" \
+["pibrella"]="pibrella" \
+["piglow"]="piglow" \
+["propellerhat"]="p1" \
+["scrollphat"]="scrollphat" \
+["skywriterhat"]="skywriter" \
+["unicornhat"]="unicornhat" )
+
+# setup variables
 
 FORCE=$1
-DEVICE_TREE=true
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
+MIN_INSTALL=false
+FAILED_PKG=false
+REMOVE_PKG=false
+UPDATE_DB=false
 
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
@@ -48,6 +71,10 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
+
+RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+DEBPOOL="http://ftp.debian.org/debian/pool"
+GETPOOL="https://get.pimoroni.com"
 
 # function define
 
@@ -74,17 +101,29 @@ prompt() {
 }
 
 success() {
-    echo "$(tput setaf 2)$1$(tput sgr0)"
+    echo -e "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+inform() {
+    echo -e "$(tput setaf 6)$1$(tput sgr0)"
 }
 
 warning() {
-    echo "$(tput setaf 1)$1$(tput sgr0)"
+    echo -e "$(tput setaf 1)$1$(tput sgr0)"
 }
 
 newline() {
     echo ""
 }
 
+progress() {
+    count=0
+    until [ $count -eq $1 ]; do
+        echo -n "..." && sleep 1
+        ((count++))
+    done
+    echo
+}
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -99,13 +138,14 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get update || { warning "Apt failed to update indexes!" && exit 1; }
-        UPDATE_DB=true
+        echo "Updating apt indexes..." && progress 3 &
+        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
+        progress 3 UPDATE_DB=true
     fi
 }
 
 sysupgrade() {
-    sudo apt-get update && sudo apt-get upgrade
+    sudo apt-get upgrade
     sudo apt-get clean && sudo apt-get autoclean
     sudo apt-get -y autoremove &> /dev/null
 }
@@ -139,7 +179,7 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true
+            IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osreleases[@]}; do
@@ -158,6 +198,19 @@ os_check() {
                 fi
             done
         fi
+    fi
+    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        IS_RASPBIAN=false
+        for os in ${oswarning[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
+        for os in ${osdeny[@]}; do
+            if [ $os == "Kano" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            fi
+        done
     fi
     if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         IS_RASPBIAN=false
@@ -209,23 +262,15 @@ raspbian_check() {
 }
 
 home_dir() {
-    if ! $IS_MACOSX; then
-        if [ $EUID -ne 0 ]; then
-            USER_HOME=$(getent passwd $USER | cut -d: -f6)
-        else
-            if [ $SUDO_USER ]; then
-                USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-            else
-                warning "Running as root and no other sudo user available"
-                exit 1
-            fi
-        fi
-    else
-        if [ $EUID -ne 0 ]; then
+    if [ $EUID -ne 0 ]; then
+        if $IS_MACOSX; then
             USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
         else
-            USER_HOME=$(dscl . -read /Users/$SUDO_USER NFSHomeDirectory | cut -d: -f2)
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
         fi
+    else
+        warning "Running as root, login as a regular user with sudo rights!"
+        newline && exit 1
     fi
 }
 
@@ -252,6 +297,117 @@ check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
 
+apt_pkg_req() {
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
+
+    if [ "" == "$APT_CHK" ]; then
+        echo "$1 is required"
+        true
+    else
+        echo "$1 is already installed"
+        false
+    fi
+}
+
+apt_pkg_install() {
+    echo "Installing $1..."
+    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    newline
+}
+
+apt_deb_chk() {
+    sudo apt-get --yes install "$1" 2> /dev/null | grep -e "$1 is already the newest" -e "Setting up $1" || return 1
+}
+
+apt_deb_install() {
+    echo "Installing $1..."
+    if [[ "$1" != *".deb"* ]]; then
+        sudo apt-get --yes install "$1" | grep -e "$1 is already the newest" -e "Setting up $1" || inform "Apt failed to install $1!\nFalling back on pypi..."
+    else
+        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $DEBDIR
+        wget "$GETPOOL/resources/$1" &> /dev/null
+        sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
+    fi
+    newline
+}
+
+pip2_chk() {
+    if command -v pip2 > /dev/null; then
+        PIP2_BIN="pip2"
+    elif command -v pip-2.7 > /dev/null; then
+        PIP2_BIN="pip-2.7"
+    elif command -v pip-2.6 > /dev/null; then
+        PIP2_BIN="pip-2.6"
+    else
+        PIP2_BIN="pip"
+    fi
+}
+
+pip2_pkg_req() {
+    PIP2_CHK=$($PIP2_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP2_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+pip3_chk() {
+    if command -v pip3 > /dev/null; then
+        PIP3_BIN="pip3"
+    elif command -v pip-3.3 > /dev/null; then
+        PIP3_BIN="pip-3.3"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip-3.2"
+    else
+        PIP3_BIN="pip"
+    fi
+}
+
+pip3_pkg_req() {
+    PIP3_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+
+    if [ "" == "$PIP3_CHK" ]; then
+        true
+    else
+        false
+    fi
+}
+
+lib_chk() {
+    newline && pip2_chk && pip3_chk
+    sysupdate && UPDATE_DB=true
+    echo "Checking for installed libraries..."
+    for debpkg in "${!deblibpairs[@]}"; do
+        progress 3 &
+        if command -v $PIP2_BIN > /dev/null && ! pip2_pkg_req "${deblibpairs[$debpkg]}"; then
+            if ! apt_deb_chk "python-$debpkg"; then
+                PIP2_MSG=$(sudo $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
+                | grep -e "installed ${deblibpairs[$debpkg]}" -e "up-to-date: ${deblibpairs[$debpkg]}")
+                if [[ "$PIP2_MSG" == *"up-to-date"* ]]; then
+                    echo "${deblibpairs[$debpkg]} for Python 2 already up-to-date"
+                else
+                    echo "Successfully upgraded ${deblibpairs[$debpkg]} for Python 2"
+                fi                   
+            fi
+        fi
+        if command -v $PIP3_BIN > /dev/null && ! pip3_pkg_req "${deblibpairs[$debpkg]}"; then
+            if ! apt_deb_chk "python3-$debpkg"; then
+                PIP3_MSG=$(sudo $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
+                | grep -e "installed ${deblibpairs[$debpkg]}" -e "up-to-date: ${deblibpairs[$debpkg]}")
+                if [[ "$PIP3_MSG" == *"up-to-date"* ]]; then
+                    echo "${deblibpairs[$debpkg]} for Python 3 already up-to-date"
+                else
+                    echo "Successfully upgraded ${deblibpairs[$debpkg]} for Python 3"
+                fi                   
+            fi
+        fi
+    done
+    newline && inform "all libraries are now up-to-date!" && newline
+}
+
 : <<'MAINSTART'
 
 Perform all variables declarations as well as function definition
@@ -269,23 +425,23 @@ if [ $debugmode != "no" ]; then
         gitrepobranch="$debugpoint"
     fi
     newline
-    warning "DEBUG MODE ENABLED"
+    inform "DEBUG MODE ENABLED"
     echo "git user $gitusername and $gitrepobranch branch/tag will be used"
     newline
 else
     newline
     echo "This script will make sure your Raspberry Pi is up to date"
     newline
-    warning "--- Warning ---"
-    newline
-    echo "Always be careful when running scripts and commands"
-    echo "copied from the internet. Ensure they are from a"
-    echo "trusted source."
-    newline
-    echo "If you want to see what this script does before"
-    echo "running it, you should run:"
-    echo "\curl -sS $GETPOOL/$scriptname"
-    newline
+    if [ "$FORCE" != '-y' ]; then
+        inform "Always be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source."
+        newline
+        echo "If you want to see what this script does before"
+        echo "running it, you should run:"
+        echo "\curl -sS $GETPOOL/$scriptname"
+        newline
+    fi
 fi
 
 # checks and init
@@ -354,21 +510,14 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 if confirm "Do you wish to continue?"; then
-    newline
-    echo "Bringing your system up-to-date..."
-    newline
-    sysupgrade
-    newline
-    echo "All done!"
-    newline
+    echo -e "\nBringing your system up-to-date..."
+    lib_chk && sysupgrade
+    success "\nAll done!\n"
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot
-        newline
+        sysreboot && newline
     fi
 else
-    newline
-    echo "Aborting..."
-    newline
+    newline && echo "Aborting..." && newline
 fi
 
 exit 0
