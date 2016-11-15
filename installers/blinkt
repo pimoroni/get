@@ -68,7 +68,7 @@ moreaptdep=( "python-numpy" "python-psutil" "python-requests" "python-tweepy" "p
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611131500
+# template 1611150040
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -139,7 +139,7 @@ progress() {
         echo -n "..." && sleep 1
         ((count++))
     done
-    echo
+	echo
 }
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
@@ -155,9 +155,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        echo "Updating apt indexes..." && progress 3 &
+        echo "Updating apt indexes..." && progress 4 &
         sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
-        progress 3 UPDATE_DB=true
+        progress 4 && UPDATE_DB=true
     fi
 }
 
@@ -297,7 +297,7 @@ space_chk() {
             newline
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
-                \curl -sS $GETPOOL/expandfs | sudo bash
+                curl -sS $GETPOOL/expandfs | sudo bash
                 exit 1
             else
                 newline && exit 1
@@ -362,7 +362,7 @@ pip2_chk() {
 }
 
 pip2_pkg_req() {
-    PIP2_CHK=$($PIP2_BIN search $1 | grep INSTALLED)
+    PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP2_CHK" ]; then
         true
@@ -384,7 +384,7 @@ pip3_chk() {
 }
 
 pip3_pkg_req() {
-    PIP3_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+    PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP3_CHK" ]; then
         true
@@ -589,7 +589,7 @@ if confirm "Do you wish to continue?"; then
             inform "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
+            curl -sS $GETPOOL/spi | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by SPI interface..."
@@ -616,7 +616,7 @@ if confirm "Do you wish to continue?"; then
             inform "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
+            curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by I2C interface..."
@@ -659,7 +659,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $uartreq == "yes" ]; then
         newline && echo "The serial console must be disabled for $productname to work"
-        \curl -sS $GETPOOL/uarton | sudo bash -s - "-y"
+        curl -sS $GETPOOL/uarton | sudo bash -s - "-y"
         ASK_TO_REBOOT=true && newline
     fi
 
