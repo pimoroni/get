@@ -68,7 +68,7 @@ moreaptdep=( "minicom" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611150040
+# template 1611151000
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -139,7 +139,7 @@ progress() {
         echo -n "..." && sleep 1
         ((count++))
     done
-	echo
+    echo
 }
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
@@ -155,9 +155,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        echo "Updating apt indexes..." && progress 4 &
+        echo "Updating apt indexes..." && progress 3 &
         sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
-        progress 4 && UPDATE_DB=true
+        progress 3 && UPDATE_DB=true
     fi
 }
 
