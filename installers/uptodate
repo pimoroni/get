@@ -47,6 +47,7 @@ declare -A deblibpairs=( \
 ["microdotphat"]="microdotphat" \
 ["mote"]="mote" \
 ["motephat"]="motephat" \
+["pantilthat"]="pantilthat" \
 ["pianohat"]="pianohat" \
 ["pibrella"]="pibrella" \
 ["piglow"]="piglow" \
@@ -140,7 +141,7 @@ sysupdate() {
     if ! $UPDATE_DB; then
         echo "Updating apt indexes..." && progress 3 &
         sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
-        progress 3 UPDATE_DB=true
+        progress 3 && UPDATE_DB=true
     fi
 }
 
@@ -332,6 +333,18 @@ apt_deb_install() {
     newline
 }
 
+get_install() {
+    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    if [ "$1" != diagnostic ];then
+        sysupdate && UPDATE_DB=true
+    fi
+    if ! command -v curl > /dev/null; then
+        apt_pkg_install "curl"
+    fi
+    \curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    read -p "Press Enter to continue..." < /dev/tty
+}
+
 pip2_chk() {
     if command -v pip2 > /dev/null; then
         PIP2_BIN="pip2"
@@ -345,7 +358,7 @@ pip2_chk() {
 }
 
 pip2_pkg_req() {
-    PIP2_CHK=$($PIP2_BIN search $1 | grep INSTALLED)
+    PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP2_CHK" ]; then
         true
@@ -367,7 +380,7 @@ pip3_chk() {
 }
 
 pip3_pkg_req() {
-    PIP3_CHK=$($PIP3_BIN search $1 | grep INSTALLED)
+    PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP3_CHK" ]; then
         true
@@ -381,27 +394,31 @@ lib_chk() {
     sysupdate && UPDATE_DB=true
     echo "Checking for installed libraries..."
     for debpkg in "${!deblibpairs[@]}"; do
-        progress 3 &
+        progress 3
         if command -v $PIP2_BIN > /dev/null && ! pip2_pkg_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python-$debpkg"; then
                 PIP2_MSG=$(sudo $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
-                | grep -e "installed ${deblibpairs[$debpkg]}" -e "up-to-date: ${deblibpairs[$debpkg]}")
+                | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
                 if [[ "$PIP2_MSG" == *"up-to-date"* ]]; then
-                    echo "${deblibpairs[$debpkg]} for Python 2 already up-to-date"
+                    echo "${deblibpairs[$debpkg]} for Python 2 is already the newest version."
                 else
                     echo "Successfully upgraded ${deblibpairs[$debpkg]} for Python 2"
-                fi                   
+                fi
+            else
+                sudo $PIP2_BIN uninstall -y "$debpkg" &> /dev/null
             fi
         fi
         if command -v $PIP3_BIN > /dev/null && ! pip3_pkg_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python3-$debpkg"; then
                 PIP3_MSG=$(sudo $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
-                | grep -e "installed ${deblibpairs[$debpkg]}" -e "up-to-date: ${deblibpairs[$debpkg]}")
+                | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
                 if [[ "$PIP3_MSG" == *"up-to-date"* ]]; then
-                    echo "${deblibpairs[$debpkg]} for Python 3 already up-to-date"
+                    echo "${deblibpairs[$debpkg]} for Python 3 is already the newest version."
                 else
                     echo "Successfully upgraded ${deblibpairs[$debpkg]} for Python 3"
-                fi                   
+                fi
+            else
+                sudo $PIP3_BIN uninstall -y "$debpkg" &> /dev/null
             fi
         fi
     done
