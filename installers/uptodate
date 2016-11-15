@@ -298,6 +298,28 @@ check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
 
+
+launch_url() {
+    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    if command -v xdg-open > /dev/null; then
+        xdg-open "$1" && return 0
+    else
+      error_box "There was an error attempting to launch your browser!"
+    fi
+}
+
+get_install() {
+    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
+    if [ "$1" != diagnostic ];then
+        sysupdate && UPDATE_DB=true
+    fi
+    if ! command -v curl > /dev/null; then
+        apt_pkg_install "curl"
+    fi
+    \curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    read -p "Press Enter to continue..." < /dev/tty
+}
+
 apt_pkg_req() {
     APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
 
@@ -333,19 +355,7 @@ apt_deb_install() {
     newline
 }
 
-get_install() {
-    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    if [ "$1" != diagnostic ];then
-        sysupdate && UPDATE_DB=true
-    fi
-    if ! command -v curl > /dev/null; then
-        apt_pkg_install "curl"
-    fi
-    \curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
-    read -p "Press Enter to continue..." < /dev/tty
-}
-
-pip2_chk() {
+pip_cmd_chk() {
     if command -v pip2 > /dev/null; then
         PIP2_BIN="pip2"
     elif command -v pip-2.7 > /dev/null; then
@@ -355,9 +365,16 @@ pip2_chk() {
     else
         PIP2_BIN="pip"
     fi
+    if command -v pip3 > /dev/null; then
+        PIP3_BIN="pip3"
+    elif command -v pip-3.3 > /dev/null; then
+        PIP3_BIN="pip-3.3"
+    elif command -v pip-3.2 > /dev/null; then
+        PIP3_BIN="pip-3.2"
+    fi
 }
 
-pip2_pkg_req() {
+pip2_lib_req() {
     PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP2_CHK" ]; then
@@ -367,19 +384,7 @@ pip2_pkg_req() {
     fi
 }
 
-pip3_chk() {
-    if command -v pip3 > /dev/null; then
-        PIP3_BIN="pip3"
-    elif command -v pip-3.3 > /dev/null; then
-        PIP3_BIN="pip-3.3"
-    elif command -v pip-3.2 > /dev/null; then
-        PIP3_BIN="pip-3.2"
-    else
-        PIP3_BIN="pip"
-    fi
-}
-
-pip3_pkg_req() {
+pip3_lib_req() {
     PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
 
     if [ "" == "$PIP3_CHK" ]; then
@@ -390,12 +395,12 @@ pip3_pkg_req() {
 }
 
 lib_chk() {
-    newline && pip2_chk && pip3_chk
+    newline && pip_cmd_chk
     sysupdate && UPDATE_DB=true
     echo "Checking for installed libraries..."
     for debpkg in "${!deblibpairs[@]}"; do
         progress 3
-        if command -v $PIP2_BIN > /dev/null && ! pip2_pkg_req "${deblibpairs[$debpkg]}"; then
+        if command -v $PIP2_BIN > /dev/null && ! pip2_lib_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python-$debpkg"; then
                 PIP2_MSG=$(sudo $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
                 | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
@@ -408,7 +413,7 @@ lib_chk() {
                 sudo $PIP2_BIN uninstall -y "$debpkg" &> /dev/null
             fi
         fi
-        if command -v $PIP3_BIN > /dev/null && ! pip3_pkg_req "${deblibpairs[$debpkg]}"; then
+        if command -v $PIP3_BIN > /dev/null && ! pip3_lib_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python3-$debpkg"; then
                 PIP3_MSG=$(sudo $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
                 | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
