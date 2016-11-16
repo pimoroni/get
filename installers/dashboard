@@ -22,7 +22,7 @@ DISCLAIMER
 # script control variables
 
 productname="Product Installer" # the name of the product to install
-scriptname="pimoroni" # the name of this script
+scriptname="dashboard" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
