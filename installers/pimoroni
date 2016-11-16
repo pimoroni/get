@@ -22,7 +22,7 @@ DISCLAIMER
 # script control variables
 
 productname="Product Installer" # the name of the product to install
-scriptname="pimstaller" # the name of this script
+scriptname="pimoroni" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -44,7 +44,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Ubuntu") # list os-releases specifically disallowed
-debpackage="pimstaller_1.0.2_all.deb" # the name of the package in apt repo
+debpackage="pimoroni_1.0.0_all.deb" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
@@ -62,7 +62,7 @@ repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 pkgaptremove=() # list of conflicting packages to remove
-pkgdeplist1=() # list of core dependencies
+pkgdeplist1=( "whiptail" "zenity" ) # list of core dependencies
 pkgdeplist2=() # list of python 2 dependencies
 pkgdeplist3=() # list of python 3 dependencies
 moreaptdep=() # list of additional apt dependencies
