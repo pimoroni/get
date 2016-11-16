@@ -19,6 +19,8 @@ was written for this script.
 
 DISCLAIMER
 
+# script control variables
+
 productname="na" # the name of the product to install
 scriptname="uptodate" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
@@ -27,6 +29,7 @@ debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="yes" # whether the script should always prompt user to reboot
+mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
@@ -140,7 +143,8 @@ sysclean() {
 sysupdate() {
     if ! $UPDATE_DB; then
         echo "Updating apt indexes..." && progress 3 &
-        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
+        echo "Reading package lists..."
         progress 3 && UPDATE_DB=true
     fi
 }
