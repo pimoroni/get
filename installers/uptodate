@@ -325,7 +325,7 @@ get_install() {
 }
 
 apt_pkg_req() {
-    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
         echo "$1 is required"
@@ -349,7 +349,8 @@ apt_deb_chk() {
 apt_deb_install() {
     echo "Installing $1..."
     if [[ "$1" != *".deb"* ]]; then
-        sudo apt-get --yes install "$1" | grep -e "$1 is already the newest" -e "Setting up $1" || inform "Apt failed to install $1!\nFalling back on pypi..."
+        sudo apt-get --yes install "$1" &> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
+        dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed"
     else
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
