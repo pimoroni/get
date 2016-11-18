@@ -69,7 +69,7 @@ moreaptdep=( "python-numpy" "python3-numpy" "python-pygame" "python3-pygame" ) #
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611170230
+# template 1611180210
 
 FORCE=$1
 ASK_TO_REBOOT=false
