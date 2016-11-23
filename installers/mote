@@ -65,11 +65,11 @@ pkgaptremove=() # list of conflicting packages to remove
 pkgdeplist1=() # list of core dependencies
 pkgdeplist2=( "python-serial" ) # list of python 2 dependencies
 pkgdeplist3=( "python3-serial" ) # list of python 3 dependencies
-moreaptdep=( "python-requests" "python3-requests" ) # list of additional apt dependencies
+moreaptdep=( "python-flask" "python-requests" "python3-flask" "python3-requests" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1611151400
+# template 1611180210
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -157,7 +157,8 @@ sysclean() {
 sysupdate() {
     if ! $UPDATE_DB; then
         echo "Updating apt indexes..." && progress 3 &
-        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
+        echo "Reading package lists..."
         progress 3 && UPDATE_DB=true
     fi
 }
@@ -338,7 +339,7 @@ get_install() {
 }
 
 apt_pkg_req() {
-    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
         echo "$1 is required"
@@ -356,13 +357,21 @@ apt_pkg_install() {
 }
 
 apt_deb_chk() {
-    sudo apt-get --yes install "$1" 2> /dev/null | grep -e "$1 is already the newest" -e "Setting up $1" || return 1
+    BEFORE=$(dpkg-query -W "$1" 2> /dev/null)
+    sudo apt-get --yes install "$1" &> /dev/null || return 1
+    AFTER=$(dpkg-query -W "$1" 2> /dev/null)
+    if [ "$BEFORE" == "$AFTER" ]; then
+        echo "$1 is already the newest version"
+    else
+        echo "$1 was successfully upgraded"
+    fi
 }
 
 apt_deb_install() {
     echo "Installing $1..."
     if [[ "$1" != *".deb"* ]]; then
-        sudo apt-get --yes install "$1" | grep -e "$1 is already the newest" -e "Setting up $1" || inform "Apt failed to install $1!\nFalling back on pypi..."
+        sudo apt-get --yes install "$1" &> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
+        dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed"
     else
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
@@ -394,7 +403,7 @@ pip_cmd_chk() {
 pip2_lib_req() {
     PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
 
-    if [ "" == "$PIP2_CHK" ]; then
+    if [ -z "$PIP2_CHK" ]; then
         true
     else
         false
@@ -404,7 +413,7 @@ pip2_lib_req() {
 pip3_lib_req() {
     PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
 
-    if [ "" == "$PIP3_CHK" ]; then
+    if [ -z "$PIP3_CHK" ]; then
         true
     else
         false
