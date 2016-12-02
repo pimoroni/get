@@ -69,7 +69,7 @@ moreaptdep=( "scrot" "zenity" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1612021245
+# template 1612021310
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -692,18 +692,17 @@ if confirm "Do you wish to continue?"; then
 
 # minimum install routine
 
-        if [ $gitrepoclone != "yes" ] && [ -n $copydir ]; then
-            newline
-            echo "$productname comes with examples and documentation that you may wish to install."
-            echo "Performing a full install will ensure those resources are installed,"
-            echo "along with all required dependencies. It may however take a while!"
-            newline
-            if ! confirm "Do you wish to perform a full install?"; then
-                MIN_INSTALL=true
-            fi
-        elif [ $mininstall == "yes" ] && [ -z "$DISPLAY" ]; then
+    if [ $mininstall != "yes" ] && [ $gitrepoclone != "yes" ]; then
+        newline
+        echo "$productname comes with examples and documentation that you may wish to install."
+        echo "Performing a full install will ensure those resources are installed,"
+        echo "along with all required dependencies. It may however take a while!"
+        newline
+        if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    elif [ $mininstall == "yes" ] && [ -z "$DISPLAY" ]; then
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
