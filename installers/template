@@ -69,7 +69,7 @@ moreaptdep=() # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1612021450
+# template 1612051540
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -587,12 +587,12 @@ if confirm "Do you wish to continue?"; then
         apt_pkg_install "wget"
     fi
 
-    if [ "$pip2support" == "yes" ] && [ -n $(which python2) ]; then
+    if [ "$pip2support" == "yes" ] && [ -f $(which python2) ]; then
         apt_pkg_install "python-pip"
     else
         "$pip2support" == "na"
     fi
-    if [ "$pip3support" == "yes" ] && [ -n $(which python3) ]; then
+    if [ "$pip3support" == "yes" ] && [ -f $(which python3) ]; then
             apt_pkg_install "python3-pip"
     else
         "$pip3support" == "na"
@@ -752,13 +752,13 @@ if confirm "Do you wish to continue?"; then
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
             apt_deb_install "$debpackage"
         fi
-        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+        if [ $pip2support == "yes" ] && [ -f $(which python2) ]; then
             apt_deb_install "python-$debpackage"
             if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
                 sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
         fi
-        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+        if [ $pip3support == "yes" ] && [ -f $(which python3) ]; then
             apt_deb_install "python3-$debpackage"
             if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
                 sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
@@ -772,7 +772,7 @@ if confirm "Do you wish to continue?"; then
 
 # pypi repo install
 
-    if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+    if [ $pip2support == "yes" ] && [ -f $(which python2) ]; then
         for pipdep in ${pipdeplist[@]}; do
             if pip2_lib_req "$pipdep"; then
                 sudo -H $PIP2_BIN install "$pipdep"
@@ -788,7 +788,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+    if [ $pip3support == "yes" ] && [ -f $(which python3) ]; then
         for pipdep in ${pipdeplist[@]}; do
             if pip3_lib_req "$pipdep"; then
                 sudo -H $PIP3_BIN install "$pipdep"
@@ -837,10 +837,10 @@ if confirm "Do you wish to continue?"; then
     if [ $repoinstall == "yes" ]; then
         newline && echo "Installing library..." && newline
         cd $installdir/$gitreponame/$libdir
-        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+        if [ $pip2support == "yes" ] && [ -f $(which python2) ]; then
             sudo python2 ./setup.py install
         fi
-        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+        if [ $pip3support == "yes" ] && [ -f $(which python3) ]; then
             sudo python3 ./setup.py install
         fi
         newline
