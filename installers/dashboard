@@ -69,7 +69,7 @@ moreaptdep=( "scrot" "zenity" ) # list of additional apt dependencies
 pipdeplist=() # list of dependencies to source from pip
 morepipdep=() # list of additional pip dependencies
 
-# template 1612051555
+# template 1612051640
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -850,43 +850,25 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL; then
         newline && echo "Checking for additional software..." && newline
-        moredepreq=false
 
         for moredep in ${moreaptdep[@]}; do
             if apt_pkg_req "$moredep"; then
-                moredepreq=true
+                apt_pkg_install "$moredep"
             fi
         done
-        if $moredepreq; then
-            newline
-            for moredep in ${moreaptdep[@]}; do
-                if apt_pkg_req "$moredep"; then
-                    apt_pkg_install "$moredep"
-                fi
-            done
-            moredepreq=false
-        fi
 
         for moredep in ${morepipdep[@]}; do
-            if pip2_lib_req "$moredep"; then
-                moredepreq=true
-            fi
-            if pip3_lib_req "$moredep"; then
-                moredepreq=true
-            fi
-        done
-        if $moredepreq; then
-            newline
-            for moredep in ${morepipdep[@]}; do
+            if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
                 if pip2_lib_req "$moredep"; then
                     sudo -H $PIP2_BIN install "$moredep"
                 fi
+            fi
+            if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
                 if pip3_lib_req "$moredep"; then
                     sudo -H $PIP3_BIN install "$moredep"
                 fi
-            done
-            moredepreq=false
-        fi
+            fi
+        done
     fi
 
 # resources install
