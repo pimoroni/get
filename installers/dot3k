@@ -67,7 +67,7 @@ pipdeplist=( "python-uinput" "wifi" ) # list of dependencies to source from pypi
 examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" "vlc" ) # list of additional dependencies
 
-# template 1612061715
+# template 1612061815
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -616,10 +616,10 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            sudo $PIP2_BIN install -U RPi.GPIO && FAILED_PKG=false
+            sudo $PIP2_BIN install RPi.GPIO && FAILED_PKG=false
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            sudo $PIP3_BIN install -U RPi.GPIO && FAILED_PKG=false
+            sudo $PIP3_BIN install RPi.GPIO && FAILED_PKG=false
         fi
         echo "RPi.GPIO installed and up-to-date" && newline
     fi
@@ -635,10 +635,10 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
-            sudo $PIP2_BIN install -U spidev && FAILED_PKG=false
+            sudo $PIP2_BIN install spidev && FAILED_PKG=false
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
-            sudo $PIP3_BIN install -U spidev && FAILED_PKG=false
+            sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
         if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
             warning "Unable to install spidev for python 3!"
@@ -778,7 +778,7 @@ if confirm "Do you wish to continue?"; then
     if [ -f "$(which python2)" ] && [ $pip2support == "yes" ] && apt_pkg_req "python-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 2..." && newline
-            if ! sudo -H $PIP2_BIN install -U "$piplibname"; then
+            if ! sudo -H $PIP2_BIN install "$piplibname"; then
                 warning "Python 2 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
@@ -789,7 +789,7 @@ if confirm "Do you wish to continue?"; then
     if [ -f "$(which python3)" ] && [ $pip3support == "yes" ] && apt_pkg_req "python3-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 3..." && newline
-            if ! sudo -H $PIP3_BIN install -U "$piplibname"; then
+            if ! sudo -H $PIP3_BIN install "$piplibname"; then
                 warning "Python 3 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
