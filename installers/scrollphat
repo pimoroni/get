@@ -67,7 +67,7 @@ pipdeplist=() # list of dependencies to source from pypi
 examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 
-# template 1612061655
+# template 1612061715
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -586,25 +586,25 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ "$pip2support" == "yes" ]; then
-        if [ -f "$(which python2)" ] && ! apt_pkg_req "python-pip" &> /dev/null; then
-                apt_pkg_install "python-pip"
-        else
+        if ! [ -f "$(which python2)" ]; then
             if confirm "Python 2 is not installed. Would like to install it?"; then
                 apt_pkg_install "python-pip"
             else
                 pip2support="na"
             fi
+        elif apt_pkg_req "python-pip" &> /dev/null; then
+            apt_pkg_install "python-pip"
         fi
     fi
     if [ "$pip3support" == "yes" ]; then
-        if [ -f "$(which python3)" ] && ! apt_pkg_req "python3-pip" &> /dev/null; then
-                apt_pkg_install "python3-pip"
-        else
+        if ! [ -f "$(which python3)" ]; then
             if confirm "Python 3 is not installed. Would like to install it?"; then
                 apt_pkg_install "python3-pip"
             else
-                pip3support="na"
+                pip2support="na"
             fi
+        elif apt_pkg_req "python3-pip" &> /dev/null; then
+            apt_pkg_install "python3-pip"
         fi
     fi
     pip_cmd_chk
