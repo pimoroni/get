@@ -67,7 +67,7 @@ pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=( "minicom" ) # list of additional dependencies
 
-# template 1612061525
+# template 1612061545
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -474,8 +474,8 @@ if [ $debugmode != "no" ]; then
     newline
 else
     newline
-    echo "This script will install everything needed to use"
-    echo "the $topdir $productname"
+    echo "This script will install everything needed to use your"
+    echo "$topdir $productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -751,35 +751,31 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride == "yes" ]; then
-        debpackage="na"
-    fi
-
-    if [ $debpackage != "na" ]; then
-        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-            apt_deb_install "$debpackage"
-        fi
-        if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
-            apt_deb_install "python-$debpackage"
-            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
+    if [ $pipoverride != "yes" ]; then
+        if [ $debpackage != "na" ]; then
+            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+                apt_deb_install "$debpackage"
+            fi
+            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+                apt_deb_install "python-$debpackage"
+                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
+                fi
+            fi
+            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+                apt_deb_install "python3-$debpackage"
+                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
+                fi
             fi
         fi
-        if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
-            apt_deb_install "python3-$debpackage"
-            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-            fi
-        fi
-    fi
-
-    if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+    else
         debpackage="na"
     fi
 
 # pypi repo install
 
-    if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
+    if [ -f "$(which python2)" ] && [ $pip2support == "yes" ] && apt_pkg_req "python-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 2..." && newline
             if ! sudo -H $PIP2_BIN install -U "$piplibname"; then
@@ -790,7 +786,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
+    if [ -f "$(which python3)" ] && [ $pip3support == "yes" ] && apt_pkg_req "python3-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 3..." && newline
             if ! sudo -H $PIP3_BIN install -U "$piplibname"; then
@@ -834,10 +830,10 @@ if confirm "Do you wish to continue?"; then
     if [ $repoinstall == "yes" ]; then
         newline && echo "Installing library..." && newline
         cd $installdir/$gitreponame/$libdir
-        if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
             sudo python2 ./setup.py install
         fi
-        if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
             sudo python3 ./setup.py install
         fi
         newline
