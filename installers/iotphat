@@ -66,8 +66,9 @@ coredeplist=( "python-serial" ) # list of core dependencies (min install)
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=( "minicom" ) # list of additional dependencies
+xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612061815
+# template 1612061945
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -715,8 +716,6 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
-    elif [ $mininstall == "yes" ] && [ -z "$DISPLAY" ]; then
-        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -843,9 +842,6 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL; then
         newline && echo "Checking for additional software..." && newline
-        for moredep in ${somemoredep[@]}; do
-            apt_pkg_install "$moredep"
-        done
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
                 if ! apt_pkg_install "python-$moredep"; then
@@ -872,6 +868,14 @@ if confirm "Do you wish to continue?"; then
                 sudo -H $PIP3_BIN install "$pipdep"
             fi
         done
+        for moredep in ${somemoredep[@]}; do
+            apt_pkg_install "$moredep"
+        done
+        if [ -n "$DISPLAY" ]; then
+            for x11dep in ${xdisplaydep[@]}; do
+                apt_pkg_install "$x11dep"
+            done
+        fi
     fi
 
 # resources install
