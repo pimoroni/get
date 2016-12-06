@@ -67,7 +67,7 @@ pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=( "minicom" ) # list of additional dependencies
 
-# template 1612061545
+# template 1612061555
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -889,7 +889,7 @@ if confirm "Do you wish to continue?"; then
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
                 inform "The $repodir directory already exists on your system!"
-                echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
+                echo "We've backed them up to $repodir-backup, just in case you've changed anything!"
             else
                 rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
