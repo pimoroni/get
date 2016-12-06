@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "puredata-core" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612062035
+# template 1612062115
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -602,7 +602,7 @@ if confirm "Do you wish to continue?"; then
             if confirm "Python 3 is not installed. Would like to install it?"; then
                 apt_pkg_install "python3-pip"
             else
-                pip2support="na"
+                pip3support="na"
             fi
         elif apt_pkg_req "python3-pip" &> /dev/null; then
             apt_pkg_install "python3-pip"
