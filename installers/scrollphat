@@ -62,11 +62,12 @@ repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=() # list of core dependencies
-examplesdep=( "pil" "psutil" "feedparser" ) # list of dependencies used by examples
+coredeplist=() # list of core dependencies (min install)
+pipdeplist=() # list of dependencies to source from pypi
+examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 
-# template 1612060230
+# template 1612061335
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -844,6 +845,9 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL; then
         newline && echo "Checking for additional software..." && newline
+        for moredep in ${somemoredep[@]}; do
+            apt_pkg_install "$moredep"
+        done
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
                 apt_pkg_install "python-$moredep"
@@ -852,8 +856,13 @@ if confirm "Do you wish to continue?"; then
                 apt_pkg_install "python3-$moredep"
             fi
         done
-        for moredep in ${somemoredep[@]}; do
-            apt_pkg_install "$moredep"
+        for pipdep in ${pipdeplist[@]}; do
+            if [ -f "$(which python2)" ] && pip2_lib_req "$pipdep"; then
+                sudo -H $PIP2_BIN install "$pipdep"
+            fi
+            if [ -f "$(which python3)" ] && pip3_lib_req "$pipdep"; then
+                sudo -H $PIP3_BIN install "$pipdep"
+            fi
         done
     fi
 
