@@ -61,15 +61,12 @@ repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
-pkgaptremove=() # list of conflicting packages to remove
-pkgdeplist1=() # list of core dependencies
-pkgdeplist2=( "python-dev" ) # list of python 2 dependencies
-pkgdeplist3=( "python3-dev" ) # list of python 3 dependencies
-moreaptdep=( "puredata-core" ) # list of additional apt dependencies
-pipdeplist=() # list of dependencies to source from pip
-morepipdep=( "python-uinput" ) # list of additional pip dependencies
+pkgremove=() # list of conflicting packages to remove
+coredeplist=() # list of core dependencies
+examplesdep=( "uinput" ) # list of dependencies used by examples
+somemoredep=( "puredata-core" ) # list of additional dependencies
 
-# template 1612051640
+# template 1612060230
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -587,15 +584,25 @@ if confirm "Do you wish to continue?"; then
         apt_pkg_install "wget"
     fi
 
-    if [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
-        apt_pkg_install "python-pip"
-    else
-        pip2support="na"
+    if [ "$pip2support" == "yes" ]; then
+        if ! [ -f "$(which python2)" ]; then
+            echo "Python 2 is not installed."
+            if confirm "Would like to install it?"; then
+                apt_pkg_install "python-pip"
+            else
+                pip2support="na"
+            fi
+        fi
     fi
-    if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
-            apt_pkg_install "python3-pip"
-    else
-        pip3support="na"
+    if [ "$pip3support" == "yes" ]; then
+        if ! [ -f "$(which python3)" ]; then
+            echo "Python 3 is not installed."
+            if confirm "Would like to install it?"; then
+                apt_pkg_install "python3-pip"
+            else
+                pip3support="na"
+            fi
+        fi
     fi
     pip_cmd_chk
 
@@ -730,15 +737,12 @@ if confirm "Do you wish to continue?"; then
     newline && echo "Checking for dependencies..." && newline
 
     if $REMOVE_PKG; then
-        for pkgrm in ${pkgaptremove[@]}; do
+        for pkgrm in ${pkgremove[@]}; do
             warning "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
     fi
-
-    pkgdeplist=( "${pkgdeplist1[@]}" "${pkgdeplist2[@]}" "${pkgdeplist3[@]}" )
-
-    for pkgdep in ${pkgdeplist[@]}; do
+    for pkgdep in ${coredeplist[@]}; do
         if apt_pkg_req "$pkgdep"; then
             apt_pkg_install "$pkgdep"
         fi
@@ -773,11 +777,6 @@ if confirm "Do you wish to continue?"; then
 # pypi repo install
 
     if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
-        for pipdep in ${pipdeplist[@]}; do
-            if pip2_lib_req "$pipdep"; then
-                sudo -H $PIP2_BIN install "$pipdep"
-            fi
-        done
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 2..." && newline
             if ! sudo -H $PIP2_BIN install -U "$piplibname"; then
@@ -789,11 +788,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
-        for pipdep in ${pipdeplist[@]}; do
-            if pip3_lib_req "$pipdep"; then
-                sudo -H $PIP3_BIN install "$pipdep"
-            fi
-        done
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 3..." && newline
             if ! sudo -H $PIP3_BIN install -U "$piplibname"; then
@@ -850,24 +844,16 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL; then
         newline && echo "Checking for additional software..." && newline
-
-        for moredep in ${moreaptdep[@]}; do
-            if apt_pkg_req "$moredep"; then
-                apt_pkg_install "$moredep"
+        for moredep in ${examplesdep[@]}; do
+            if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
+                apt_pkg_install "python-$moredep"
+            fi
+            if [ -f "$(which python3)" ] && apt_pkg_req "python3-$moredep"; then
+                apt_pkg_install "python3-$moredep"
             fi
         done
-
-        for moredep in ${morepipdep[@]}; do
-            if [ $pip2support == "yes" ] && [ -f "$(which python2)" ]; then
-                if pip2_lib_req "$moredep"; then
-                    sudo -H $PIP2_BIN install "$moredep"
-                fi
-            fi
-            if [ $pip3support == "yes" ] && [ -f "$(which python3)" ]; then
-                if pip3_lib_req "$moredep"; then
-                    sudo -H $PIP3_BIN install "$moredep"
-                fi
-            fi
+        for moredep in ${somemoredep[@]}; do
+            apt_pkg_install "$moredep"
         done
     fi
 
@@ -914,7 +900,7 @@ if confirm "Do you wish to continue?"; then
 # script custom routines
 
     if [ $customcmd == "no" ]; then
-        if [ -n "$pkgaptremove" ]; then
+        if [ -n "$pkgremove" ]; then
             newline && echo "Finalising Install..." && newline
             sysclean && newline
         fi
