@@ -68,7 +68,7 @@ examplesdep=( "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612061945
+# template 1612062035
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -641,10 +641,10 @@ if confirm "Do you wish to continue?"; then
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
-        if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" > /dev/null; then
             warning "Unable to install spidev for python 3!"
             FAILED_PKG=true
-        elif ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "spidev" > /dev/null; then
             warning "Unable to install spidev for python 2!"
             FAILED_PKG=true
         else
@@ -688,10 +688,10 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if ! $PIP3_BIN list | grep "smbus" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" > /dev/null; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
-        elif ! $PIP2_BIN list | grep "smbus" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" > /dev/null; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         else
