@@ -1,8 +1,8 @@
 #!/bin/bash
 
 startpoint=70
-cmdpoint=909
-endpoint=942
+cmdpoint=911
+endpoint=944
 lenient="no"
 
 sourcedir="./installers"
