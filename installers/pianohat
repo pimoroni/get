@@ -67,7 +67,7 @@ pipdeplist=() # list of dependencies to source from pypi
 examplesdep=( "numpy" "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 
-# template 1612061555
+# template 1612061635
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -350,7 +350,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
     newline
 }
 
@@ -848,10 +848,20 @@ if confirm "Do you wish to continue?"; then
         done
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
-                apt_pkg_install "python-$moredep"
+                if ! apt_pkg_install "python-$moredep"; then
+                    sudo -H $PIP2_BIN install "$moredep"
+                    if pip2_lib_req "$moredep"; then
+                        FAILED_PKG=true
+                    fi
+                fi
             fi
             if [ -f "$(which python3)" ] && apt_pkg_req "python3-$moredep"; then
-                apt_pkg_install "python3-$moredep"
+                if ! apt_pkg_install "python3-$moredep"; then
+                    sudo -H $PIP3_BIN install "$moredep"
+                    if pip3_lib_req "$moredep"; then
+                        FAILED_PKG=true
+                    fi
+                fi
             fi
         done
         for pipdep in ${pipdeplist[@]}; do
