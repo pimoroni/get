@@ -929,18 +929,21 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline
-        echo "Finalising Install..."
-        newline
-        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        cd $DEBDIR
-        wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb &> /dev/null
-        sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
-        sudo rm /usr/bin/bstc &> /dev/null
-        sudo rm /usr/bin/bstl &> /dev/null
-        sysclean
-        newline
-        success "All done!"
-        newline
+        echo "Finalising Install..." && newline
+        if [ -z "$DISPLAY" ]; then
+            inform "no X server running - Propeller IDE install skipped"
+        elif $IS_ARMv6 ; then
+            inform "armv6 processor - Propeller IDE install skipped"
+        else
+            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+            cd $DEBDIR
+            wget https://github.com/parallaxinc/PropellerIDE/releases/download/0.36.7/propelleride-0.36.7-armhf.deb &> /dev/null
+            sudo dpkg -i $DEBDIR/propelleride-0.36.7-armhf.deb
+            sudo rm /usr/bin/bstc &> /dev/null
+            sudo rm /usr/bin/bstl &> /dev/null
+            sysclean
+            newline && success "All done!" && newline
+        fi
     fi
 
     if $FAILED_PKG; then
