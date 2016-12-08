@@ -402,11 +402,8 @@ if confirm "Do you wish to continue?"; then
             speaker-test -l5 -c2 -t wav
         fi
     fi
-    newline
-    success "All done!"
-    newline
-    echo "Enjoy your new $productname!"
-    newline
+    newline && success "All done!" && newline
+    echo "Enjoy your new $productname!" && newline
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot
