@@ -65,11 +65,10 @@ pkgremove=() # list of conflicting packages to remove
 coredeplist=( "python-dev" "python3-dev" "python-sn3218" "python3-sn3218" "python-st7036" "python3-st7036" ) # list of core dependencies (min install)
 pipdeplist=( "python-uinput" "wifi" ) # list of dependencies to source from pypi
 examplesdep=( "psutil" ) # list of python modules required by examples
-somemoredep=( "libudev-dev" "vlc" ) # list of additional dependencies
+somemoredep=( "libudev-dev" ) # list of additional dependencies
+xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1612061815
-
-# template 1612062115
+# template 1612082200
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -477,7 +476,7 @@ if [ $debugmode != "no" ]; then
 else
     newline
     echo "This script will install everything needed to use your"
-    echo "$topdir $productname"
+    echo "$productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -874,7 +873,9 @@ if confirm "Do you wish to continue?"; then
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
-                apt_pkg_install "$x11dep"
+                if apt_pkg_req "$x11dep"; then
+                    apt_pkg_install "$x11dep"
+                fi
             done
         fi
     fi
