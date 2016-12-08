@@ -932,7 +932,9 @@ if confirm "Do you wish to continue?"; then
         newline && echo "Finalising Install..." && newline
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
+        wget $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2j-4_armhf.deb
         wget $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb
+        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2j-4_armhf.deb
         sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
         get_install phatdac
     fi
