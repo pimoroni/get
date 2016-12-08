@@ -46,7 +46,7 @@ oswarning=() # list experimental os-releases
 osdeny=() # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
+pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
 pip3support="na" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
@@ -935,7 +935,7 @@ if confirm "Do you wish to continue?"; then
             newline
             DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $DEBDIR
-            wget $RASPOOL/main/b/blueman/blueman_2.0.4-1+b3_armhf.deb
+            wget $RASPOOL/main/b/blueman/blueman_2.0.4-1+b3_armhf.deb 1> /dev/null
             sudo dpkg -i $DEBDIR/blueman_2.0.4-1+b3_armhf.deb
         fi
         sysclean

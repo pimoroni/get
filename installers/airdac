@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Dashboard" # the name of the product to install
-scriptname="dashboard" # the name of this script
+productname="pHAT DAC with shairport-sync" # the name of the product to install
+scriptname="shairport" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -30,21 +30,21 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="yes" # whether the script enforces minimum install routine
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
-armhfonly="no" # whether the script is allowed to run on other arch
+armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
-oswarning=( "Debian" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Ubuntu") # list os-releases specifically disallowed
-debpackage="pimoroni_0.9.6_all.deb" # the name of the package in apt repo
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
+debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
@@ -57,16 +57,16 @@ gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
 gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
-repoclean="no" # whether any git repo clone found should be cleaned up
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "whiptail" ) # list of core dependencies (min install)
+coredeplist=( "avahi-daemon" "libavahi-common3" "libavahi-client3" "libc6" "libasound2" "libconfig9" "libdaemon0" "libpopt0" "libpulse0" "libsoxr0" ) # list of core dependencies (min install)
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
-xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
+xdisplaydep=() # list of dependencies requiring X server
 
 # template 1612082200
 
@@ -930,9 +930,14 @@ if confirm "Do you wish to continue?"; then
         newline && echo "All done!" && newline
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
-        newline && echo "Finalising Install..."
-        # place all custom commands in this scope
-        newline
+        newline && echo "Finalising Install..." && newline
+        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
+        cd $DEBDIR
+        wget $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2j-4_armhf.deb 1> /dev/null
+        wget $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb 1> /dev/null
+        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2j-4_armhf.deb
+        sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
+        get_install phatdac
     fi
 
     if $FAILED_PKG; then
