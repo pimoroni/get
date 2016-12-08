@@ -928,12 +928,11 @@ if confirm "Do you wish to continue?"; then
         newline && echo "All done!" && newline
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
-        newline
-        echo "Finalising Install..." && newline
+        newline && echo "Finalising Install..." && newline
         if [ -z "$DISPLAY" ]; then
-            inform "no X server running - Propeller IDE install skipped"
+            inform "no X server running - Propeller IDE install skipped" && newline
         elif $IS_ARMv6 ; then
-            inform "armv6 processor - Propeller IDE install skipped"
+            inform "armv6 processor - Propeller IDE install skipped" && newline
         else
             DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $DEBDIR
