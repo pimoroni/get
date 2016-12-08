@@ -45,7 +45,7 @@ osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=() # list experimental os-releases
 osdeny=() # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
-piplibname="esptool" # the name of the lib in pip repo
+piplibname="na" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="no" # whether python3 is supported
@@ -61,15 +61,14 @@ repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
-pkgaptremove=() # list of conflicting packages to remove
-pkgdeplist1=( "avrdude" "avr-libc" "git" "git-gui" "gitk" ) # list of core dependencies
-pkgdeplist2=( "ipython" "python-dev" "python-mock" ) # list of python 2 dependencies
-pkgdeplist3=( "ipython3" "python3-dev" "python3-mock" ) # list of python 3 dependencies
-moreaptdep=() # list of additional apt dependencies
-pipdeplist=() # list of dependencies to source from pip
-morepipdep=() # list of additional pip dependencies
+pkgremove=() # list of conflicting packages to remove
+coredeplist=( "avrdude" "avr-libc" "git" "git-gui" "gitk" "ipython" "python-dev" ) # list of core dependencies (min install)
+pipdeplist=( "esptool" ) # list of dependencies to source from pypi
+examplesdep=( "mock" ) # list of python modules required by examples
+somemoredep=() # list of additional dependencies
+xdisplaydep=() # list of dependencies requiring X server
 
-# template 1611151400
+# template 1612062115
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -157,7 +156,8 @@ sysclean() {
 sysupdate() {
     if ! $UPDATE_DB; then
         echo "Updating apt indexes..." && progress 3 &
-        sudo apt-get update | grep -e "Reading package lists" || { warning "Apt failed to update indexes!" && exit 1; }
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
+        echo "Reading package lists..."
         progress 3 && UPDATE_DB=true
     fi
 }
@@ -338,7 +338,7 @@ get_install() {
 }
 
 apt_pkg_req() {
-    APT_CHK=$(dpkg-query -W -f='${Status}\n' $1 2> /dev/null | grep "install ok installed")
+    APT_CHK=$(dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed")
 
     if [ "" == "$APT_CHK" ]; then
         echo "$1 is required"
@@ -351,18 +351,26 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
+    sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
     newline
 }
 
 apt_deb_chk() {
-    sudo apt-get --yes install "$1" 2> /dev/null | grep -e "$1 is already the newest" -e "Setting up $1" || return 1
+    BEFORE=$(dpkg-query -W "$1" 2> /dev/null)
+    sudo apt-get --yes install "$1" &> /dev/null || return 1
+    AFTER=$(dpkg-query -W "$1" 2> /dev/null)
+    if [ "$BEFORE" == "$AFTER" ]; then
+        echo "$1 is already the newest version"
+    else
+        echo "$1 was successfully upgraded"
+    fi
 }
 
 apt_deb_install() {
     echo "Installing $1..."
     if [[ "$1" != *".deb"* ]]; then
-        sudo apt-get --yes install "$1" | grep -e "$1 is already the newest" -e "Setting up $1" || inform "Apt failed to install $1!\nFalling back on pypi..."
+        sudo apt-get --yes install "$1" &> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
+        dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed"
     else
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
@@ -394,7 +402,7 @@ pip_cmd_chk() {
 pip2_lib_req() {
     PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
 
-    if [ "" == "$PIP2_CHK" ]; then
+    if [ -z "$PIP2_CHK" ]; then
         true
     else
         false
@@ -404,7 +412,7 @@ pip2_lib_req() {
 pip3_lib_req() {
     PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
 
-    if [ "" == "$PIP3_CHK" ]; then
+    if [ -z "$PIP3_CHK" ]; then
         true
     else
         false
@@ -467,8 +475,8 @@ if [ $debugmode != "no" ]; then
     newline
 else
     newline
-    echo "This script will install everything needed to use"
-    echo "the $topdir $productname"
+    echo "This script will install everything needed to use your"
+    echo "$topdir $productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -578,13 +586,29 @@ if confirm "Do you wish to continue?"; then
         apt_pkg_install "wget"
     fi
 
+    if [ "$pip2support" == "yes" ]; then
+        if ! [ -f "$(which python2)" ]; then
+            if confirm "Python 2 is not installed. Would like to install it?"; then
+                apt_pkg_install "python-pip"
+            else
+                pip2support="na"
+            fi
+        elif apt_pkg_req "python-pip" &> /dev/null; then
+            apt_pkg_install "python-pip"
+        fi
+    fi
+    if [ "$pip3support" == "yes" ]; then
+        if ! [ -f "$(which python3)" ]; then
+            if confirm "Python 3 is not installed. Would like to install it?"; then
+                apt_pkg_install "python3-pip"
+            else
+                pip3support="na"
+            fi
+        elif apt_pkg_req "python3-pip" &> /dev/null; then
+            apt_pkg_install "python3-pip"
+        fi
+    fi
     pip_cmd_chk
-    if ! command -v $PIP2_BIN > /dev/null; then
-        apt_pkg_install "python-pip"
-    fi
-    if ! command -v $PIP3_BIN > /dev/null; then
-        apt_pkg_install "python3-pip"
-    fi
 
 # hardware setup
 
@@ -592,11 +616,11 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
-        if ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            sudo $PIP2_BIN install -U RPi.GPIO && FAILED_PKG=false
+        if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
+            sudo $PIP2_BIN install RPi.GPIO && FAILED_PKG=false
         fi
-        if ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            sudo $PIP3_BIN install -U RPi.GPIO && FAILED_PKG=false
+        if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
+            sudo $PIP3_BIN install RPi.GPIO && FAILED_PKG=false
         fi
         echo "RPi.GPIO installed and up-to-date" && newline
     fi
@@ -611,16 +635,16 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by SPI interface..."
-        if ! apt_pkg_install "python-spidev" &> /dev/null; then
-            sudo $PIP2_BIN install -U spidev && FAILED_PKG=false
+        if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
+            sudo $PIP2_BIN install spidev && FAILED_PKG=false
         fi
-        if ! apt_pkg_install "python3-spidev" &> /dev/null; then
-            sudo $PIP3_BIN install -U spidev && FAILED_PKG=false
+        if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
+            sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
-        if ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" > /dev/null; then
             warning "Unable to install spidev for python 3!"
             FAILED_PKG=true
-        elif ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "spidev" > /dev/null; then
             warning "Unable to install spidev for python 2!"
             FAILED_PKG=true
         else
@@ -638,7 +662,7 @@ if confirm "Do you wish to continue?"; then
             ASK_TO_REBOOT=true
         fi
         newline && echo "Checking packages required by I2C interface..."
-        if ! apt_pkg_install "python-smbus" &> /dev/null; then
+        if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
             if python --version | grep "2.7" > /dev/null; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
@@ -647,7 +671,7 @@ if confirm "Do you wish to continue?"; then
                 sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
-        if ! apt_pkg_install "python3-smbus" &> /dev/null; then
+        if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
             if python3 --version | grep "3.4" > /dev/null; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
@@ -664,10 +688,10 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if ! $PIP3_BIN list | grep "smbus" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" > /dev/null; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
-        elif ! $PIP2_BIN list | grep "smbus" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" > /dev/null; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         else
@@ -683,13 +707,12 @@ if confirm "Do you wish to continue?"; then
 
 # minimum install routine
 
-    if [ $gitrepoclone != "yes" ] && [ $mininstall != "yes" ]; then
+    if [ $mininstall != "yes" ] && [ $gitrepoclone != "yes" ]; then
         newline
         echo "$productname comes with examples and documentation that you may wish to install."
         echo "Performing a full install will ensure those resources are installed,"
         echo "along with all required dependencies. It may however take a while!"
         newline
-
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
@@ -716,57 +739,45 @@ if confirm "Do you wish to continue?"; then
     newline && echo "Checking for dependencies..." && newline
 
     if $REMOVE_PKG; then
-        for pkgrm in ${pkgaptremove[@]}; do
+        for pkgrm in ${pkgremove[@]}; do
             warning "Installed package conflicts with requirements"
             sudo apt-get remove "$pkgrm"
         done
     fi
-
-    pkgdeplist=( "${pkgdeplist1[@]}" "${pkgdeplist2[@]}" "${pkgdeplist3[@]}" )
-
-    for pkgdep in ${pkgdeplist[@]}; do
+    for pkgdep in ${coredeplist[@]}; do
         if apt_pkg_req "$pkgdep"; then
             apt_pkg_install "$pkgdep"
         fi
     done
 
-    if [ $pipoverride == "yes" ]; then
-        debpackage="na"
-    fi
-
-    if [ $debpackage != "na" ]; then
-        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-            apt_deb_install "$debpackage"
-        fi
-        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
-            apt_deb_install "python-$debpackage"
-            if ! apt_pkg_req "python-$debpackage"; then
-                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
+    if [ $pipoverride != "yes" ]; then
+        if [ $debpackage != "na" ]; then
+            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+                apt_deb_install "$debpackage"
+            fi
+            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+                apt_deb_install "python-$debpackage"
+                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
+                fi
+            fi
+            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+                apt_deb_install "python3-$debpackage"
+                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
+                fi
             fi
         fi
-        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
-            apt_deb_install "python3-$debpackage"
-            if ! apt_pkg_req "python3-$debpackage"; then
-                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-            fi
-        fi
-    fi
-
-    if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+    else
         debpackage="na"
     fi
 
 # pypi repo install
 
-    if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
-        for pipdep in ${pipdeplist[@]}; do
-            if pip2_lib_req "$pipdep"; then
-                sudo -H $PIP2_BIN install "$pipdep"
-            fi
-        done
+    if [ -f "$(which python2)" ] && [ $pip2support == "yes" ] && apt_pkg_req "python-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 2..." && newline
-            if ! sudo -H $PIP2_BIN install -U "$piplibname"; then
+            if ! sudo -H $PIP2_BIN install "$piplibname"; then
                 warning "Python 2 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
@@ -774,15 +785,10 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
-        for pipdep in ${pipdeplist[@]}; do
-            if pip3_lib_req "$pipdep"; then
-                sudo -H $PIP3_BIN install "$pipdep"
-            fi
-        done
+    if [ -f "$(which python3)" ] && [ $pip3support == "yes" ] && apt_pkg_req "python3-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 3..." && newline
-            if ! sudo -H $PIP3_BIN install -U "$piplibname"; then
+            if ! sudo -H $PIP3_BIN install "$piplibname"; then
                 warning "Python 3 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
@@ -823,10 +829,10 @@ if confirm "Do you wish to continue?"; then
     if [ $repoinstall == "yes" ]; then
         newline && echo "Installing library..." && newline
         cd $installdir/$gitreponame/$libdir
-        if [ $pip2support == "yes" ] && [ -n $(which python2) ]; then
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
             sudo python2 ./setup.py install
         fi
-        if [ $pip3support == "yes" ] && [ -n $(which python3) ]; then
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
             sudo python3 ./setup.py install
         fi
         newline
@@ -836,42 +842,39 @@ if confirm "Do you wish to continue?"; then
 
     if ! $MIN_INSTALL; then
         newline && echo "Checking for additional software..." && newline
-        moredepreq=false
-
-        for moredep in ${moreaptdep[@]}; do
-            if apt_pkg_req "$moredep"; then
-                moredepreq=true
-            fi
-        done
-        if $moredepreq; then
-            newline
-            for moredep in ${moreaptdep[@]}; do
-                if apt_pkg_req "$moredep"; then
-                    apt_pkg_install "$moredep"
-                fi
-            done
-            moredepreq=false
-        fi
-
-        for moredep in ${morepipdep[@]}; do
-            if pip2_lib_req "$moredep"; then
-                moredepreq=true
-            fi
-            if pip3_lib_req "$moredep"; then
-                moredepreq=true
-            fi
-        done
-        if $moredepreq; then
-            newline
-            for moredep in ${morepipdep[@]}; do
-                if pip2_lib_req "$moredep"; then
+        for moredep in ${examplesdep[@]}; do
+            if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
+                if ! apt_pkg_install "python-$moredep"; then
                     sudo -H $PIP2_BIN install "$moredep"
+                    if pip2_lib_req "$moredep"; then
+                        FAILED_PKG=true
+                    fi
                 fi
-                if pip3_lib_req "$moredep"; then
+            fi
+            if [ -f "$(which python3)" ] && apt_pkg_req "python3-$moredep"; then
+                if ! apt_pkg_install "python3-$moredep"; then
                     sudo -H $PIP3_BIN install "$moredep"
+                    if pip3_lib_req "$moredep"; then
+                        FAILED_PKG=true
+                    fi
                 fi
+            fi
+        done
+        for pipdep in ${pipdeplist[@]}; do
+            if [ -f "$(which python2)" ] && pip2_lib_req "$pipdep"; then
+                sudo -H $PIP2_BIN install "$pipdep"
+            fi
+            if [ -f "$(which python3)" ] && pip3_lib_req "$pipdep"; then
+                sudo -H $PIP3_BIN install "$pipdep"
+            fi
+        done
+        for moredep in ${somemoredep[@]}; do
+            apt_pkg_install "$moredep"
+        done
+        if [ -n "$DISPLAY" ]; then
+            for x11dep in ${xdisplaydep[@]}; do
+                apt_pkg_install "$x11dep"
             done
-            moredepreq=false
         fi
     fi
 
@@ -900,7 +903,7 @@ if confirm "Do you wish to continue?"; then
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
                 inform "The $repodir directory already exists on your system!"
-                echo "We've backed it up to $repodir-backup, just in case you've changed anything!"
+                echo "We've backed them up to $repodir-backup, just in case you've changed anything!"
             else
                 rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
