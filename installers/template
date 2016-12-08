@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612062115
+# template 1612070315
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -476,7 +476,7 @@ if [ $debugmode != "no" ]; then
 else
     newline
     echo "This script will install everything needed to use your"
-    echo "$topdir $productname"
+    echo "$productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
