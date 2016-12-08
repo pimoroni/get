@@ -935,7 +935,7 @@ if confirm "Do you wish to continue?"; then
             newline
             DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
             cd $DEBDIR
-            wget $RASPOOL/main/b/blueman/blueman_2.0.4-1+b3_armhf.deb
+            wget $RASPOOL/main/b/blueman/blueman_2.0.4-1+b3_armhf.deb 1> /dev/null
             sudo dpkg -i $DEBDIR/blueman_2.0.4-1+b3_armhf.deb
         fi
         sysclean
