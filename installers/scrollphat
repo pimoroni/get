@@ -68,7 +68,7 @@ examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612062115
+# template 1612131915
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -200,58 +200,65 @@ os_check() {
             IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
             for os in ${osdeny[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
+            for os in ${oswarning[@]}; do
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osreleases[@]}; do
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                fi
+            done
         fi
-    fi
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -d ~/.config/ubuntu-mate ]; then
-        for os in ${osdeny[@]}; do
-            if [ $os == "Mate" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if uname -s | grep "Darwin" > /dev/null; then
+    elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
+        for os in ${oswarning[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
         for os in ${osdeny[@]}; do
             if [ $os == "Darwin" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -476,7 +483,7 @@ if [ $debugmode != "no" ]; then
 else
     newline
     echo "This script will install everything needed to use your"
-    echo "$topdir $productname"
+    echo "$productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -750,23 +757,24 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride != "yes" ]; then
-        if [ $debpackage != "na" ]; then
-            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-                apt_deb_install "$debpackage"
+    if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_deb_install "$debpackage"
+        fi
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            apt_deb_install "python-$debpackage"
+            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
-                apt_deb_install "python-$debpackage"
-                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            apt_deb_install "python3-$debpackage"
+            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
-                apt_deb_install "python3-$debpackage"
-                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
-            fi
+        fi
+        if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+            debpackage="na"
         fi
     else
         debpackage="na"
@@ -873,7 +881,9 @@ if confirm "Do you wish to continue?"; then
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
-                apt_pkg_install "$x11dep"
+                if apt_pkg_req "$x11dep"; then
+                    apt_pkg_install "$x11dep"
+                fi
             done
         fi
     fi
