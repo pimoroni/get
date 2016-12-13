@@ -68,7 +68,7 @@ examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612131740
+# template 1612131805
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -750,27 +750,24 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride != "yes" ]; then
-        if [ $debpackage != "na" ]; then
-            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-                apt_deb_install "$debpackage"
+    if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_deb_install "$debpackage"
+        fi
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            apt_deb_install "python-$debpackage"
+            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
-                apt_deb_install "python-$debpackage"
-                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
-                else
-                    debpackage="na"
-                fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            apt_deb_install "python3-$debpackage"
+            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
-                apt_deb_install "python3-$debpackage"
-                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-                else
-                    debpackage="na"
-                fi
-            fi
+        fi
+        if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+            debpackage="na"
         fi
     else
         debpackage="na"
