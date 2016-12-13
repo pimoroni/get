@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
 
-# template 1612082200
+# template 1612131740
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -759,12 +759,16 @@ if confirm "Do you wish to continue?"; then
                 apt_deb_install "python-$debpackage"
                 if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
                     sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
+                else
+                    debpackage="na"
                 fi
             fi
             if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
                 apt_deb_install "python3-$debpackage"
                 if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
                     sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
+                else
+                    debpackage="na"
                 fi
             fi
         fi
