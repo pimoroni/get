@@ -68,7 +68,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612142045
+# template 1612142055
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -196,25 +196,22 @@ os_check() {
     IS_EXPERIMENTAL=false
     OS_NAME="Unknown"
 
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+    if uname -s | grep "Darwin" > /dev/null; then
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
         OS_NAME="Kano"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
     elif [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
         OS_NAME="PiTop"
     elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
-    fi
-    if cat /etc/os-release | grep "Kali" > /dev/null; then
-        OS_NAME="Kali"
     elif cat /etc/os-release | grep "Debian" > /dev/null; then
         OS_NAME="Debian"
-    fi
-    if [ -d ~/.config/ubuntu-mate ];then
-        OS_NAME="Mate"
     elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
         OS_NAME="Ubuntu"
-    fi
-    if uname -s | grep "Darwin" > /dev/null; then
-        OS_NAME="Darwin" && IS_MACOSX=true
     fi
 
     if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
