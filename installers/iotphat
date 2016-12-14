@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "minicom" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612131915
+# template 1612141555
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -201,51 +201,57 @@ os_check() {
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osdeny[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                if $IS_RASPBIAN=true; then
+                    if [ $os == "Kano" ]; then
+                        if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "PiTop" ]; then
+                        if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "Mate" ]; then
+                        if [ -d ~/.config/ubuntu-mate ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                        fi
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                if $IS_RASPBIAN=true; then
+                    if [ $os == "Kano" ]; then
+                        if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                        fi
+                    elif [ $os == "PiTop" ]; then
+                        if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                        fi
+                    elif [ $os == "Mate" ]; then
+                        if [ -d ~/.config/ubuntu-mate ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                        fi
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                 fi
             done
             for os in ${osreleases[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                if $IS_RASPBIAN=true; then
+                    if [ $os == "Kano" ]; then
+                        if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "PiTop" ]; then
+                        if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "Mate" ]; then
+                        if [ -d ~/.config/ubuntu-mate ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                        fi
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=true && IS_EXPERIMENTAL=false
