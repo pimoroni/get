@@ -21,16 +21,16 @@ DISCLAIMER
 
 # script control variables
 
-productname="pHAT DAC with shairport-sync" # the name of the product to install
-scriptname="shairport" # the name of this script
+productname="Pimoroni Dashboard" # the name of the product to install
+scriptname="dashboard" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
-debugmode="no" # whether the script should use debug routines
+debugmode="yes" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="yes" # whether the script enforces minimum install routine
-customcmd="yes" # whether to execute commands specified before exit
+customcmd="no" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
@@ -44,7 +44,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-debpackage="na" # the name of the package in apt repo
+debpackage="pimoroni_0.9.6_all.deb" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
@@ -57,19 +57,18 @@ gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
 gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
-repoclean="no"  # whether any git repo clone found should be cleaned up
+repoclean="no" # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "avahi-daemon" "libavahi-client3" "libavahi-common3" "libasound2" "libc6" "libconfig9" "libdaemon0" "libpopt0" "libpulse0" "libsoxr0" "libssl1.1"
- ) # list of core dependencies (min install)
+coredeplist=( "whiptail" ) # list of core dependencies (min install)
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
-xdisplaydep=() # list of dependencies requiring X server
+xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
 
-# template 1612070315
+# template 1612131915
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -201,58 +200,65 @@ os_check() {
             IS_RASPBIAN=true && IS_SUPPORTED=true
         fi
         if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
             for os in ${osdeny[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
+            for os in ${oswarning[@]}; do
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osreleases[@]}; do
+                if [ $os == "Kano" ]; then
+                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "PiTop" ]; then
+                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif [ $os == "Mate" ]; then
+                    if [ -d ~/.config/ubuntu-mate ]; then
+                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep $os > /dev/null; then
+                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                fi
+            done
         fi
-    fi
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -d ~/.config/ubuntu-mate ]; then
-        for os in ${osdeny[@]}; do
-            if [ $os == "Mate" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if uname -s | grep "Darwin" > /dev/null; then
+    elif uname -s | grep "Darwin" > /dev/null; then
         IS_MACOSX=true
+        for os in ${oswarning[@]}; do
+            if [ $os == "Darwin" ]; then
+                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            fi
+        done
         for os in ${osdeny[@]}; do
             if [ $os == "Darwin" ]; then
                 IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -751,23 +757,24 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride != "yes" ]; then
-        if [ $debpackage != "na" ]; then
-            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-                apt_deb_install "$debpackage"
+    if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_deb_install "$debpackage"
+        fi
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            apt_deb_install "python-$debpackage"
+            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
-                apt_deb_install "python-$debpackage"
-                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            apt_deb_install "python3-$debpackage"
+            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
-                apt_deb_install "python3-$debpackage"
-                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
-            fi
+        fi
+        if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+            debpackage="na"
         fi
     else
         debpackage="na"
@@ -874,7 +881,9 @@ if confirm "Do you wish to continue?"; then
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
-                apt_pkg_install "$x11dep"
+                if apt_pkg_req "$x11dep"; then
+                    apt_pkg_install "$x11dep"
+                fi
             done
         fi
     fi
@@ -929,12 +938,9 @@ if confirm "Do you wish to continue?"; then
         newline && echo "All done!" && newline
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
-        newline && echo "Finalising Install..." && newline
-        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        cd $DEBDIR
-        wget $DEBPOOL/main/s/shairport-sync/shairport-sync_2.8.4-1~bpo8+1_armhf.deb
-        sudo dpkg -i $DEBDIR/shairport-sync_2.8.4-1~bpo8+1_armhf.deb
-        #get_install phatdac
+        newline && echo "Finalising Install..."
+        # place all custom commands in this scope
+        newline
     fi
 
     if $FAILED_PKG; then

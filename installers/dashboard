@@ -21,7 +21,7 @@ DISCLAIMER
 
 # script control variables
 
-productname="Dashboard" # the name of the product to install
+productname="Pimoroni Dashboard" # the name of the product to install
 scriptname="dashboard" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Kano" "Mate" "PiTop" ) # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Kali" "Ubuntu") # list os-releases specifically disallowed
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 debpackage="pimoroni_0.9.6_all.deb" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
