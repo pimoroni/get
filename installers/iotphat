@@ -190,18 +190,15 @@ arch_check() {
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
         if command -v apt-get > /dev/null; then
             for os in ${osdeny[@]}; do
-                if $IS_RASPBIAN; then
+                if cat /etc/os-release | grep "Raspbian" > /dev/null; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -214,13 +211,15 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                         fi
+                    else
+                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                 fi
             done
             for os in ${oswarning[@]}; do
-                if $IS_RASPBIAN; then
+                if cat /etc/os-release | grep "Raspbian" > /dev/null; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
@@ -233,13 +232,15 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                         fi
+                    else
+                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                 fi
             done
             for os in ${osreleases[@]}; do
-                if $IS_RASPBIAN; then
+                if cat /etc/os-release | grep "Raspbian" > /dev/null; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
@@ -252,6 +253,8 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                         fi
+                    else
+                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=true && IS_EXPERIMENTAL=false
@@ -512,8 +515,8 @@ home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
     echo "IS_MACOSX is $IS_MACOSX"
+    echo "IS_RASPBIAN is $IS_RASPBIAN"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     newline
