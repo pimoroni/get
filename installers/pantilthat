@@ -68,7 +68,7 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612141555
+# template 1612141615
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -197,6 +197,9 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if command -v apt-get > /dev/null; then
+            if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+                IS_RASPBIAN=true && IS_SUPPORTED=true
+            fi
             for os in ${osdeny[@]}; do
                 if cat /etc/os-release | grep "Raspbian" > /dev/null; then
                     if [ $os == "Kano" ]; then
@@ -211,8 +214,6 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
                         fi
-                    else
-                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -232,8 +233,6 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                         fi
-                    else
-                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=false && IS_EXPERIMENTAL=true
@@ -253,8 +252,6 @@ os_check() {
                         if [ -d ~/.config/ubuntu-mate ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
                         fi
-                    else
-                        IS_RASPBIAN=true && IS_SUPPORTED=true
                     fi
                 elif cat /etc/os-release | grep $os > /dev/null; then
                     IS_SUPPORTED=true && IS_EXPERIMENTAL=false
