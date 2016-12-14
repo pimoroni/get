@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
 
-# template 1612142055
+# template 1612142140
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -204,7 +204,7 @@ os_check() {
         OS_NAME="Kano"
     elif [ -d ~/.config/ubuntu-mate ];then
         OS_NAME="Mate"
-    elif [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
         OS_NAME="PiTop"
     elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
