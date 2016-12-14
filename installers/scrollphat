@@ -68,7 +68,7 @@ examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612141730
+# template 1612141755
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -199,35 +199,6 @@ os_check() {
 
     if [ -f /etc/os-release ]; then
         if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-                    if [ $os == "Kano" ]; then
-                        if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                        fi
-                    elif [ $os == "PiTop" ]; then
-                        if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                        fi
-                    elif [ $os == "Raspbian" ]; then
-                        IS_RASPBIAN=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep "Debian" > /dev/null; then
-                    if [ $os == "Kali" ] && cat /etc/os-release | grep "Kali" > /dev/null; then
-                        IS_DEBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    elif [ $os == "Debian" ]; then
-                        IS_DEBIAN=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
-                    if [ $os == "Mate" ] && [ -d ~/.config/ubuntu-mate ]; then
-                        IS_UBUNTU=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    elif [ $os == "Ubuntu" ]; then
-                        IS_UBUNTU=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
             for os in ${oswarning[@]}; do
                 if cat /etc/os-release | grep "Raspbian" > /dev/null; then
                     if [ $os == "Kano" ]; then
@@ -253,8 +224,33 @@ os_check() {
                     elif [ $os == "Ubuntu" ]; then
                         IS_UBUNTU=true && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
                     fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+                fi
+            done
+            for os in ${osreleases[@]}; do
+                if cat /etc/os-release | grep "Raspbian" > /dev/null; then
+                    if [ $os == "Kano" ]; then
+                        if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "PiTop" ]; then
+                        if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
+                            IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                        fi
+                    elif [ $os == "Raspbian" ]; then
+                        IS_RASPBIAN=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep "Debian" > /dev/null; then
+                    if [ $os == "Kali" ] && cat /etc/os-release | grep "Kali" > /dev/null; then
+                        IS_DEBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    elif [ $os == "Debian" ]; then
+                        IS_DEBIAN=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
+                elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+                    if [ $os == "Mate" ] && [ -d ~/.config/ubuntu-mate ]; then
+                        IS_UBUNTU=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    elif [ $os == "Ubuntu" ]; then
+                        IS_UBUNTU=true && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+                    fi
                 fi
             done
         fi
