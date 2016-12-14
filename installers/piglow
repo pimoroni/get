@@ -201,7 +201,7 @@ os_check() {
         fi
         if command -v apt-get > /dev/null; then
             for os in ${osdeny[@]}; do
-                if $IS_RASPBIAN=true; then
+                if $IS_RASPBIAN; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -220,7 +220,7 @@ os_check() {
                 fi
             done
             for os in ${oswarning[@]}; do
-                if $IS_RASPBIAN=true; then
+                if $IS_RASPBIAN; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
@@ -239,7 +239,7 @@ os_check() {
                 fi
             done
             for os in ${osreleases[@]}; do
-                if $IS_RASPBIAN=true; then
+                if $IS_RASPBIAN; then
                     if [ $os == "Kano" ]; then
                         if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
                             IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
