@@ -21,6 +21,7 @@ fi
 
 for script in ${scriptlist[@]}; do
     if [ "$lenient" == "yes" ]; then
+        endpoint=$((endpoint + 10)) 
         blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
     else
         blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
