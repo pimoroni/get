@@ -43,7 +43,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "RetroPi" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Kali" "RetroPie" ) # list os-releases specifically disallowed
 debpackage="aptdebname" # the name of the package in apt repo
 piplibname="piplibname" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612161205
+# template 1612161220
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -207,7 +207,7 @@ os_check() {
     elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
-        OS_NAME="RetroPi"
+        OS_NAME="RetroPie"
     elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep "Debian" > /dev/null; then
