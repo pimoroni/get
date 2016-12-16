@@ -30,7 +30,7 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
@@ -41,34 +41,34 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-debpackage="picadehat" # the name of the package in apt repo
-piplibname="picadehat" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+osreleases=( "Raspbian" "RetroPie" ) # list os-releases supported
+oswarning=() # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Kali" "Mate" "PiTop" "Ubuntu" ) # list os-releases specifically disallowed
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
+pipoverride="no" # whether the script should give priority to pip repo
+pip2support="na" # whether python2 is supported
+pip3support="na" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="picadehat" # the name of the dir for copy of resources
 gitreponame="picade-hat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
-gitrepoclone="no" # whether the git repo is to be cloned locally
+gitrepoclone="yes" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
-repoclean="no" # whether any git repo clone found should be cleaned up
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
-libdir="library" # subdirectory of library in repo
-copydir=( "documentation" "examples" ) # subdirectories to copy from repo
+libdir="na" # subdirectory of library in repo
+copydir=() # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=() # list of core dependencies (min install)
+coredeplist=( "lsb-release" ) # list of core dependencies (min install)
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612131915
+# template 1612161220
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -190,80 +190,37 @@ arch_check() {
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
 
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
-        if command -v apt-get > /dev/null; then
-            for os in ${osdeny[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
-            for os in ${osreleases[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-        fi
-    elif uname -s | grep "Darwin" > /dev/null; then
-        IS_MACOSX=true
-        for os in ${oswarning[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+    if uname -s | grep "Darwin" > /dev/null; then
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif command -v emulationstation > /dev/null; then
+        OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep "Debian" > /dev/null; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+        OS_NAME="Ubuntu"
+    fi
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
+    fi
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
     fi
 }
 
@@ -506,8 +463,7 @@ home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     newline
@@ -931,20 +887,21 @@ if confirm "Do you wish to continue?"; then
 # script custom routines
 
     if [ $customcmd == "no" ]; then
-        if [ -n "$pkgremove" ]; then
+        if [ -n "$pkgaptremove" ]; then
             newline && echo "Finalising Install..." && newline
             sysclean && newline
         fi
         newline && echo "All done!" && newline
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
-        newline && echo "Finalising Install..."
-        # place all custom commands in this scope
         newline
+        cd $installdir/$gitclonedir
+        sudo bash ./setup.sh
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!" && newline
+        warning "Some packages could not be installed, review the output for details!"
+        newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"

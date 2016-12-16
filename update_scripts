@@ -1,8 +1,8 @@
 #!/bin/bash
 
 startpoint=71
-cmdpoint=931
-endpoint=964
+cmdpoint=885
+endpoint=918
 lenient="no"
 
 sourcedir="./installers"
@@ -21,6 +21,7 @@ fi
 
 for script in ${scriptlist[@]}; do
     if [ "$lenient" == "yes" ]; then
+        endpoint=$((endpoint + 10)) 
         blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
     else
         blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")

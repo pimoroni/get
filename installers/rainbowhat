@@ -40,13 +40,13 @@ armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
-raspbianonly="yes" # whether the script is allowed to run on other OSes
+raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 debpackage="rainbowhat" # the name of the package in apt repo
 piplibname="rainbowhat" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
+pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612131915
+# template 1612142140
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -190,80 +190,35 @@ arch_check() {
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
 
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
-        if command -v apt-get > /dev/null; then
-            for os in ${osdeny[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
-            for os in ${osreleases[@]}; do
-                if [ $os == "Kano" ]; then
-                    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "PiTop" ]; then
-                    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif [ $os == "Mate" ]; then
-                    if [ -d ~/.config/ubuntu-mate ]; then
-                        IS_RASPBIAN=false && IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                    fi
-                elif cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-        fi
-    elif uname -s | grep "Darwin" > /dev/null; then
-        IS_MACOSX=true
-        for os in ${oswarning[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+    if uname -s | grep "Darwin" > /dev/null; then
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep "Debian" > /dev/null; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+        OS_NAME="Ubuntu"
+    fi
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
+    fi
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
     fi
 }
 
@@ -506,8 +461,7 @@ home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     newline

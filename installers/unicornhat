@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Kano" "PiTop" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Mate" ) # list os-releases specifically disallowed
+oswarning=( "Debian" "Kano" "PiTop" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Mate" "Ubuntu" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="unicornhat" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -68,7 +68,7 @@ examplesdep=( "flask" "numpy" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612062115
+# template 1612142140
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -190,73 +190,35 @@ arch_check() {
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
 
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
-        if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
-            for os in ${osdeny[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                fi
-            done
-        fi
-    fi
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -d ~/.config/ubuntu-mate ]; then
-        for os in ${osdeny[@]}; do
-            if [ $os == "Mate" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
     if uname -s | grep "Darwin" > /dev/null; then
-        IS_MACOSX=true
-        for os in ${osdeny[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep "Debian" > /dev/null; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+        OS_NAME="Ubuntu"
+    fi
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
+    fi
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
     fi
 }
 
@@ -476,7 +438,7 @@ if [ $debugmode != "no" ]; then
 else
     newline
     echo "This script will install everything needed to use your"
-    echo "$topdir $productname"
+    echo "$productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -499,8 +461,7 @@ home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     newline
@@ -750,23 +711,24 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride != "yes" ]; then
-        if [ $debpackage != "na" ]; then
-            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-                apt_deb_install "$debpackage"
+    if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_deb_install "$debpackage"
+        fi
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            apt_deb_install "python-$debpackage"
+            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
-                apt_deb_install "python-$debpackage"
-                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            apt_deb_install "python3-$debpackage"
+            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
-                apt_deb_install "python3-$debpackage"
-                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
-            fi
+        fi
+        if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+            debpackage="na"
         fi
     else
         debpackage="na"
@@ -873,7 +835,9 @@ if confirm "Do you wish to continue?"; then
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
-                apt_pkg_install "$x11dep"
+                if apt_pkg_req "$x11dep"; then
+                    apt_pkg_install "$x11dep"
+                fi
             done
         fi
     fi
