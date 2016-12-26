@@ -895,8 +895,12 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline
+        if [ "$OS_NAME" != "Retropie" ]; then
+            inform "Retropie does not seem to be installed. No worries,"
+            inform "we can still set up the hardware side for you!"
+        fi
         cd $installdir/$gitclonedir
-        sudo bash ./setup.sh
+        sudo bash ./setup.sh        
     fi
 
     if $FAILED_PKG; then
