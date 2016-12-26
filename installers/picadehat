@@ -50,7 +50,7 @@ pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
 pip3support="na" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="picadehat" # the name of the dir for copy of resources
+localdir="picade" # the name of the dir for copy of resources
 gitreponame="picade-hat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
@@ -895,8 +895,12 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline
+        if [ "$OS_NAME" != "Retropie" ]; then
+            inform "Retropie does not seem to be installed. No worries,"
+            inform "we can still set up the hardware side for you!"
+        fi
         cd $installdir/$gitclonedir
-        sudo bash ./setup.sh
+        sudo bash ./setup.sh        
     fi
 
     if $FAILED_PKG; then
