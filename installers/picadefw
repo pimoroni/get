@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Display-o-Tron 3000/HAT" # the name of the product to install
-scriptname="displayotron" # the name of this script
+productname="Picade" # the name of the product to install
+scriptname="picadefw" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -30,43 +30,43 @@ debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
-customcmd="no" # whether to execute commands specified before exit
+customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
-i2creq="yes" # whether the i2c interface is required
+i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
-spireq="yes" # whether the spi interface is required
+spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
+osreleases=( "Raspbian" "RetroPie" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-debpackage="displayotron" # the name of the package in apt repo
-piplibname="dot3k" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+osdeny=( "Darwin" "Kali" "Mate" "PiTop" ) # list os-releases specifically disallowed
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
+pipoverride="no" # whether the script should give priority to pip repo
+pip2support="na" # whether python2 is supported
+pip3support="na" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="displayotron" # the name of the dir for copy of resources
-gitreponame="dot3k" # the name of the git project repo
+localdir="picade" # the name of the dir for copy of resources
+gitreponame="picade-sketch" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
-gitrepoclone="no" # whether the git repo is to be cloned locally
+gitrepoclone="yes" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
-repoclean="no" # whether any git repo clone found should be cleaned up
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
-libdir="library" # subdirectory of library in repo
-copydir=( "documentation" "examples" ) # subdirectories to copy from repo
+libdir="na" # subdirectory of library in repo
+copydir=() # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "python-dev" "python3-dev" "python-sn3218" "python3-sn3218" "python-st7036" "python3-st7036" ) # list of core dependencies (min install)
-pipdeplist=( "python-uinput" "wifi" ) # list of dependencies to source from pypi
-examplesdep=( "psutil" ) # list of python modules required by examples
-somemoredep=( "libudev-dev" ) # list of additional dependencies
-xdisplaydep=( "vlc" ) # list of dependencies requiring X server
+coredeplist=( "avrdude" ) # list of core dependencies (min install)
+pipdeplist=( "serial" ) # list of dependencies to source from pypi
+examplesdep=() # list of python modules required by examples
+somemoredep=() # list of additional dependencies
+xdisplaydep=() # list of dependencies requiring X server
 
 # template 1612161220
 
@@ -887,20 +887,21 @@ if confirm "Do you wish to continue?"; then
 # script custom routines
 
     if [ $customcmd == "no" ]; then
-        if [ -n "$pkgremove" ]; then
+        if [ -n "$pkgaptremove" ]; then
             newline && echo "Finalising Install..." && newline
             sysclean && newline
         fi
         newline && echo "All done!" && newline
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
-        newline && echo "Finalising Install..."
-        # place all custom commands in this scope
         newline
+        cd $installdir/$gitclonedir/update
+        sudo bash ./update
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!" && newline
+        warning "Some packages could not be installed, review the output for details!"
+        newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"

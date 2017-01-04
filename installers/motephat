@@ -68,7 +68,7 @@ examplesdep=( "requests" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612142140
+# template 1612161220
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -206,6 +206,8 @@ os_check() {
         OS_NAME="Mate"
     elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
         OS_NAME="PiTop"
+    elif command -v emulationstation > /dev/null; then
+        OS_NAME="RetroPie"
     elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep "Debian" > /dev/null; then
