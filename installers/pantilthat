@@ -68,7 +68,7 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612161220
+# template 1701042300
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -171,7 +171,7 @@ sysupgrade() {
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
-    newline
+    echo
     if prompt "Would you like to reboot now?"; then
         sync && sudo reboot
     fi
@@ -252,20 +252,20 @@ home_dir() {
         fi
     else
         warning "Running as root, login as a regular user with sudo rights!"
-        newline && exit 1
+        echo && exit 1
     fi
 }
 
 space_chk() {
     if command -v stat > /dev/null && ! $IS_MACOSX; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-            newline
+            echo
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
                 \curl -sS $GETPOOL/expandfs | sudo bash
                 exit 1
             else
-                newline && exit 1
+                echo && exit 1
             fi
         fi
     fi
@@ -316,7 +316,7 @@ apt_pkg_req() {
 apt_pkg_install() {
     echo "Installing $1..."
     sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
-    newline
+    echo
 }
 
 apt_deb_chk() {
@@ -341,7 +341,7 @@ apt_deb_install() {
         wget "$GETPOOL/resources/$1" &> /dev/null
         sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
     fi
-    newline
+    echo
 }
 
 pip_cmd_chk() {
@@ -385,10 +385,10 @@ pip3_lib_req() {
 
 usb_max_power() {
     if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-        newline && echo "Max USB current setting already active"
+        echo -e "\nMax USB current setting already active"
     else
-        newline && echo "Adjusting USB current setting in $CONFIG"
-        echo "max_usb_current=1" | sudo tee -a $CONFIG && newline
+        echo -e "\nAdjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG && echo
     fi
 }
 
@@ -410,10 +410,10 @@ get_init_sys() {
 
 i2c_vc_dtparam() {
     if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
-        newline && echo "i2c0 bus already active"
+        echo -e "\ni2c0 bus already active"
     else
-        newline && echo "Enabling i2c0 bus in $CONFIG"
-        echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG && newline
+        echo -e "\nEnabling i2c0 bus in $CONFIG"
+        echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG && echo
     fi
 }
 
