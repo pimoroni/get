@@ -68,7 +68,7 @@ examplesdep=( "numpy" "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1612062115
+# template 1701042300
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -171,7 +171,7 @@ sysupgrade() {
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
-    newline
+    echo
     if prompt "Would you like to reboot now?"; then
         sync && sudo reboot
     fi
@@ -190,73 +190,37 @@ arch_check() {
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
 
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
-        if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
-            for os in ${osdeny[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                fi
-            done
-        fi
-    fi
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -d ~/.config/ubuntu-mate ]; then
-        for os in ${osdeny[@]}; do
-            if [ $os == "Mate" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
     if uname -s | grep "Darwin" > /dev/null; then
-        IS_MACOSX=true
-        for os in ${osdeny[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif command -v emulationstation > /dev/null; then
+        OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep "Debian" > /dev/null; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+        OS_NAME="Ubuntu"
+    fi
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
+    fi
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
     fi
 }
 
@@ -288,20 +252,20 @@ home_dir() {
         fi
     else
         warning "Running as root, login as a regular user with sudo rights!"
-        newline && exit 1
+        echo && exit 1
     fi
 }
 
 space_chk() {
     if command -v stat > /dev/null && ! $IS_MACOSX; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-            newline
+            echo
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
                 \curl -sS $GETPOOL/expandfs | sudo bash
                 exit 1
             else
-                newline && exit 1
+                echo && exit 1
             fi
         fi
     fi
@@ -352,7 +316,7 @@ apt_pkg_req() {
 apt_pkg_install() {
     echo "Installing $1..."
     sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
-    newline
+    echo
 }
 
 apt_deb_chk() {
@@ -377,7 +341,7 @@ apt_deb_install() {
         wget "$GETPOOL/resources/$1" &> /dev/null
         sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
     fi
-    newline
+    echo
 }
 
 pip_cmd_chk() {
@@ -421,10 +385,10 @@ pip3_lib_req() {
 
 usb_max_power() {
     if [ -e $CONFIG ] && grep -q "^max_usb_current=1$" $CONFIG; then
-        newline && echo "Max USB current setting already active"
+        echo -e "\nMax USB current setting already active"
     else
-        newline && echo "Adjusting USB current setting in $CONFIG"
-        echo "max_usb_current=1" | sudo tee -a $CONFIG && newline
+        echo -e "\nAdjusting USB current setting in $CONFIG"
+        echo "max_usb_current=1" | sudo tee -a $CONFIG && echo
     fi
 }
 
@@ -446,10 +410,10 @@ get_init_sys() {
 
 i2c_vc_dtparam() {
     if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
-        newline && echo "i2c0 bus already active"
+        echo -e "\ni2c0 bus already active"
     else
-        newline && echo "Enabling i2c0 bus in $CONFIG"
-        echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG && newline
+        echo -e "\nEnabling i2c0 bus in $CONFIG"
+        echo "dtparam=i2c_vc=on" | sudo tee -a $CONFIG && echo
     fi
 }
 
@@ -476,7 +440,7 @@ if [ $debugmode != "no" ]; then
 else
     newline
     echo "This script will install everything needed to use your"
-    echo "$topdir $productname"
+    echo "$productname"
     newline
     if [ "$FORCE" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
@@ -499,8 +463,7 @@ home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     newline
@@ -750,23 +713,24 @@ if confirm "Do you wish to continue?"; then
         fi
     done
 
-    if [ $pipoverride != "yes" ]; then
-        if [ $debpackage != "na" ]; then
-            if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
-                apt_deb_install "$debpackage"
+    if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
+            apt_deb_install "$debpackage"
+        fi
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            apt_deb_install "python-$debpackage"
+            if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
+                sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
-                apt_deb_install "python-$debpackage"
-                if ! apt_pkg_req "python-$debpackage" &> /dev/null; then
-                    sudo $PIP2_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            apt_deb_install "python3-$debpackage"
+            if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
+                sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
             fi
-            if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
-                apt_deb_install "python3-$debpackage"
-                if ! apt_pkg_req "python3-$debpackage" &> /dev/null; then
-                    sudo $PIP3_BIN uninstall -y "$piplibname" &> /dev/null
-                fi
-            fi
+        fi
+        if apt_pkg_req "python-$debpackage" &> /dev/null || apt_pkg_req "python3-$debpackage" &> /dev/null; then
+            debpackage="na"
         fi
     else
         debpackage="na"
@@ -873,7 +837,9 @@ if confirm "Do you wish to continue?"; then
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
-                apt_pkg_install "$x11dep"
+                if apt_pkg_req "$x11dep"; then
+                    apt_pkg_install "$x11dep"
+                fi
             done
         fi
     fi
