@@ -928,19 +928,13 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline && echo "Finalising Install..."
         if [ "$OS_NAME" != "Mate" ] && command -v mate-volume-control-applet > /dev/null; then
+            if [ -e $AUTOSTART ] && ! grep -q "@pulseaudio" $AUTOSTART; then
+                echo "@pulseaudio" >> $AUTOSTART
+            fi
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
                 echo "@mate-volume-control-applet" >> $AUTOSTART
-                echo "@pulseaudio -D" >> $AUTOSTART
             fi
-            DAEMONCONF=/etc/pulse/daemon.conf
             PULSECONF=~/.config/pulse/client.conf
-            if ! grep -q "^daemonize = yes" "$DAEMONCONF"; then
-                sudo sed -i "s|^; daemonize = yes|daemonize = yes|" "$DAEMONCONF" &> /dev/null
-                sudo sed -i "s|^; daemonize = no|daemonize = yes|" "$DAEMONCONF" &> /dev/null
-                sudo sed -i "s|^# daemonize = yes|daemonize = yes|" "$DAEMONCONF" &> /dev/null
-                sudo sed -i "s|^# daemonize = no|daemonize = yes|" "$DAEMONCONF" &> /dev/null
-                sudo sed -i "s|^daemonize = no|daemonize = yes|" "$DAEMONCONF" &> /dev/null
-            fi
             if ! [ -f "$PULSECONF" ]; then
                 mkdir ~/.config/pulse &> /dev/null
                 echo "autospawn = yes" > "$PULSECONF"
