@@ -931,25 +931,15 @@ if confirm "Do you wish to continue?"; then
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
                 echo "@mate-volume-control-applet" >> $AUTOSTART
             fi
-            PULSECONF="~/.config/pulse/client.conf"
-            #if ! [ -f "$PULSECONF/default.pa" ]; then
-            #    echo ".include /etc/pulse/default.pa" > "$PULSECONF/default.pa"
-            #    echo "set-default-sink alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF/default.pa"
-            #elif ! grep -q "^set-default-sink alsa_output.platform-soc_sound.analog-stereo" "$PULSECONF/default.pa"; then
-            #    echo "set-default-sink alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF/default.pa"
-            #fi
+            PULSECONF=~/.config/pulse/client.conf
             if ! [ -f "$PULSECONF" ]; then
                 echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
                 echo "autospawn = yes" > "$PULSECONF"
-                echo "daemon-binary = /usr/bin/pulseaudio" >> "$PULSECONF"
+                echo "daemon-binary = /bin/true" >> "$PULSECONF"
             elif ! grep -q "alsa_output.platform-soc_sound.analog-stereo" "$PULSECONF"; then
+                sudo sed -i "s|^autospawn = no|autospawn = yes|" "$PULSECONF" &> /dev/null
                 echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
-                sudo sed -i "s|^autospawn = no|^autospawn = yes|" "$PULSECONF" &> /dev/null
             fi
-            #if ! grep -q "^daemonize = yes" "$PULSECONF/daemon.conf"; then
-            #    sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$PULSECONF/daemon.conf" &> /dev/null
-            #fi
-            mate-volume-control-applet &
         fi
         newline
     fi
