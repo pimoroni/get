@@ -935,6 +935,9 @@ if confirm "Do you wish to continue?"; then
             PULSECONF=~/.config/pulse/client.conf
             if ! grep -q "^daemonize = yes" "$DAEMONCONF"; then
                 sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$DAEMONCONF" &> /dev/null
+                sudo sed -i "s|^; daemonize = no|^daemonize = yes|" "$DAEMONCONF" &> /dev/null
+                sudo sed -i "s|^# daemonize = yes|^daemonize = yes|" "$DAEMONCONF" &> /dev/null
+                sudo sed -i "s|^# daemonize = no|^daemonize = yes|" "$DAEMONCONF" &> /dev/null
             fi
             if ! [ -f "$PULSECONF" ]; then
                 mkdir ~/.config/pulse &> /dev/null
