@@ -182,9 +182,9 @@ arch_check() {
     IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv.l" > /dev/null; then
+    if uname -m | grep -q "armv.l"; then
         IS_ARMHF=true
-        if uname -m | grep "armv6l" > /dev/null; then
+        if uname -m | grep -q "armv6l"; then
             IS_ARMv6=true
         fi
     fi
@@ -197,9 +197,9 @@ os_check() {
     IS_EXPERIMENTAL=false
     OS_NAME="Unknown"
 
-    if uname -s | grep "Darwin" > /dev/null; then
+    if uname -s | grep -q "Darwin"; then
         OS_NAME="Darwin" && IS_MACOSX=true
-    elif cat /etc/os-release | grep "Kali" > /dev/null; then
+    elif cat /etc/os-release | grep -q "Kali"; then
         OS_NAME="Kali"
     elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
         OS_NAME="Kano"
@@ -209,11 +209,11 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
-    elif cat /etc/os-release | grep "Raspbian" > /dev/null; then
+    elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
-    elif cat /etc/os-release | grep "Debian" > /dev/null; then
+    elif cat /etc/os-release | grep -q "Debian"; then
         OS_NAME="Debian"
-    elif cat /etc/os-release | grep "Ubuntu" > /dev/null; then
+    elif cat /etc/os-release | grep -q "Ubuntu"; then
         OS_NAME="Ubuntu"
     fi
 
@@ -230,13 +230,13 @@ raspbian_check() {
     IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "/sid" > /dev/null; then
+        if cat /etc/os-release | grep -q "/sid"; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+        elif cat /etc/os-release | grep -q "stretch"; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+        elif cat /etc/os-release | grep -q "jessie"; then
             IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+        elif cat /etc/os-release | grep -q "wheezy"; then
             IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
             IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -621,10 +621,10 @@ if confirm "Do you wish to continue?"; then
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "spidev"; then
             warning "Unable to install spidev for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "spidev" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "spidev"; then
             warning "Unable to install spidev for python 2!"
             FAILED_PKG=true
         else
@@ -643,7 +643,7 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
-            if python --version | grep "2.7" > /dev/null; then
+            if python --version | grep -q "2.7"; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
@@ -652,13 +652,13 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
-            if python3 --version | grep "3.4" > /dev/null; then
+            if python3 --version | grep -q "3.4"; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3
-            elif python3 --version | grep "3.5" > /dev/null; then
+            elif python3 --version | grep -q "3.5"; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
@@ -668,10 +668,10 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" > /dev/null; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "smbus"; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" > /dev/null; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "smbus"; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         else
@@ -927,20 +927,29 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline && echo "Finalising Install..."
-        if command -v mate-volume-control-applet > /dev/null; then
+        if [ "$OS_NAME" != "Mate" ] && command -v mate-volume-control-applet > /dev/null; then
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
-                echo "@mate-volume-control-applet" | sudo tee -a $AUTOSTART &> /dev/null
+                echo "@mate-volume-control-applet" >> $AUTOSTART
             fi
-            PULSECONF="~/.config/pulse"
-            if ! [ -d $PULSECONF ]; then
-                cp -R /etc/pulse ~/.config/pulse &> /dev/null
-                if ! grep -q "^daemonize = yes" "$PULSECONF/daemon.conf"; then
-                    sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$PULSECONF/daemon.conf" &> /dev/null
-                fi
-                if grep -q "#set-default-sink output" "$PULSECONF/default.pa"; then
-                    sudo sed -i "s|#set-default-sink output|set-default-sink alsa_output.platform-soc_sound.analog-stereo|" "$PULSECONF/default.pa" &> /dev/null
-                fi
+            PULSECONF="~/.config/pulse/client.conf"
+            #if ! [ -f "$PULSECONF/default.pa" ]; then
+            #    echo ".include /etc/pulse/default.pa" > "$PULSECONF/default.pa"
+            #    echo "set-default-sink alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF/default.pa"
+            #elif ! grep -q "^set-default-sink alsa_output.platform-soc_sound.analog-stereo" "$PULSECONF/default.pa"; then
+            #    echo "set-default-sink alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF/default.pa"
+            #fi
+            if ! [ -f "$PULSECONF" ]; then
+                echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
+                echo "autospawn = yes" > "$PULSECONF"
+                echo "daemon-binary = /usr/bin/pulseaudio" >> "$PULSECONF"
+            elif ! grep -q "alsa_output.platform-soc_sound.analog-stereo" "$PULSECONF"; then
+                echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
+                sudo sed -i "s|^autospawn = no|^autospawn = yes|" "$PULSECONF" &> /dev/null
             fi
+            #if ! grep -q "^daemonize = yes" "$PULSECONF/daemon.conf"; then
+            #    sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$PULSECONF/daemon.conf" &> /dev/null
+            #fi
+            mate-volume-control-applet &
         fi
         newline
     fi
