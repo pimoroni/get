@@ -931,13 +931,17 @@ if confirm "Do you wish to continue?"; then
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
                 echo "@mate-volume-control-applet" >> $AUTOSTART
             fi
+            DAEMONCONF=/etc/pulse/daemon.conf
             PULSECONF=~/.config/pulse/client.conf
+            if ! grep -q "^daemonize = yes" "$DAEMONCONF"; then
+                sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$DAEMONCONF" &> /dev/null
+            fi
             if ! [ -f "$PULSECONF" ]; then
-                echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
+                mkdir ~/.config/pulse &> /dev/null
                 echo "autospawn = yes" > "$PULSECONF"
-                echo "daemon-binary = /bin/true" >> "$PULSECONF"
+                echo "daemon-binary = /usr/bin/pulseaudio" >> "$PULSECONF"
+                echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
             elif ! grep -q "alsa_output.platform-soc_sound.analog-stereo" "$PULSECONF"; then
-                sudo sed -i "s|^autospawn = no|autospawn = yes|" "$PULSECONF" &> /dev/null
                 echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
             fi
         fi
