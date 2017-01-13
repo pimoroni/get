@@ -401,6 +401,7 @@ add_dtoverlay() {
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
     fi
+}
 
 servd_trig() {
     if command -v service > /dev/null; then
