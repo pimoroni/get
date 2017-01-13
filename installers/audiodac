@@ -78,6 +78,7 @@ FAILED_PKG=false
 REMOVE_PKG=false
 UPDATE_DB=false
 
+AUTOSTART=~/.config/lxsession/LXDE-pi/autostart
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
 APTSRC=/etc/apt/sources.list
@@ -397,6 +398,7 @@ add_dtoverlay() {
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
@@ -686,6 +688,7 @@ if confirm "Do you wish to continue?"; then
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
+        newline
     fi
 
 # minimum install routine
@@ -915,7 +918,21 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline && echo "Finalising Install..."
-        # place all custom commands in this scope
+        if command -v mate-volume-control-applet > /dev/null; then
+            if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
+                echo "@mate-volume-control-applet" | sudo tee -a $AUTOSTART &> /dev/null
+            fi
+        else
+            if [ -e /etc/asound.conf ]; then
+                if [ -e /etc/asound.conf.old ]; then
+                    sudo rm -f /etc/asound.conf.old
+                fi
+                sudo mv /etc/asound.conf /etc/asound.conf.old
+            fi
+            sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > ~/asound.conf
+            sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> ~/asound.conf
+            sudo mv ~/asound.conf /etc/asound.conf
+        fi
         newline
     fi
 
