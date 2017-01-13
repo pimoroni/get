@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701131900
+# template 1701132105
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -689,6 +689,15 @@ if confirm "Do you wish to continue?"; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
         newline
+        if [ -e /etc/asound.conf ]; then
+            if [ -e /etc/asound.conf.old ]; then
+                sudo rm -f /etc/asound.conf.old
+            fi
+            sudo mv /etc/asound.conf /etc/asound.conf.old
+        fi
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > ~/asound.conf
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> ~/asound.conf
+        sudo mv ~/asound.conf /etc/asound.conf
     fi
 
 # minimum install routine
@@ -922,16 +931,16 @@ if confirm "Do you wish to continue?"; then
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
                 echo "@mate-volume-control-applet" | sudo tee -a $AUTOSTART &> /dev/null
             fi
-        else
-            if [ -e /etc/asound.conf ]; then
-                if [ -e /etc/asound.conf.old ]; then
-                    sudo rm -f /etc/asound.conf.old
+            PULSECONF="~/.config/pulse"
+            if ! [ -d $PULSECONF ]; then
+                cp -R /etc/pulse ~/.config/pulse &> /dev/null
+                if ! grep -q "^daemonize = yes" "$PULSECONF/daemon.conf"; then
+                    sudo sed -i "s|^; daemonize = yes|^daemonize = yes|" "$PULSECONF/daemon.conf" &> /dev/null
                 fi
-                sudo mv /etc/asound.conf /etc/asound.conf.old
+                if grep -q "#set-default-sink output" "$PULSECONF/default.pa"; then
+                    sudo sed -i "s|#set-default-sink output|set-default-sink alsa_output.platform-soc_sound.analog-stereo|" "$PULSECONF/default.pa" &> /dev/null
+                fi
             fi
-            sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > ~/asound.conf
-            sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> ~/asound.conf
-            sudo mv ~/asound.conf /etc/asound.conf
         fi
         newline
     fi
