@@ -28,7 +28,7 @@ debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 mininstall="yes" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701132105
+# template 1701132255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -930,6 +930,7 @@ if confirm "Do you wish to continue?"; then
         if [ "$OS_NAME" != "Mate" ] && command -v mate-volume-control-applet > /dev/null; then
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
                 echo "@mate-volume-control-applet" >> $AUTOSTART
+                echo "@pulseaudio -D" >> $AUTOSTART
             fi
             DAEMONCONF=/etc/pulse/daemon.conf
             PULSECONF=~/.config/pulse/client.conf
