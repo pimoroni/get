@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701132255
+# template 1701140130
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -252,7 +252,7 @@ home_dir() {
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         fi
     else
-        warning "Running as root, login as a regular user with sudo rights!"
+        warning "Running as root, please log in as a regular user with sudo rights!"
         echo && exit 1
     fi
 }
@@ -403,6 +403,11 @@ add_dtoverlay() {
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
     fi
+}
+
+kill_volumealsa() {
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 servd_trig() {
@@ -688,7 +693,7 @@ if confirm "Do you wish to continue?"; then
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
-        newline
+        kill_volumealsa && newline
         if [ -e /etc/asound.conf ]; then
             if [ -e /etc/asound.conf.old ]; then
                 sudo rm -f /etc/asound.conf.old
@@ -928,7 +933,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline && echo "Finalising Install..."
         if [ "$OS_NAME" != "Mate" ] && command -v mate-volume-control-applet > /dev/null; then
-            if [ -e $AUTOSTART ] && ! grep -q "@pulseaudio" $AUTOSTART; then
+            if [ -e $AUTOSTART ] && ! grep -q "@pulseaudio -D" $AUTOSTART; then
                 echo "@pulseaudio" >> $AUTOSTART
             fi
             if [ -e $AUTOSTART ] && ! grep -q "@mate-volume-control-applet" $AUTOSTART; then
