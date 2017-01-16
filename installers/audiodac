@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701140130
+# template 1701151525
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -599,6 +599,12 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking hardware requirements..."
 
+    if [ $uartreq == "yes" ]; then
+        newline && echo "The serial console must be disabled for $productname to work"
+        \curl -sS $GETPOOL/uarton | sudo bash -s - "-y"
+        ASK_TO_REBOOT=true && newline
+    fi
+
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
@@ -684,25 +690,23 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 
-    if [ $uartreq == "yes" ]; then
-        newline && echo "The serial console must be disabled for $productname to work"
-        \curl -sS $GETPOOL/uarton | sudo bash -s - "-y"
-        ASK_TO_REBOOT=true && newline
-    fi
-
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
         kill_volumealsa && newline
         if [ -e /etc/asound.conf ]; then
-            if [ -e /etc/asound.conf.old ]; then
-                sudo rm -f /etc/asound.conf.old
-            fi
-            sudo mv /etc/asound.conf /etc/asound.conf.old
+            sudo rm -f /etc/asound.conf.backup &> /dev/null
+            sudo mv /etc/asound.conf /etc/asound.conf.backup
+            inform "existing config backed up to /etc/asound.conf.backup"
         fi
-        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > ~/asound.conf
-        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> ~/asound.conf
-        sudo mv ~/asound.conf /etc/asound.conf
+        if [ -e $HOME/.asound.conf ]; then
+            sudo rm -f $HOME/.asound.conf.backup &> /dev/null
+            sudo mv $HOME/.asound.conf $HOME/.asound.conf.backup
+            inform "existing config backed up to ~/.asound.conf.backup"
+        fi
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asound.conf
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asound.conf
+        sudo mv $HOME/.asound.conf /etc/asound.conf
     fi
 
 # minimum install routine
