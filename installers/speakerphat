@@ -32,7 +32,7 @@ promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
-i2creq="no" # whether the i2c interface is required
+i2creq="yes" # whether the i2c interface is required
 i2sreq="yes" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701151525
+# template 1701231935
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -694,19 +694,19 @@ if confirm "Do you wish to continue?"; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
         kill_volumealsa && newline
-        if [ -e /etc/asound.conf ]; then
+        if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
             inform "existing config backed up to /etc/asound.conf.backup"
         fi
-        if [ -e $HOME/.asound.conf ]; then
-            sudo rm -f $HOME/.asound.conf.backup &> /dev/null
-            sudo mv $HOME/.asound.conf $HOME/.asound.conf.backup
+        if [ -f $HOME/.asoundrc ]; then
+            sudo rm -f $HOME/.asoundrc.backup &> /dev/null
+            sudo mv $HOME/.asoundrc $HOME/.asoundrc.backup
             inform "existing config backed up to ~/.asound.conf.backup"
         fi
-        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asound.conf
-        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asound.conf
-        sudo mv $HOME/.asound.conf /etc/asound.conf
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
+        sudo mv $HOME/.asoundrc /etc/asound.conf
     fi
 
 # minimum install routine
@@ -937,7 +937,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         newline
         cd $installdir/$gitclonedir
-        sudo bash ./setup.sh        
+        sudo bash ./setup.sh -y
     fi
 
     if $FAILED_PKG; then
