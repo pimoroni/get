@@ -68,7 +68,7 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701241850
+# template 1701241900
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -624,6 +624,7 @@ if confirm "Do you wish to continue?"; then
             echo "SPI must be enabled for $productname to work"
             if sudo raspi-config nonint get_spi | grep -q "1"; then
                 sudo raspi-config nonint do_spi 0
+                inform "SPI enabled"
             else
                 \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
                 ASK_TO_REBOOT=true
@@ -655,6 +656,7 @@ if confirm "Do you wish to continue?"; then
             echo "I2C must be enabled for $productname to work"
             if sudo raspi-config nonint get_i2c | grep -q "1"; then
                 sudo raspi-config nonint do_i2c 0
+                inform "I2C enabled"
             else
                 \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
                 ASK_TO_REBOOT=true
@@ -923,7 +925,7 @@ if confirm "Do you wish to continue?"; then
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
                 inform "\nThe $repodir directory already exists on your system!"
-                echo "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
+                echo -e "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
             else
                 rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
