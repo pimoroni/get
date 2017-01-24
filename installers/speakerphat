@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701231935
+# template 1701241905
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -622,8 +622,13 @@ if confirm "Do you wish to continue?"; then
             inform "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
-            ASK_TO_REBOOT=true
+            if sudo raspi-config nonint get_spi | grep -q "1"; then
+                sudo raspi-config nonint do_spi 0
+                inform "SPI is now enabled"
+            else
+                \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
+                ASK_TO_REBOOT=true
+            fi
         fi
         newline && echo "Checking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
@@ -632,10 +637,10 @@ if confirm "Do you wish to continue?"; then
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "spidev"; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" &> /dev/null; then
             warning "Unable to install spidev for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "spidev"; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "spidev" &> /dev/null; then
             warning "Unable to install spidev for python 2!"
             FAILED_PKG=true
         else
@@ -649,8 +654,13 @@ if confirm "Do you wish to continue?"; then
             inform "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
-            ASK_TO_REBOOT=true
+            if sudo raspi-config nonint get_i2c | grep -q "1"; then
+                sudo raspi-config nonint do_i2c 0
+                inform "I2C is now enabled"
+            else
+                \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
+                ASK_TO_REBOOT=true
+            fi
         fi
         newline && echo "Checking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
@@ -679,10 +689,10 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "smbus"; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "smbus"; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         else
@@ -891,10 +901,15 @@ if confirm "Do you wish to continue?"; then
         if ! command -v git > /dev/null; then
             apt_pkg_install git
         fi
-        newline && echo "Downloading examples and documentation..." && newline
+        newline && echo "Downloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        if [ -n "$GITTAG" ]; then
+            git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
+        else
+            git clone --depth=1 https://github.com/$gitusername/$gitreponame &> /dev/null
+        fi
         cd $installdir
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
@@ -909,8 +924,8 @@ if confirm "Do you wish to continue?"; then
                 else
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
-                inform "The $repodir directory already exists on your system!"
-                echo "We've backed them up to $repodir-backup, just in case you've changed anything!"
+                inform "\nThe $repodir directory already exists on your system!"
+                echo -e "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
             else
                 rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
@@ -920,7 +935,7 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         done
-        newline && echo "Resources for your $productname were copied to"
+        echo "Resources for your $productname were copied to"
         inform "$installdir"
         rm -rf $TMPDIR
     fi
