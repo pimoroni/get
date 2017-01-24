@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701231935
+# template 1701241650
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -894,7 +894,9 @@ if confirm "Do you wish to continue?"; then
         newline && echo "Downloading examples and documentation..." && newline
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        GITTAG=$(git tag | tail -n 1)
+        echo "GITTAG is $GITTAG"
+        git clone https://github.com/$gitusername/$gitreponame -b $GITTAG
         cd $installdir
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
