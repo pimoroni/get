@@ -68,9 +68,8 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701231935
+# template 1701271405
 
-FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -97,7 +96,7 @@ SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 # function define
 
 confirm() {
-    if [ "$FORCE" == '-y' ]; then
+    if [ "$1" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -405,6 +404,22 @@ add_dtoverlay() {
     fi
 }
 
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+    fi
+}
+
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
+}
+
 kill_volumealsa() {
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
@@ -460,7 +475,7 @@ else
     echo "This script will install everything needed to use your"
     echo "$productname"
     newline
-    if [ "$FORCE" != '-y' ]; then
+    if [ "$1" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source."
@@ -557,7 +572,7 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
 
-    if [ "$FORCE" != '-y' ]; then
+    if [ "$1" != '-y' ]; then
         if ! check_network; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
@@ -622,8 +637,13 @@ if confirm "Do you wish to continue?"; then
             inform "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
-            ASK_TO_REBOOT=true
+            if sudo raspi-config nonint get_spi | grep -q "1"; then
+                sudo raspi-config nonint do_spi 0
+                inform "SPI is now enabled"
+            else
+                \curl -sS $GETPOOL/spi | sudo bash -s - "-y"
+                ASK_TO_REBOOT=true
+            fi
         fi
         newline && echo "Checking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
@@ -632,10 +652,10 @@ if confirm "Do you wish to continue?"; then
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             sudo $PIP3_BIN install spidev && FAILED_PKG=false
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "spidev"; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" &> /dev/null; then
             warning "Unable to install spidev for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "spidev"; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "spidev" &> /dev/null; then
             warning "Unable to install spidev for python 2!"
             FAILED_PKG=true
         else
@@ -649,8 +669,13 @@ if confirm "Do you wish to continue?"; then
             inform "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
-            ASK_TO_REBOOT=true
+            if sudo raspi-config nonint get_i2c | grep -q "1"; then
+                sudo raspi-config nonint do_i2c 0
+                inform "I2C is now enabled"
+            else
+                \curl -sS $GETPOOL/i2c | sudo bash -s - "-y"
+                ASK_TO_REBOOT=true
+            fi
         fi
         newline && echo "Checking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
@@ -679,10 +704,10 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep -q "smbus"; then
+        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
             warning "Unable to install smbus for python 3!"
             FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep -q "smbus"; then
+        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
             warning "Unable to install smbus for python 2!"
             FAILED_PKG=true
         else
@@ -693,7 +718,6 @@ if confirm "Do you wish to continue?"; then
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
-        kill_volumealsa && newline
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -891,10 +915,15 @@ if confirm "Do you wish to continue?"; then
         if ! command -v git > /dev/null; then
             apt_pkg_install git
         fi
-        newline && echo "Downloading examples and documentation..." && newline
+        newline && echo "Downloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        git clone --depth=1 https://github.com/$gitusername/$gitreponame
+        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        if [ -n "$GITTAG" ]; then
+            git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
+        else
+            git clone --depth=1 https://github.com/$gitusername/$gitreponame &> /dev/null
+        fi
         cd $installdir
         for repodir in ${copydir[@]}; do
             if [ -d $repodir ] && [ $repodir != "documentation" ]; then
@@ -909,8 +938,8 @@ if confirm "Do you wish to continue?"; then
                 else
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
-                inform "The $repodir directory already exists on your system!"
-                echo "We've backed them up to $repodir-backup, just in case you've changed anything!"
+                inform "\nThe $repodir directory already exists on your system!"
+                echo -e "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
             else
                 rm -R $installdir/$repodir &> /dev/null
                 if [ $gitrepotop != "root" ]; then
@@ -920,7 +949,7 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         done
-        newline && echo "Resources for your $productname were copied to"
+        echo "Resources for your $productname were copied to"
         inform "$installdir"
         rm -rf $TMPDIR
     fi
@@ -936,6 +965,9 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         newline && echo "Finalising Install..."
+        add_dtoverlay hifiberry-dac
+        disable_pi_audio
+        kill_volumealsa && disable_pulseaudio
         if [ "$OS_NAME" != "Mate" ] && command -v mate-volume-control-applet > /dev/null; then
             if [ -e $AUTOSTART ] && ! grep -q "@pulseaudio -D" $AUTOSTART; then
                 echo "@pulseaudio" >> $AUTOSTART
@@ -953,7 +985,6 @@ if confirm "Do you wish to continue?"; then
                 echo "default-sink = alsa_output.platform-soc_sound.analog-stereo" >> "$PULSECONF"
             fi
         fi
-        newline
     fi
 
     if $FAILED_PKG; then

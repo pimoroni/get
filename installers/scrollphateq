@@ -21,14 +21,14 @@ DISCLAIMER
 
 # script control variables
 
-productname="Speaker pHAT" # the name of the product to install
-scriptname="speakerphat" # the name of this script
+productname="Scroll pHAT EQ" # the name of the product to install
+scriptname="scrollphateq" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=() # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Kali" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list os-releases specifically disallowed
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
@@ -965,10 +965,14 @@ if confirm "Do you wish to continue?"; then
         echo "Enjoy your $productname!" && newline
     else # custom block starts here
         cd $installdir/$gitclonedir
-        add_dtoverlay hifiberry-dac
-        disable_pi_audio
-        kill_volumealsa && disable_pulseaudio
-        sudo bash ./setup.sh -y speaker-phat
+        if confirm "are you using a pHAT DAC?"; then
+            add_dtoverlay hifiberry-dac
+            disable_pi_audio
+            kill_volumealsa && disable_pulseaudio
+        else
+            sudo mv ./dependencies/home/user/.asoundrc $HOME/.asoundrc
+        fi
+        sudo bash ./setup.sh -y scroll-phat
     fi
 
     if $FAILED_PKG; then
