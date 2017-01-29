@@ -68,9 +68,8 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701241905
+# template 1701291220
 
-FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -87,6 +86,7 @@ BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
 RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+RPIPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
 
@@ -97,7 +97,7 @@ SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 # function define
 
 confirm() {
-    if [ "$FORCE" == '-y' ]; then
+    if [ "$1" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -203,6 +203,8 @@ os_check() {
         OS_NAME="Kali"
     elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
         OS_NAME="Kano"
+    elif whoami | grep -q "linaro"; then
+        OS_NAME="Linaro"
     elif [ -d ~/.config/ubuntu-mate ];then
         OS_NAME="Mate"
     elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
@@ -405,6 +407,22 @@ add_dtoverlay() {
     fi
 }
 
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+    fi
+}
+
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
+}
+
 kill_volumealsa() {
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
@@ -460,7 +478,7 @@ else
     echo "This script will install everything needed to use your"
     echo "$productname"
     newline
-    if [ "$FORCE" != '-y' ]; then
+    if [ "$1" != '-y' ]; then
         inform "Always be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source."
@@ -557,7 +575,7 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
 
-    if [ "$FORCE" != '-y' ]; then
+    if [ "$1" != '-y' ]; then
         if ! check_network; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
@@ -668,7 +686,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
@@ -677,7 +695,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3
             elif python3 --version | grep -q "3.5"; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
@@ -703,7 +721,6 @@ if confirm "Do you wish to continue?"; then
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
         add_dtoverlay hifiberry-dac
-        kill_volumealsa && newline
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
