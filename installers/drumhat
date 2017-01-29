@@ -68,7 +68,7 @@ examplesdep=( "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701291155
+# template 1701291220
 
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -86,6 +86,7 @@ BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
 RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+RPIPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
 
@@ -685,7 +686,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
@@ -694,7 +695,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3
             elif python3 --version | grep -q "3.5"; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
