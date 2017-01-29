@@ -42,7 +42,7 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Kano" "Mate" "PiTop" "Ubuntu" ) # list experimental os-releases
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "Retropie" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1701271405
+# template 1701291220
 
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -86,6 +86,7 @@ BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
 RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+RPIPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
 
@@ -202,6 +203,8 @@ os_check() {
         OS_NAME="Kali"
     elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
         OS_NAME="Kano"
+    elif whoami | grep -q "linaro"; then
+        OS_NAME="Linaro"
     elif [ -d ~/.config/ubuntu-mate ];then
         OS_NAME="Mate"
     elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
@@ -683,7 +686,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS2
             fi
         fi
@@ -692,7 +695,7 @@ if confirm "Do you wish to continue?"; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RASPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
+                wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3
             elif python3 --version | grep -q "3.5"; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
