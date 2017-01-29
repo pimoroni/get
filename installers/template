@@ -43,7 +43,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "RetroPie" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Kali" "Linaro" "RetroPie" ) # list os-releases specifically disallowed
 debpackage="aptdebname" # the name of the package in apt repo
 piplibname="piplibname" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701271405
+# template 1701291155
 
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -202,6 +202,8 @@ os_check() {
         OS_NAME="Kali"
     elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
         OS_NAME="Kano"
+    elif whoami | grep -q "linaro"; then
+        OS_NAME="Linaro"
     elif [ -d ~/.config/ubuntu-mate ];then
         OS_NAME="Mate"
     elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
