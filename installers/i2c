@@ -38,7 +38,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
 FORCE=$1
 DEVICE_TREE=true
