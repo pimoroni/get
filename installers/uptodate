@@ -36,9 +36,9 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" ) # list os-releases supported
-oswarning=( "Debian" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Ubuntu" ) # list os-releases specifically disallowed
+osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
+oswarning=() # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Kali" "Linaro" "Ubuntu" ) # list os-releases specifically disallowed
 
 declare -A deblibpairs=( \
 ["automationhat"]="automationhat" \
@@ -61,7 +61,6 @@ declare -A deblibpairs=( \
 
 # setup variables
 
-FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -69,6 +68,7 @@ FAILED_PKG=false
 REMOVE_PKG=false
 UPDATE_DB=false
 
+AUTOSTART=~/.config/lxsession/LXDE-pi/autostart
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
 APTSRC=/etc/apt/sources.list
@@ -77,13 +77,14 @@ BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
 
 RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
+RPIPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
 
 # function define
 
 confirm() {
-    if [ "$FORCE" == '-y' ]; then
+    if [ "$1" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -158,7 +159,7 @@ sysupgrade() {
 sysreboot() {
     warning "Some changes made to your system require"
     warning "your computer to reboot to take effect."
-    newline
+    echo
     if prompt "Would you like to reboot now?"; then
         sync && sudo reboot
     fi
@@ -168,82 +169,48 @@ arch_check() {
     IS_ARMHF=false
     IS_ARMv6=false
 
-    if uname -m | grep "armv.l" > /dev/null; then
+    if uname -m | grep -q "armv.l"; then
         IS_ARMHF=true
-        if uname -m | grep "armv6l" > /dev/null; then
+        if uname -m | grep -q "armv6l"; then
             IS_ARMv6=true
         fi
     fi
 }
 
 os_check() {
-    IS_RASPBIAN=false
     IS_MACOSX=false
+    IS_RASPBIAN=false
     IS_SUPPORTED=false
     IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
 
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "Raspbian" > /dev/null; then
-            IS_RASPBIAN=true && IS_SUPPORTED=true
-        fi
-        if command -v apt-get > /dev/null; then
-            for os in ${osreleases[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-                fi
-            done
-            for os in ${oswarning[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-                fi
-            done
-            for os in ${osdeny[@]}; do
-                if cat /etc/os-release | grep $os > /dev/null; then
-                    IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-                fi
-            done
-        fi
+    if uname -s | grep -q "Darwin"; then
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep -q "Kali"; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif whoami | grep -q "linaro"; then
+        OS_NAME="Linaro"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif command -v emulationstation > /dev/null; then
+        OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "Raspbian"; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep -q "Debian"; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep -q "Ubuntu"; then
+        OS_NAME="Ubuntu"
     fi
-    if [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "Kano" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
     fi
-    if [ -f ~/.pt-dashboard-config ] || [ -d ~/.pt-dashboard ]; then
-        IS_RASPBIAN=false
-        for os in ${oswarning[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-            fi
-        done
-        for os in ${osdeny[@]}; do
-            if [ $os == "PiTop" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if [ -d ~/.config/ubuntu-mate ]; then
-        for os in ${osdeny[@]}; do
-            if [ $os == "Mate" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
-    fi
-    if uname -s | grep "Darwin" > /dev/null; then
-        IS_MACOSX=true
-        for os in ${osdeny[@]}; do
-            if [ $os == "Darwin" ]; then
-                IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-            fi
-        done
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
     fi
 }
 
@@ -252,13 +219,13 @@ raspbian_check() {
     IS_EXPERIMENTAL=false
 
     if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep "/sid" > /dev/null; then
+        if cat /etc/os-release | grep -q "/sid"; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-        elif cat /etc/os-release | grep "stretch" > /dev/null; then
+        elif cat /etc/os-release | grep -q "stretch"; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-        elif cat /etc/os-release | grep "jessie" > /dev/null; then
+        elif cat /etc/os-release | grep -q "jessie"; then
             IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep "wheezy" > /dev/null; then
+        elif cat /etc/os-release | grep -q "wheezy"; then
             IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         else
             IS_SUPPORTED=false && IS_EXPERIMENTAL=false
@@ -274,21 +241,21 @@ home_dir() {
             USER_HOME=$(getent passwd $USER | cut -d: -f6)
         fi
     else
-        warning "Running as root, login as a regular user with sudo rights!"
-        newline && exit 1
+        warning "Running as root, please log in as a regular user with sudo rights!"
+        echo && exit 1
     fi
 }
 
 space_chk() {
     if command -v stat > /dev/null && ! $IS_MACOSX; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
-            newline
+            echo
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
                 \curl -sS $GETPOOL/expandfs | sudo bash
                 exit 1
             else
-                newline && exit 1
+                echo && exit 1
             fi
         fi
     fi
@@ -338,8 +305,8 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { warning "Apt failed to install $1!" && FAILED_PKG=true && return 1; }
-    newline
+    sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
+    echo
 }
 
 apt_deb_chk() {
@@ -364,7 +331,7 @@ apt_deb_install() {
         wget "$GETPOOL/resources/$1" &> /dev/null
         sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
     fi
-    newline
+    echo
 }
 
 pip_cmd_chk() {
