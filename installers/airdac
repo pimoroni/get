@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="pHAT DAC with shairport-sync" # the name of the product to install
-scriptname="shairport" # the name of this script
+productname="Airplay via shairport-sync" # the name of the product to install
+scriptname="airdac" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -33,7 +33,7 @@ mininstall="yes" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
-i2sreq="yes" # whether the i2s interface is required
+i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
@@ -68,8 +68,9 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701291220
+# template 1702062035
 
+FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -97,7 +98,7 @@ SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 # function define
 
 confirm() {
-    if [ "$1" == '-y' ]; then
+    if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -475,7 +476,7 @@ if [ $debugmode != "no" ]; then
     newline
 else
     newline
-    echo "This script will install everything needed to use your"
+    echo "This script will install everything needed to use"
     echo "$productname"
     newline
     if [ "$1" != '-y' ]; then
@@ -707,13 +708,17 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 3!"
-            FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 2!"
-            FAILED_PKG=true
-        else
+        if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
+            if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 3!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
+            if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 2!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] || [ "$pip3support" == "yes" ]; then
             echo "smbus installed and up-to-date" && newline
         fi
     fi
@@ -970,11 +975,27 @@ if confirm "Do you wish to continue?"; then
         newline && echo "Finalising Install..." && newline
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
-        wget $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2j-4_armhf.deb 1> /dev/null
-        wget $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb 1> /dev/null
-        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2j-4_armhf.deb
+        wget -q $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2j-5_armhf.deb
+        wget -q $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb
+        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2j-5_armhf.deb
         sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
-        get_install phatdac
+        echo "What product would you like to configure?" && newline
+        echo "0 : (leave audio unconfigured)"
+        echo "1 : pHAT DAC"
+        echo "2 : Speaker pHAT"
+        newline
+        read -r -p "Enter an option [0-2]:" choice < /dev/tty
+        if [[ $choice =~ ^(0)$ ]]; then
+            inform "\nThe Raspberry Pi audio setup has been preserved!\n"
+        elif [[ $choice =~ ^(1)$ ]]; then
+            inform "\nSetting up pHAT DAC..."
+            get_install phatdac
+        elif [[ $choice =~ ^(2)$ ]]; then
+            inform "\nSetting up Speaker pHAT..."
+            get_install speakerphat
+        else
+            warning "Invalid option!" && exit 1
+        fi
     fi
 
     if $FAILED_PKG; then
