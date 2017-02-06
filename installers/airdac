@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="pHAT DAC with shairport-sync" # the name of the product to install
-scriptname="shairport" # the name of this script
+productname="Airplay via shairport-sync" # the name of the product to install
+scriptname="airdac" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -33,7 +33,7 @@ mininstall="yes" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
-i2sreq="yes" # whether the i2s interface is required
+i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
@@ -974,7 +974,23 @@ if confirm "Do you wish to continue?"; then
         wget $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb 1> /dev/null
         sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2j-4_armhf.deb
         sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
-        get_install phatdac
+        echo "What product would you like to configure?" && newline
+        echo "0 : (leave audio unconfigured)"
+        echo "1 : pHAT DAC"
+        echo "2 : Speaker pHAT"
+        newline
+        read -r -p "Enter an option [0-2]:" choice < /dev/tty
+        if [[ $choice =~ ^(0)$ ]]; then
+            inform "\nThe Raspberry Pi audio setup has been preserved!"
+        elif [[ $choice =~ ^(1)$ ]]; then
+            inform "\nSetting up pHAT DAC..."
+            get_install phatdac
+        elif [[ $choice =~ ^(2)$ ]]; then
+            inform "\nSetting up Speaker pHAT..."
+            get_install speakerphat
+        else
+            warning "Invalid option!" && exit 1
+        fi
     fi
 
     if $FAILED_PKG; then
