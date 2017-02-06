@@ -68,8 +68,9 @@ examplesdep=( "requests" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701291220
+# template 1702062035
 
+FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -97,7 +98,7 @@ SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 # function define
 
 confirm() {
-    if [ "$1" == '-y' ]; then
+    if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -475,7 +476,7 @@ if [ $debugmode != "no" ]; then
     newline
 else
     newline
-    echo "This script will install everything needed to use your"
+    echo "This script will install everything needed to use"
     echo "$productname"
     newline
     if [ "$1" != '-y' ]; then
@@ -707,13 +708,17 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 3!"
-            FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 2!"
-            FAILED_PKG=true
-        else
+        if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
+            if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 3!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
+            if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 2!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] || [ "$pip3support" == "yes" ]; then
             echo "smbus installed and up-to-date" && newline
         fi
     fi
