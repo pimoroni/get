@@ -40,6 +40,7 @@ osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases su
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
+FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -58,7 +59,7 @@ LOADMOD=/etc/modules
 # function define
 
 confirm() {
-    if [ "$1" == '-y' ]; then
+    if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
