@@ -68,7 +68,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1702062035
+# template 1702081340
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -402,14 +402,17 @@ add_dtoverlay() {
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=True
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=True
     fi
 }
 
 remove_dtoverlay() {
     sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=True
 }
 
 disable_pi_audio() {
