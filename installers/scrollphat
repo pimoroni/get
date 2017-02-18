@@ -68,7 +68,7 @@ examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702181520
+# template 1702181530
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -556,20 +556,19 @@ if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-if [ $i2sreq == "yes" ]; then
-    echo -e "Note: $productname uses the I2S interface\n"
-    warning "The on-board audio chip will be disabled if you proceed!\n"
-fi
-
-if [ $i2creq == "yes" ]; then
-    echo -e "Note: $productname requires I2C communication\n"
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!\n"
 fi
 if [ $spireq == "yes" ]; then
     echo -e "Note: $productname requires SPI communication\n"
 fi
-if [ $uartreq == "yes" ]; then
-    echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!\n"
+if [ $i2creq == "yes" ]; then
+    echo -e "Note: $productname requires I2C communication\n"
+fi
+if [ $i2sreq == "yes" ]; then
+    echo -e "Note: $productname uses the I2S interface"
+    warning "The on-board audio chip will be disabled if you proceed!\n"
 fi
 
 if confirm "Do you wish to continue?"; then
