@@ -43,7 +43,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
 debpackage="aptdebname" # the name of the package in apt repo
 piplibname="piplibname" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702081340
+# template 1702181520
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -282,7 +282,6 @@ timestamp() {
 check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
-
 
 launch_url() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
@@ -502,56 +501,55 @@ space_chk
 home_dir
 
 if [ $debugmode != "no" ]; then
-    echo "USER_HOME is $USER_HOME" && newline
+    echo "USER_HOME is $USER_HOME"
     echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
-    newline
+    echo
 fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    warning "Config files have been left untouched"
-    newline && exit 1
+    warning "Config files have been left untouched\n"
+    exit 1
 fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 fi
 
 if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
+    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
+    exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
     if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        newline && warning "--- Warning ---" && newline
+        warning "\n--- Warning ---\n"
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support"
-        newline && exit 1
+        echo "for additional information and support\n"
+        exit 1
     fi
 fi
 
 if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "Your operating system is not supported, sorry!"
-        newline && exit 1
+    warning "Your operating system is not supported, sorry!\n"
+    exit 1
 fi
 
 if $IS_EXPERIMENTAL; then
     warning "Support for your operating system is experimental. Please visit"
-    warning "forums.pimoroni.com if you experience issues with this product."
-    newline
+    warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -559,18 +557,19 @@ if [ $forcesudo == "yes" ]; then
 fi
 
 if [ $i2sreq == "yes" ]; then
-    echo "Note: $productname uses the I2S interface" && newline
+    echo -e "Note: $productname uses the I2S interface\n"
+    warning "The on-board audio chip will be disabled if you proceed!\n"
 fi
 
 if [ $i2creq == "yes" ]; then
-    echo "Note: $productname requires I2C communication" && newline
+    echo -e "Note: $productname requires I2C communication\n"
 fi
 if [ $spireq == "yes" ]; then
-    echo "Note: $productname requires SPI communication" && newline
+    echo -e "Note: $productname requires SPI communication\n"
 fi
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!" && newline
+    warning "The serial console will be disabled if you proceed!\n"
 fi
 
 if confirm "Do you wish to continue?"; then
@@ -579,7 +578,7 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
 
-    if [ "$1" != '-y' ]; then
+    if [ "$FORCE" != '-y' ]; then
         if ! check_network; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
