@@ -68,7 +68,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222030
+# template 1702222035
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -622,7 +622,7 @@ if confirm "Do you wish to continue?"; then
     fi
     if [ "$pip3support" == "yes" ]; then
         if ! [ -f "$(which python3)" ]; then
-            if confirm "Python 3 is not installed. Would like to install it?"; then
+            if prompt "Python 3 is not installed. Would like to install it?"; then
                 apt_pkg_install "python3-pip"
             else
                 pip3support="na"
