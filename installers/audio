@@ -310,12 +310,10 @@ route_audio() {
             amixer cset numid=3 $choice  > /dev/null
             success "Audio output mode changed!"
             hotplug_hdmi
-            test_audio
         elif [[ $choice =~ ^(3)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             success "Audio signal will be forcefully sent to HDMI!"
             force_hdmi
-            test_audio
         else
             warning "Invalid option!"
             route_audio
@@ -423,6 +421,9 @@ if confirm "Do you wish to continue?"; then
     if [ $bcm2835off == "no" ]; then
         newline
         route_audio && newline
+        if [ "$FORCE" != '-y' ]; then
+            test_audio
+        fi
     else
         newline
         warning "Default sound driver currently not loaded!"
