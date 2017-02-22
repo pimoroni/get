@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "puredata-core" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222100
+# template 1702222340
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -678,7 +678,7 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
         if [ "$RPIGPIO2" == "install ok installed" ] || [ "$RPIGPIO3" == "install ok installed" ]; then
-            if ! FAILED_PKG; then
+            if ! $FAILED_PKG; then
                 echo -e "RPi.GPIO installed and up-to-date\n"
             fi
         fi
@@ -733,7 +733,7 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
         if [ "$SPIDEV2" == "install ok installed" ] && [ "$SPIDEV3" == "install ok installed" ]; then
-            if ! FAILED_PKG; then
+            if ! $FAILED_PKG; then
                 echo -e "spidev installed and up-to-date\n"
             fi
         fi
@@ -791,7 +791,7 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
         if [ "$SMBUS2" == "install ok installed" ] && [ "$SMBUS3" == "install ok installed" ]; then
-            if ! FAILED_PKG; then
+            if ! $FAILED_PKG; then
                 echo -e "smbus installed and up-to-date\n"
             fi
         fi
