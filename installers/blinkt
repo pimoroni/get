@@ -68,7 +68,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702221405
+# template 1702221930
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -327,7 +327,6 @@ apt_pkg_req() {
 apt_pkg_install() {
     echo "Installing $1..."
     sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
-    echo
 }
 
 apt_deb_chk() {
@@ -648,22 +647,22 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            if python --version | grep -q "2.7"; then
+            if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
                 echo "python-rpi.gpio can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RPIPOOL/main/i/i2c-tools/$RPIGPIO2 &> /dev/null
+                wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO2
             else
                 sudo $PIP2_BIN install RPi.GPIO && FAILED_PKG=false
             fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            if python --version | grep -q "3.4"; then
+            if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
                 echo "python3-rpi.gpio can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RPIPOOL/main/i/i2c-tools/$RPIGPIO3 &> /dev/null
+                wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO3
             else
                 sudo $PIP3_BIN install RPi.GPIO && FAILED_PKG=false
@@ -688,22 +687,22 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
-            if python --version | grep -q "2.7"; then
+            if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
                 echo "python-spidev can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RPIPOOL/main/i/i2c-tools/$SPIDEV2 &> /dev/null
+                wget $RPIPOOL/main/s/spidev/$SPIDEV2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV2
             else
                 sudo $PIP2_BIN install spidev && FAILED_PKG=false
             fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
-            if python --version | grep -q "3.4"; then
+            if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
                 echo "python3-spidev can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                wget $RPIPOOL/main/i/i2c-tools/$SPIDEV3 &> /dev/null
+                wget $RPIPOOL/main/s/spidev/$SPIDEV3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV3
             else
                 sudo $PIP3_BIN install spidev && FAILED_PKG=false
@@ -736,7 +735,7 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
-            if python --version | grep -q "2.7"; then
+            if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
                 echo "python-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
@@ -745,13 +744,13 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
-            if python3 --version | grep -q "3.4"; then
+            if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
                 echo "python3-smbus can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3
-            elif python3 --version | grep -q "3.5"; then
+            elif [ -n $(python3 --version 2>&1 | grep -q "3.5") ]; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
@@ -999,7 +998,7 @@ if confirm "Do you wish to continue?"; then
                 else
                     cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
                 fi
-                inform "\nThe $repodir directory already exists on your system!"
+                inform "The $repodir directory already exists on your system!"
                 echo -e "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
             else
                 rm -R $installdir/$repodir &> /dev/null
