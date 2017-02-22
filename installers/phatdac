@@ -249,6 +249,52 @@ check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
 
+
+add_dtoverlay() {
+    if grep -q "^dtoverlay=$1" $CONFIG; then
+        echo -e "\n$1 overlay already active"
+    elif grep -q "^#dtoverlay=$1" $CONFIG; then
+        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    else
+        echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
+}
+
+kill_volumealsa() {
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+}
+
 : <<'MAINSTART'
 
 Perform all variables declarations as well as function definition
@@ -261,7 +307,7 @@ MAINSTART
 if [ $debugmode != "no" ]; then
     inform "\nDEBUG MODE ENABLED"
 else
-    echo -e "This script will install everything needed to use $productname"
+    echo -e "\nThis script will install everything needed to use $productname"
     if [ "$FORCE" != '-y' ]; then
         inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"

@@ -68,7 +68,7 @@ examplesdep=( "numpy" "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702212020
+# template 1702221255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -403,24 +403,24 @@ add_dtoverlay() {
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
 remove_dtoverlay() {
     sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
-    ASK_TO_REBOOT=True
+    ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -428,7 +428,7 @@ disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -486,9 +486,9 @@ if [ $debugmode != "no" ]; then
     inform "\nDEBUG MODE ENABLED"
     echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
-    echo -e "\nThis script will install everything needed to use\n$productname\n"
+    echo -e "\nThis script will install everything needed to use\n$productname"
     if [ "$FORCE" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source.\n"
         echo "If you want to see what this script does before"

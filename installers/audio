@@ -241,24 +241,24 @@ add_dtoverlay() {
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
 remove_dtoverlay() {
     sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
-    ASK_TO_REBOOT=True
+    ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -266,7 +266,7 @@ disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
