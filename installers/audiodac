@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "mate-media" ) # list of dependencies requiring X server
 
-# template 1702181530
+# template 1702221255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -212,6 +212,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
@@ -401,23 +403,32 @@ add_dtoverlay() {
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
-        ASK_TO_REBOOT=True
+        ASK_TO_REBOOT=true
     fi
 }
 
 remove_dtoverlay() {
     sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
-    ASK_TO_REBOOT=True
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
 }
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -472,24 +483,16 @@ if [ $debugmode != "no" ]; then
     if [ $debugpoint != "none" ]; then
         gitrepobranch="$debugpoint"
     fi
-    newline
-    inform "DEBUG MODE ENABLED"
-    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
-    newline
+    inform "\nDEBUG MODE ENABLED"
+    echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
-    newline
-    echo "This script will install everything needed to use"
-    echo "$productname"
-    newline
-    if [ "$1" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+    echo -e "\nThis script will install everything needed to use\n$productname"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
-        inform "trusted source."
-        newline
+        inform "trusted source.\n"
         echo "If you want to see what this script does before"
-        echo "running it, you should run:"
-        echo "\curl -sS $GETPOOL/$scriptname"
-        newline
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
     fi
 fi
 

@@ -182,6 +182,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
@@ -233,6 +235,49 @@ hotplug_hdmi() {
     fi
 }
 
+add_dtoverlay() {
+    if grep -q "^dtoverlay=$1" $CONFIG; then
+        echo -e "\n$1 overlay already active"
+    elif grep -q "^#dtoverlay=$1" $CONFIG; then
+        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    else
+        echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
+    fi
+}
+
 route_audio() {
     if [ $debugmode == "yes" ]; then
         warning "passed parameter is $FORCE"
@@ -265,24 +310,14 @@ route_audio() {
             amixer cset numid=3 $choice  > /dev/null
             success "Audio output mode changed!"
             hotplug_hdmi
-            test_audio
         elif [[ $choice =~ ^(3)$ ]]; then
             amixer cset numid=3 $choice  > /dev/null
             success "Audio signal will be forcefully sent to HDMI!"
             force_hdmi
-            test_audio
         else
             warning "Invalid option!"
             route_audio
         fi
-    fi
-}
-
-test_audio() {
-    newline
-    if confirm "Do you wish to test your system now?"; then
-        newline && echo "Testing..."
-        speaker-test -l5 -c2 -t wav
     fi
 }
 
@@ -292,6 +327,21 @@ Perform all global variables declarations as well as function definition
 above this section for clarity, thanks!
 
 MAINSTART
+
+# intro message
+
+if [ $debugmode != "no" ]; then
+    inform "\nDEBUG MODE ENABLED"
+else
+    echo -e "\nThis script will configure your Pi audio output!"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+    fi
+fi
 
 # checks and init
 
@@ -356,21 +406,9 @@ if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-newline
-echo "This script will configure your Pi audio output!"
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS https://get.pimoroni.com/$scriptname"
-newline
-
 if confirm "Do you wish to continue?"; then
+
+# environment preparation
 
     if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
         bcm2835off="no"
@@ -382,11 +420,24 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "no" ]; then
         newline
-        route_audio && newline
+        route_audio
+        if [ "$FORCE" != '-y' ]; then
+            test_audio
+        fi
+        newline
     else
         newline
-        warning "Default sound driver currently not loaded"
-        warning "This script must now exit." && exit 1
+        warning "Default sound driver currently not loaded!"
+        if confirm "Do you wish to re-enable the on-board audio?"; then
+            enable_pi_audio
+            remove_dtoverlay i2s-mmap
+            remove_dtoverlay hifiberry-dac
+            sudo rm /etc/asound.conf &> /dev/null
+            sudo ~/.asound.rc &> /dev/null
+            newline
+        else
+            exit 1
+        fi
     fi
 
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
