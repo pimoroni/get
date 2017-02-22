@@ -601,6 +601,9 @@ if confirm "Do you wish to continue?"; then
         sysupdate
     fi
 
+    if apt_pkg_req "apt-utils" &> /dev/null; then
+        apt_pkg_install "apt-utils"
+    fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
