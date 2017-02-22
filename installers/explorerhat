@@ -68,7 +68,7 @@ examplesdep=( "pygame" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222340
+# template 1702222350
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -679,7 +679,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$RPIGPIO2" == "install ok installed" ] || [ "$RPIGPIO3" == "install ok installed" ]; then
             if ! $FAILED_PKG; then
-                echo -e "RPi.GPIO installed and up-to-date\n"
+                echo -e "RPi.GPIO installed and up-to-date"
             fi
         fi
     fi
@@ -722,19 +722,19 @@ if confirm "Do you wish to continue?"; then
             if ! $PIP2_BIN list | grep "spidev" &> /dev/null; then
                 warning "Unable to install spidev for python 2!" && FAILED_PKG=true
             else
-                SPIDEV3="install ok installed"
+                SPIDEV2="install ok installed"
             fi
         fi
         if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
             if ! $PIP3_BIN list | grep "spidev" &> /dev/null; then
                 warning "Unable to install spidev for python 3!" && FAILED_PKG=true
             else
-                SPIDEV2="install ok installed"
+                SPIDEV3="install ok installed"
             fi
         fi
         if [ "$SPIDEV2" == "install ok installed" ] && [ "$SPIDEV3" == "install ok installed" ]; then
             if ! $FAILED_PKG; then
-                echo -e "spidev installed and up-to-date\n"
+                echo -e "spidev installed and up-to-date"
             fi
         fi
     fi
@@ -780,19 +780,19 @@ if confirm "Do you wish to continue?"; then
             if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
                 warning "Unable to install smbus for python 2!" && FAILED_PKG=true
             else
-                SMBUS3="install ok installed"
+                SMBUS2="install ok installed"
             fi
         fi
         if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
             if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
                 warning "Unable to install smbus for python 3!" && FAILED_PKG=true
             else
-                SMBUS2="install ok installed"
+                SMBUS3="install ok installed"
             fi
         fi
         if [ "$SMBUS2" == "install ok installed" ] && [ "$SMBUS3" == "install ok installed" ]; then
             if ! $FAILED_PKG; then
-                echo -e "smbus installed and up-to-date\n"
+                echo -e "smbus installed and up-to-date"
             fi
         fi
     fi
