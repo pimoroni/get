@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702221255
+# template 1702221325
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -429,6 +429,14 @@ disable_pi_audio() {
         sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
+    fi
+}
+
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
     fi
 }
 

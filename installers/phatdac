@@ -285,6 +285,14 @@ disable_pi_audio() {
     fi
 }
 
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
+    fi
+}
+
 disable_pulseaudio() {
     sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
     pulseaudio -k &> /dev/null
@@ -406,32 +414,20 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $DEVICE_TREE; then
-
-        echo -e "\nAdding Device Tree Entry to $CONFIG"
-
-        if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
-            echo "dtoverlay already active"
-        else
-            echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
-        fi
-
+        add_dtoverlay hifiberry-dac
         if [ -e $BLACKLIST ]; then
-            echo -e "\nCommenting out Blacklist entry in "
-            echo "$BLACKLIST"
             sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
         fi
     else
-        echo -e "\nNo Device Tree Detected, not supported\n"
-        exit 1
+        echo -e "\nNo Device Tree Detected, not supported\n" && exit 1
     fi
 
     if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
         bcm2835off="no"
         echo -e "\nDisabling default sound driver"
-        sudo sed -i "s|^dtparam=audio=on$|#dtparam=audio=on|" $CONFIG &> /dev/null
+        disable_pi_audio && kill_volumealsa
         if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
         fi
@@ -445,8 +441,6 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nDefault sound driver currently not loaded"
         bcm2835off="yes"
     fi
-
-    echo "Configuring sound output"
 
     if [ $bcm2835off == "yes" ]; then
         echo -e "\nWe can now test your $productname"
