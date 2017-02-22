@@ -286,7 +286,7 @@ if [ $debugmode != "no" ]; then
 else
     echo "This script will enable the I2C0 bus on your Raspberry Pi"
     if [ "$FORCE" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source.\n"
         echo "If you want to see what this script does before"

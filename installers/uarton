@@ -285,9 +285,9 @@ if [ $debugmode != "no" ]; then
     echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
     echo "This script will disable the serial console so that"
-    echo "serial communication with devices is operational."
+    echo "serial communication with devices is operational"
     if [ "$FORCE" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source.\n"
         echo "If you want to see what this script does before"

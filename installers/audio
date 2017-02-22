@@ -333,9 +333,9 @@ MAINSTART
 if [ $debugmode != "no" ]; then
     inform "\nDEBUG MODE ENABLED"
 else
-    echo -e "\nThis script will configure your Pi audio output!\n"
+    echo -e "\nThis script will configure your Pi audio output!"
     if [ "$FORCE" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source.\n"
         echo "If you want to see what this script does before"
@@ -420,10 +420,11 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "no" ]; then
         newline
-        route_audio && newline
+        route_audio
         if [ "$FORCE" != '-y' ]; then
             test_audio
         fi
+        newline
     else
         newline
         warning "Default sound driver currently not loaded!"
