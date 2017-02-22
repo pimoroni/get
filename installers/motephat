@@ -68,7 +68,7 @@ examplesdep=( "requests" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222350
+# template 1702222355
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -732,7 +732,7 @@ if confirm "Do you wish to continue?"; then
                 SPIDEV3="install ok installed"
             fi
         fi
-        if [ "$SPIDEV2" == "install ok installed" ] && [ "$SPIDEV3" == "install ok installed" ]; then
+        if [ "$SPIDEV2" == "install ok installed" ] || [ "$SPIDEV3" == "install ok installed" ]; then
             if ! $FAILED_PKG; then
                 echo -e "spidev installed and up-to-date"
             fi
@@ -790,7 +790,7 @@ if confirm "Do you wish to continue?"; then
                 SMBUS3="install ok installed"
             fi
         fi
-        if [ "$SMBUS2" == "install ok installed" ] && [ "$SMBUS3" == "install ok installed" ]; then
+        if [ "$SMBUS2" == "install ok installed" ] || [ "$SMBUS3" == "install ok installed" ]; then
             if ! $FAILED_PKG; then
                 echo -e "smbus installed and up-to-date"
             fi
