@@ -258,20 +258,18 @@ MAINSTART
 
 # intro message
 
-newline
-echo "This script will install everything needed to use"
-echo "$productname"
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
-newline
+if [ $debugmode != "no" ]; then
+    inform "\nDEBUG MODE ENABLED"
+else
+    echo -e "This script will install everything needed to use $productname"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+    fi
+fi
 
 # checks and init
 
