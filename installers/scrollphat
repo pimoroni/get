@@ -68,7 +68,7 @@ examplesdep=( "feedparser" "pil" "psutil" ) # list of python modules required by
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222000
+# template 1702222030
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -671,19 +671,19 @@ if confirm "Do you wish to continue?"; then
             if ! $PIP2_BIN list | grep "RPi.GPIO" &> /dev/null; then
                 warning "Unable to install RPi.GPIO for python 2!"
                 FAILED_PKG=true
-            else
-                RPIGPIO2="yes"
             fi
+        else
+            RPIGPIO2=""
         fi
         if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
             if ! $PIP3_BIN list | grep "RPi.GPIO" &> /dev/null; then
                 warning "Unable to install RPi.GPIO for python 3!"
                 FAILED_PKG=true
-            else
-                RPIGPIO3="yes"
             fi
+        else
+            RPIGPIO3=""
         fi
-        if [ "$RPIGPIO2" == "yes" ] && [ "$RPIGPIO3" == "yes" ]; then
+        if [ -z "$RPIGPIO2" ] && [ -z "$RPIGPIO3" ]; then
             echo "RPi.GPIO installed and up-to-date" && newline
         fi
     fi
