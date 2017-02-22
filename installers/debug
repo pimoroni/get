@@ -21,17 +21,17 @@ DISCLAIMER
 
 # script control variables
 
-productname="Pimoroni Dashboard" # the name of the product to install
-scriptname="dashboard" # the name of this script
+productname="Blinkt!" # the name of the product to install
+scriptname="blinkt" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
-debugmode="yes" # whether the script should use debug routines
+debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-mininstall="yes" # whether the script enforces minimum install routine
+mininstall="no" # whether the script enforces minimum install routine
 customcmd="no" # whether to execute commands specified before exit
-gpioreq="no" # whether low-level gpio access is required
+gpioreq="yes" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
@@ -42,16 +42,16 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
-debpackage="pimoroni_0.9.6_all.deb" # the name of the package in apt repo
-piplibname="na" # the name of the lib in pip repo
+oswarning=( "Debian" "Kali" "Ubuntu" "Volumio" ) # list experimental os-releases
+osdeny=( "Darwin" "Linaro" ) # list os-releases specifically disallowed
+debpackage="blinkt" # the name of the package in apt repo
+piplibname="blinkt" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
-pip2support="na" # whether python2 is supported
-pip3support="na" # whether python3 is supported
+pip2support="yes" # whether python2 is supported
+pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="na" # the name of the dir for copy of resources
-gitreponame="na" # the name of the git project repo
+localdir="blinkt" # the name of the dir for copy of resources
+gitreponame="blinkt" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -59,14 +59,14 @@ gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
 repoclean="no" # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
-libdir="na" # subdirectory of library in repo
-copydir=() # subdirectories to copy from repo
+libdir="library" # subdirectory of library in repo
+copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "whiptail" ) # list of core dependencies (min install)
+coredeplist=() # list of core dependencies (min install)
 pipdeplist=() # list of dependencies to source from pypi
-examplesdep=() # list of python modules required by examples
+examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
-xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
+xdisplaydep=() # list of dependencies requiring X server
 
 # template 1702221405
 
@@ -648,7 +648,7 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            if python --version | grep -q "2.7"; then
+            if [ -n $(python --version | grep -q "2.7") ]; then
                 echo "python-rpi.gpio can't be found, fetching from alternative location..."
                 FAILED_PKG=false
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
