@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "puredata-core" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702221255
+# template 1702221405
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -91,9 +91,15 @@ RPIPOOL="http://archive.raspberrypi.org/debian/pool"
 DEBPOOL="http://ftp.debian.org/debian/pool"
 GETPOOL="https://get.pimoroni.com"
 
-SMBUS1="python3-smbus1_1.1+35dbg-1_armhf.deb"
 SMBUS2="python-smbus_3.1.1+svn-2_armhf.deb"
 SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
+SMBUS35="python3-smbus1_1.1+35dbg-1_armhf.deb"
+
+SPIDEV2="python-spidev_2.0~git20150907_armhf.deb"
+SPIDEV3="python3-spidev_2.0~git20150907_armhf.deb"
+
+RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
+RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
 # function define
 
@@ -432,6 +438,14 @@ disable_pi_audio() {
     fi
 }
 
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
+    fi
+}
+
 disable_pulseaudio() {
     sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
     pulseaudio -k &> /dev/null
@@ -631,10 +645,26 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         newline && echo "Checking for packages required for GPIO control..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
-            sudo $PIP2_BIN install RPi.GPIO && FAILED_PKG=false
+            if python --version | grep -q "2.7"; then
+                echo "python-rpi.gpio can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RPIPOOL/main/i/i2c-tools/$RPIGPIO2 &> /dev/null
+                sudo dpkg -i $DEBDIR/$RPIGPIO2
+            else
+                sudo $PIP2_BIN install RPi.GPIO && FAILED_PKG=false
+            fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
-            sudo $PIP3_BIN install RPi.GPIO && FAILED_PKG=false
+            if python --version | grep -q "3.4"; then
+                echo "python3-rpi.gpio can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RPIPOOL/main/i/i2c-tools/$RPIGPIO3 &> /dev/null
+                sudo dpkg -i $DEBDIR/$RPIGPIO3
+            else
+                sudo $PIP3_BIN install RPi.GPIO && FAILED_PKG=false
+            fi
         fi
         echo "RPi.GPIO installed and up-to-date" && newline
     fi
@@ -655,10 +685,26 @@ if confirm "Do you wish to continue?"; then
         fi
         newline && echo "Checking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
-            sudo $PIP2_BIN install spidev && FAILED_PKG=false
+            if python --version | grep -q "2.7"; then
+                echo "python-spidev can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RPIPOOL/main/i/i2c-tools/$SPIDEV2 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SPIDEV2
+            else
+                sudo $PIP2_BIN install spidev && FAILED_PKG=false
+            fi
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
-            sudo $PIP3_BIN install spidev && FAILED_PKG=false
+            if python --version | grep -q "3.4"; then
+                echo "python3-spidev can't be found, fetching from alternative location..."
+                FAILED_PKG=false
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RPIPOOL/main/i/i2c-tools/$SPIDEV3 &> /dev/null
+                sudo dpkg -i $DEBDIR/$SPIDEV3
+            else
+                sudo $PIP3_BIN install spidev && FAILED_PKG=false
+            fi
         fi
         if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "spidev" &> /dev/null; then
             warning "Unable to install spidev for python 3!"
@@ -707,8 +753,8 @@ if confirm "Do you wish to continue?"; then
                     echo "python3-smbus can't be found, fetching from alternative location..."
                     FAILED_PKG=false
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-                    wget $GETPOOL/resources/$SMBUS1 &> /dev/null
-                    sudo dpkg -i $DEBDIR/$SMBUS1
+                    wget $GETPOOL/resources/$SMBUS35 &> /dev/null
+                    sudo dpkg -i $DEBDIR/$SMBUS35
                 fi
             fi
         fi
