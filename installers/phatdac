@@ -444,11 +444,8 @@ if confirm "Do you wish to continue?"; then
 
     if [ $bcm2835off == "yes" ]; then
         echo -e "\nWe can now test your $productname"
-        warning "Set your speakers at a low volume!"
-        if confirm "Do you wish to test your system now?"; then
-            echo "Testing..."
-            speaker-test -l5 -c2 -t wav
-        fi
+        warning "Set your speakers at a low volume!\n"
+        test_audio
     fi
     success "\nAll done!\n"
     echo -e "Enjoy your new $productname!\n"
