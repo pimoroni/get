@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231255
+# template 1702231300
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -845,8 +845,7 @@ if confirm "Do you wish to continue?"; then
 
 # apt repo install
 
-    echo "Checking install requirements..."
-    echo "Checking for dependencies..."
+    echo -e "\nChecking for dependencies..."
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgremove[@]}; do
