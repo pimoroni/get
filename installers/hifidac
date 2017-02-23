@@ -1,0 +1,467 @@
+#!/bin/bash
+
+: <<'DISCLAIMER'
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+This script is licensed under the terms of the MIT license.
+Unless otherwise noted, code reproduced herein
+was written for this script.
+
+- The Pimoroni Crew -
+
+DISCLAIMER
+
+# script control variables
+
+productname="pHAT DAC" # the name of the product to install
+scriptname="phatdac" # the name of this script
+spacereq=1 # minimum size required on root partition in MB
+debugmode="no" # whether the script should use debug routines
+debuguser="none" # optional test git user to use in debug mode
+debugpoint="none" # optional git repo branch or tag to checkout
+forcesudo="no" # whether the script requires to be ran with root privileges
+promptreboot="no" # whether the script should always prompt user to reboot
+mininstall="no" # whether the script enforces minimum install routine
+customcmd="yes" # whether to execute commands specified before exit
+gpioreq="no" # whether low-level gpio access is required
+i2creq="no" # whether the i2c interface is required
+i2sreq="yes" # whether the i2s interface is required
+spireq="no" # whether the spi interface is required
+uartreq="no" # whether uart communication is required
+armhfonly="yes" # whether the script is allowed to run on other arch
+armv6="yes" # whether armv6 processors are supported
+armv7="yes" # whether armv7 processors are supported
+armv8="yes" # whether armv8 processors are supported
+raspbianonly="no" # whether the script is allowed to run on other OSes
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+
+FORCE=$1
+ASK_TO_REBOOT=false
+CURRENT_SETTING=false
+MIN_INSTALL=false
+FAILED_PKG=false
+REMOVE_PKG=false
+UPDATE_DB=false
+
+AUTOSTART=~/.config/lxsession/LXDE-pi/autostart
+BOOTCMD=/boot/cmdline.txt
+CONFIG=/boot/config.txt
+APTSRC=/etc/apt/sources.list
+INITABCONF=/etc/inittab
+BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
+LOADMOD=/etc/modules
+
+# function define
+
+confirm() {
+    if [ "$FORCE" == '-y' ]; then
+        true
+    else
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+    fi
+}
+
+prompt() {
+        read -r -p "$1 [y/N] " response < /dev/tty
+        if [[ $response =~ ^(yes|y|Y)$ ]]; then
+            true
+        else
+            false
+        fi
+}
+
+success() {
+    echo -e "$(tput setaf 2)$1$(tput sgr0)"
+}
+
+inform() {
+    echo -e "$(tput setaf 6)$1$(tput sgr0)"
+}
+
+warning() {
+    echo -e "$(tput setaf 1)$1$(tput sgr0)"
+}
+
+newline() {
+    echo ""
+}
+
+progress() {
+    count=0
+    until [ $count -eq $1 ]; do
+        echo -n "..." && sleep 1
+        ((count++))
+    done
+    echo
+}
+sudocheck() {
+    if [ $(id -u) -ne 0 ]; then
+        echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
+        exit 1
+    fi
+}
+
+sysclean() {
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysupdate() {
+    if ! $UPDATE_DB; then
+        echo "Updating apt indexes..." && progress 3 &
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
+        echo "Reading package lists..."
+        progress 3 && UPDATE_DB=true
+    fi
+}
+
+sysupgrade() {
+    sudo apt-get upgrade
+    sudo apt-get clean && sudo apt-get autoclean
+    sudo apt-get -y autoremove &> /dev/null
+}
+
+sysreboot() {
+    warning "Some changes made to your system require"
+    warning "your computer to reboot to take effect."
+    echo
+    if prompt "Would you like to reboot now?"; then
+        sync && sudo reboot
+    fi
+}
+
+arch_check() {
+    IS_ARMHF=false
+    IS_ARMv6=false
+
+    if uname -m | grep -q "armv.l"; then
+        IS_ARMHF=true
+        if uname -m | grep -q "armv6l"; then
+            IS_ARMv6=true
+        fi
+    fi
+}
+
+os_check() {
+    IS_MACOSX=false
+    IS_RASPBIAN=false
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
+    OS_NAME="Unknown"
+
+    if uname -s | grep -q "Darwin"; then
+        OS_NAME="Darwin" && IS_MACOSX=true
+    elif cat /etc/os-release | grep -q "Kali"; then
+        OS_NAME="Kali"
+    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
+        OS_NAME="Kano"
+    elif whoami | grep -q "linaro"; then
+        OS_NAME="Linaro"
+    elif [ -d ~/.config/ubuntu-mate ];then
+        OS_NAME="Mate"
+    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
+        OS_NAME="PiTop"
+    elif command -v emulationstation > /dev/null; then
+        OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
+    elif cat /etc/os-release | grep -q "Raspbian"; then
+        OS_NAME="Raspbian" && IS_RASPBIAN=true
+    elif cat /etc/os-release | grep -q "Debian"; then
+        OS_NAME="Debian"
+    elif cat /etc/os-release | grep -q "Ubuntu"; then
+        OS_NAME="Ubuntu"
+    fi
+
+    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_SUPPORTED=true
+    fi
+    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
+        IS_EXPERIMENTAL=true
+    fi
+}
+
+raspbian_check() {
+    IS_SUPPORTED=false
+    IS_EXPERIMENTAL=false
+
+    if [ -f /etc/os-release ]; then
+        if cat /etc/os-release | grep -q "/sid"; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep -q "stretch"; then
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep -q "jessie"; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+        elif cat /etc/os-release | grep -q "wheezy"; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
+        else
+            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+        fi
+    fi
+}
+
+home_dir() {
+    if [ $EUID -ne 0 ]; then
+        if $IS_MACOSX; then
+            USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
+        else
+            USER_HOME=$(getent passwd $USER | cut -d: -f6)
+        fi
+    else
+        warning "Running as root, please log in as a regular user with sudo rights!"
+        echo && exit 1
+    fi
+}
+
+space_chk() {
+    if command -v stat > /dev/null && ! $IS_MACOSX; then
+        if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
+            echo
+            warning  "There is not enough space left to proceed with  installation"
+            if confirm "Would you like to attempt to expand your filesystem?"; then
+                curl -sS $GETPOOL/expandfs | sudo bash && exit 1
+            else
+                echo && exit 1
+            fi
+        fi
+    fi
+}
+
+timestamp() {
+    date +%Y%m%d-%H%M
+}
+
+check_network() {
+    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
+}
+
+add_dtoverlay() {
+    if grep -q "^dtoverlay=$1" $CONFIG; then
+        echo -e "\n$1 overlay already active"
+    elif grep -q "^#dtoverlay=$1" $CONFIG; then
+        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    else
+        echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
+    fi
+}
+
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
+}
+
+kill_volumealsa() {
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+}
+
+basic_asound() {
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
+        sudo mv $HOME/.asoundrc /etc/asound.conf
+}
+
+: <<'MAINSTART'
+
+Perform all variables declarations as well as function definition
+above this section for clarity, thanks!
+
+MAINSTART
+
+# intro message
+
+if [ $debugmode != "no" ]; then
+    inform "\nDEBUG MODE ENABLED"
+else
+    echo -e "\nThis script will install everything needed to use $productname"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+    fi
+fi
+
+# checks and init
+
+arch_check
+os_check
+space_chk
+home_dir
+
+if [ $debugmode != "no" ]; then
+    echo "USER_HOME is $USER_HOME"
+    echo "OS_NAME is $OS_NAME"
+    echo "IS_SUPPORTED is $IS_SUPPORTED"
+    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
+    echo
+fi
+
+if ! $IS_ARMHF; then
+    warning "This hardware is not supported, sorry!"
+    warning "Config files have been left untouched\n"
+    exit 1
+fi
+
+if $IS_ARMv8 && [ $armv8 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
+elif $IS_ARMv7 && [ $armv7 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
+elif $IS_ARMv6 && [ $armv6 == "no" ]; then
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
+fi
+
+if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
+    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
+    exit 1
+fi
+
+if $IS_RASPBIAN; then
+    raspbian_check
+    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+        warning "\n--- Warning ---\n"
+        echo "The $productname installer"
+        echo "does not work on this version of Raspbian."
+        echo "Check https://github.com/$gitusername/$gitreponame"
+        echo "for additional information and support" && echo
+        exit 1
+    fi
+fi
+
+if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
+    warning "Your operating system is not supported, sorry!\n"
+    exit 1
+fi
+
+if $IS_EXPERIMENTAL; then
+    warning "Support for your operating system is experimental. Please visit"
+    warning "forums.pimoroni.com if you experience issues with this product.\n"
+fi
+
+if [ $forcesudo == "yes" ]; then
+    sudocheck
+fi
+
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!"
+fi
+if [ $spireq == "yes" ]; then
+    echo -e "Note: $productname requires SPI communication"
+fi
+if [ $i2creq == "yes" ]; then
+    echo -e "Note: $productname requires I2C communication"
+fi
+if [ $i2sreq == "yes" ]; then
+    echo -e "Note: $productname uses the I2S interface"
+    warning "The on-board audio chip will be disabled if you proceed!"
+fi
+
+newline
+if confirm "Do you wish to continue?"; then
+
+# environment preparation
+
+    echo -e "\nChecking hardware requirements..."
+
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
+    fi
+
+    if $DEVICE_TREE; then
+        add_dtoverlay hifiberry-dac
+        if [ -e $BLACKLIST ]; then
+            sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
+        fi
+    else
+        echo -e "\nNo Device Tree Detected, not supported\n" && exit 1
+    fi
+
+    if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
+        bcm2835off="no"
+        echo -e "\nDisabling default sound driver"
+        disable_pi_audio && kill_volumealsa
+        if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+            sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+        fi
+        ASK_TO_REBOOT=true
+    elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+        bcm2835off="no"
+        echo -e "\nDisabling default sound module"
+        sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+        ASK_TO_REBOOT=true
+    else
+        echo -e "\nDefault sound driver currently not loaded"
+        bcm2835off="yes"
+    fi
+
+    if [ $bcm2835off == "yes" ]; then
+        echo -e "\nWe can now test your $productname"
+        warning "Set your speakers at a low volume!\n"
+        test_audio
+    fi
+    success "\nAll done!\n"
+    echo -e "Enjoy your new $productname!\n"
+
+    if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
+        sysreboot
+    fi
+else
+    echo -e "\nAborting...\n"
+fi
+
+exit 0
