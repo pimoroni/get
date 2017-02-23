@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Linaro" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Volumio" ) # list os-releases specifically disallowed
+oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali") # list os-releases specifically disallowed
 debpackage="microdotphat" # the name of the package in apt repo
 piplibname="microdotphat" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
@@ -62,13 +62,14 @@ repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "python-numpy" "python3-numpy" ) # list of core dependencies (min install)
+coredeplist=() # list of core dependencies (min install)
+pythondep=( "numpy" ) # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231135
+# template 1702231440
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -453,6 +454,12 @@ kill_volumealsa() {
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
+basic_asound() {
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
+        sudo mv $HOME/.asoundrc /etc/asound.conf
+}
+
 servd_trig() {
     if command -v service > /dev/null; then
         sudo service $1 $2
@@ -499,9 +506,8 @@ if [ $debugmode != "no" ]; then
 else
     echo -e "\nThis script will install everything needed to use\n$productname"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source.\n"
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
         echo -e "If you want to see what this script does before running it,"
         echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
@@ -572,24 +578,25 @@ fi
 
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!\n"
+    warning "The serial console will be disabled if you proceed!"
 fi
 if [ $spireq == "yes" ]; then
-    echo -e "Note: $productname requires SPI communication\n"
+    echo -e "Note: $productname requires SPI communication"
 fi
 if [ $i2creq == "yes" ]; then
-    echo -e "Note: $productname requires I2C communication\n"
+    echo -e "Note: $productname requires I2C communication"
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!\n"
+    warning "The on-board audio chip will be disabled if you proceed!"
 fi
 
+newline
 if confirm "Do you wish to continue?"; then
 
 # basic environment preparation
 
-    newline && echo "Checking environment..."
+    echo -e "\nChecking environment..."
 
     if [ "$FORCE" != '-y' ]; then
         if ! check_network; then
@@ -810,9 +817,6 @@ if confirm "Do you wish to continue?"; then
             sudo mv $HOME/.asoundrc $HOME/.asoundrc.backup
             inform "existing config backed up to ~/.asound.conf.backup"
         fi
-        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
-        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
-        sudo mv $HOME/.asoundrc /etc/asound.conf
     fi
 
 # minimum install routine
@@ -844,9 +848,7 @@ if confirm "Do you wish to continue?"; then
 
 # apt repo install
 
-    echo "Checking install requirements..."
-
-    newline && echo "Checking for dependencies..." && newline
+    echo -e "\nChecking for dependencies..."
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgremove[@]}; do
@@ -854,13 +856,28 @@ if confirm "Do you wish to continue?"; then
             sudo apt-get remove "$pkgrm"
         done
     fi
+
     for pkgdep in ${coredeplist[@]}; do
         if apt_pkg_req "$pkgdep"; then
             apt_pkg_install "$pkgdep"
         fi
     done
 
+    for pkgdep in ${pythondep[@]}; do
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            if apt_pkg_req "python-$pkgdep"; then
+                apt_pkg_install "python-$pkgdep"
+            fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            if apt_pkg_req "python3-$pkgdep"; then
+                apt_pkg_install "python3-$pkgdep"
+            fi
+        fi
+    done
+
     if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        newline
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
             apt_deb_install "$debpackage"
         fi
@@ -952,7 +969,7 @@ if confirm "Do you wish to continue?"; then
 # additional install
 
     if ! $MIN_INSTALL; then
-        newline && echo "Checking for additional software..." && newline
+        echo -e "\nChecking for additional software..."
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
                 if ! apt_pkg_install "python-$moredep"; then
@@ -999,7 +1016,7 @@ if confirm "Do you wish to continue?"; then
         if ! command -v git > /dev/null; then
             apt_pkg_install git
         fi
-        newline && echo "Downloading examples and documentation..."
+        echo -e "\nDownloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
         GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
@@ -1042,24 +1059,21 @@ if confirm "Do you wish to continue?"; then
 
     if [ $customcmd == "no" ]; then
         if [ -n "$pkgremove" ]; then
-            newline && echo "Finalising Install..." && newline
+            echo -e "\nFinalising Install...\n"
             sysclean && newline
         fi
-        newline && echo "All done!" && newline
-        echo "Enjoy your $productname!" && newline
+        echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
-        newline && echo "Finalising Install..."
+        echo -e "\nFinalising Install...\n"
         # place all custom commands in this scope
-        newline
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!" && newline
+        warning "Some packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product."
-        newline
+        warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
     if [ "$FORCE" != '-y' ]; then
@@ -1068,7 +1082,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 else
-    newline && echo "Aborting..." && newline
+    echo -e "\nAborting...\n"
 fi
 
 exit 0

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-startpoint=71
-cmdpoint=1041
-endpoint=1074
+startpoint=72
+cmdpoint=1058
+endpoint=1088
 lenient="no"
 
 sourcedir="./installers"
@@ -20,19 +20,22 @@ else
 fi
 
 for script in ${scriptlist[@]}; do
-    if [ "$lenient" == "yes" ]; then
-        endpoint=$((endpoint + 10)) 
-        blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
-    else
-        blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
-    fi
-
-    if [ -n "$blockcheck" ]; then
-        echo "processing $script ..."
-        variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
-        common=$(sed -n "$startpoint","$endpoint"p "$template")
-
-        { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
+    validcheck=$(sed -n "$startpoint","$startpoint"p "$sourcedir/$script" | grep "template")
+    if [ -n "$validcheck" ]; then
+        if [ "$lenient" == "yes" ]; then
+            endpoint=$((endpoint + 10)) 
+            blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+        else
+            blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
+        fi
+    
+        if [ -n "$blockcheck" ]; then
+            echo "processing $script ..."
+            variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
+            common=$(sed -n "$startpoint","$endpoint"p "$template")
+    
+            { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
+        fi
     fi
 done
 
