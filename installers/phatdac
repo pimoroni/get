@@ -1059,7 +1059,7 @@ if confirm "Do you wish to continue?"; then
 
     if [ $customcmd == "no" ]; then
         if [ -n "$pkgremove" ]; then
-            echo -e "\nFinalising Install...\n"
+            echo -e "\nFinalising Install..."
             sysclean && newline
         fi
         echo -e "\nAll done. Enjoy your $productname!\n"
@@ -1074,19 +1074,19 @@ if confirm "Do you wish to continue?"; then
     
         if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
             bcm2835off="no"
-            echo -e "\nDisabling default sound driver"
-            disable_pi_audio && kill_volumealsa
+            echo -e "Disabling default sound driver"
+            disable_pi_audio && kill_volumealsa && newline
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
                 sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
             fi
             ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
-            echo -e "\nDisabling default sound module"
+            echo -e "Disabling default sound module"
             sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
             ASK_TO_REBOOT=true
         else
-            echo -e "\nDefault sound driver currently not loaded"
+            echo -e "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
     
