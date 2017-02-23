@@ -69,7 +69,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1702231215
+# template 1702231230
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -870,7 +870,7 @@ if confirm "Do you wish to continue?"; then
                 apt_pkg_install "python3-$pkgdep"
             fi
         fi
-
+    done
     if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
             apt_deb_install "$debpackage"
