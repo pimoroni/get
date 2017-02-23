@@ -21,45 +21,29 @@ DISCLAIMER
 
 # script control variables
 
-productname="na" # the name of the product to install
-scriptname="uptodate" # the name of this script
-spacereq=50 # minimum size required on root partition in MB
+productname="pHAT DAC" # the name of the product to install
+scriptname="phatdac" # the name of this script
+spacereq=1 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="yes" # whether the script should always prompt user to reboot
+promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
+gpioreq="no" # whether low-level gpio access is required
+i2creq="no" # whether the i2c interface is required
+i2sreq="yes" # whether the i2s interface is required
+spireq="no" # whether the spi interface is required
+uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=() # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Kali" "Linaro" "Ubuntu" ) # list os-releases specifically disallowed
-
-declare -A deblibpairs=( \
-["automationhat"]="automationhat" \
-["blinkt"]="blinkt" \
-["displayotron"]="dot3k" \
-["drumhat"]="drumhat" \
-["envirophat"]="envirophat" \
-["explorerhat"]="explorerhat" \
-["microdotphat"]="microdotphat" \
-["mote"]="mote" \
-["motephat"]="motephat" \
-["pantilthat"]="pantilthat" \
-["pianohat"]="pianohat" \
-["pibrella"]="pibrella" \
-["piglow"]="piglow" \
-["propellerhat"]="p1" \
-["scrollphat"]="scrollphat" \
-["skywriterhat"]="skywriter" \
-["unicornhat"]="unicornhat" )
-
-# setup variables
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -76,11 +60,6 @@ APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
 LOADMOD=/etc/modules
-
-RASPOOL="http://mirrordirector.raspbian.org/raspbian/pool"
-RPIPOOL="http://archive.raspberrypi.org/debian/pool"
-DEBPOOL="http://ftp.debian.org/debian/pool"
-GETPOOL="https://get.pimoroni.com"
 
 # function define
 
@@ -271,141 +250,63 @@ check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
 
-launch_url() {
-    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    if command -v xdg-open > /dev/null; then
-        xdg-open "$1" && return 0
+add_dtoverlay() {
+    if grep -q "^dtoverlay=$1" $CONFIG; then
+        echo -e "\n$1 overlay already active"
+    elif grep -q "^#dtoverlay=$1" $CONFIG; then
+        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
     else
-      error_box "There was an error attempting to launch your browser!"
+        echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
     fi
 }
 
-get_install() {
-    check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
-    if [ "$1" != diagnostic ];then
-        sysupdate && UPDATE_DB=true
-    fi
-    if ! command -v curl > /dev/null; then
-        apt_pkg_install "curl"
-    fi
-    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
-    read -p "Press Enter to continue..." < /dev/tty
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
 }
 
-apt_pkg_req() {
-    APT_CHK=$(dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed")
-
-    if [ "" == "$APT_CHK" ]; then
-        echo "$1 is required"
-        true
-    else
-        echo "$1 is already installed"
-        false
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
     fi
 }
 
-apt_pkg_install() {
-    echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { inform "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
-}
-
-apt_deb_chk() {
-    BEFORE=$(dpkg-query -W "$1" 2> /dev/null)
-    sudo apt-get --yes install "$1" &> /dev/null || return 1
-    AFTER=$(dpkg-query -W "$1" 2> /dev/null)
-    if [ "$BEFORE" == "$AFTER" ]; then
-        echo "$1 is already the newest version"
-    else
-        echo "$1 was successfully upgraded"
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
     fi
 }
 
-apt_deb_install() {
-    echo "Installing $1..."
-    if [[ "$1" != *".deb"* ]]; then
-        sudo apt-get --yes install "$1" &> /dev/null || inform "Apt failed to install $1!\nFalling back on pypi..."
-        dpkg-query -W -f='${Status}\n' "$1" 2> /dev/null | grep "install ok installed"
-    else
-        DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        cd $DEBDIR
-        wget "$GETPOOL/resources/$1" &> /dev/null
-        sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
     fi
 }
 
-pip_cmd_chk() {
-    if command -v pip2 > /dev/null; then
-        PIP2_BIN="pip2"
-    elif command -v pip-2.7 > /dev/null; then
-        PIP2_BIN="pip-2.7"
-    elif command -v pip-2.6 > /dev/null; then
-        PIP2_BIN="pip-2.6"
-    else
-        PIP2_BIN="pip"
-    fi
-    if command -v pip3 > /dev/null; then
-        PIP3_BIN="pip3"
-    elif command -v pip-3.3 > /dev/null; then
-        PIP3_BIN="pip-3.3"
-    elif command -v pip-3.2 > /dev/null; then
-        PIP3_BIN="pip-3.2"
-    fi
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
 }
 
-pip2_lib_req() {
-    PIP2_CHK=$($PIP2_BIN list 2> /dev/null | grep -i "$1")
-
-    if [ -z "$PIP2_CHK" ]; then
-        true
-    else
-        false
-    fi
+kill_volumealsa() {
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
-pip3_lib_req() {
-    PIP3_CHK=$($PIP3_BIN list 2> /dev/null | grep -i "$1")
-
-    if [ -z "$PIP3_CHK" ]; then
-        true
-    else
-        false
-    fi
-}
-
-lib_chk() {
-    newline && pip_cmd_chk
-    sysupdate && UPDATE_DB=true
-    echo "Checking for installed libraries..."
-    for debpkg in "${!deblibpairs[@]}"; do
-        progress 3
-        if command -v $PIP2_BIN > /dev/null && ! pip2_lib_req "${deblibpairs[$debpkg]}"; then
-            if ! apt_deb_chk "python-$debpkg"; then
-                PIP2_MSG=$(sudo $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
-                | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
-                if [[ "$PIP2_MSG" == *"up-to-date"* ]]; then
-                    echo "${deblibpairs[$debpkg]} for Python 2 is already the newest version"
-                else
-                    echo "${deblibpairs[$debpkg]} for Python 2 was successfully upgraded"
-                fi
-            else
-                sudo $PIP2_BIN uninstall -y "$debpkg" &> /dev/null
-            fi
-        fi
-        if command -v $PIP3_BIN > /dev/null && ! pip3_lib_req "${deblibpairs[$debpkg]}"; then
-            if ! apt_deb_chk "python3-$debpkg"; then
-                PIP3_MSG=$(sudo $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
-                | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
-                if [[ "$PIP3_MSG" == *"up-to-date"* ]]; then
-                    echo "${deblibpairs[$debpkg]} for Python 3 is already the newest version"
-                else
-                    echo "${deblibpairs[$debpkg]} for Python 3 was successfully upgraded"
-                fi
-            else
-                sudo $PIP3_BIN uninstall -y "$debpkg" &> /dev/null
-            fi
-        fi
-    done
-    newline && inform "all libraries are now up-to-date!" && newline
+basic_asound() {
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
+        sudo mv $HOME/.asoundrc /etc/asound.conf
 }
 
 : <<'MAINSTART'
@@ -418,21 +319,15 @@ MAINSTART
 # intro message
 
 if [ $debugmode != "no" ]; then
-    if [ $debuguser != "none" ]; then
-        gitusername="$debuguser"
-    fi
-    if [ $debugpoint != "none" ]; then
-        gitrepobranch="$debugpoint"
-    fi
     inform "\nDEBUG MODE ENABLED"
-    echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
-    echo -e "\nThis script will make sure your Raspberry Pi is up to date"
+    echo -e "\nThis script will install everything needed to use $productname"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands copied"
-        inform "from the internet. Ensure they are from a trusted source.\n"
-        echo -e "If you want to see what this script does before running it,"
-        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
     fi
 fi
 
@@ -519,14 +414,51 @@ if confirm "Do you wish to continue?"; then
 
 # environment preparation
 
-    echo -e "\nBringing your system up-to-date..."
-    if [ "$FORCE" != '-y' ]; then
-        lib_chk
+    echo -e "\nChecking hardware requirements..."
+
+    if [ -e $CONFIG ] && grep -q "^device_tree=$" $CONFIG; then
+        DEVICE_TREE=false
     fi
-    sysupdate && sysupgrade
-    inform "\nAll done!\n"
+
+    if $DEVICE_TREE; then
+        add_dtoverlay hifiberry-dac
+        if [ -e $BLACKLIST ]; then
+            sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
+                        -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
+        fi
+    else
+        echo -e "\nNo Device Tree Detected, not supported\n" && exit 1
+    fi
+
+    if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
+        bcm2835off="no"
+        echo -e "\nDisabling default sound driver"
+        disable_pi_audio && kill_volumealsa
+        if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+            sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+        fi
+        ASK_TO_REBOOT=true
+    elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
+        bcm2835off="no"
+        echo -e "\nDisabling default sound module"
+        sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+        ASK_TO_REBOOT=true
+    else
+        echo -e "\nDefault sound driver currently not loaded"
+        bcm2835off="yes"
+    fi
+
+    if [ $bcm2835off == "yes" ]; then
+        echo -e "\nWe can now test your $productname"
+        warning "Set your speakers at a low volume!\n"
+        test_audio
+    fi
+    success "\nAll done!\n"
+    echo -e "Enjoy your new $productname!\n"
+
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
-        sysreboot && newline
+        sysreboot
     fi
 else
     echo -e "\nAborting...\n"

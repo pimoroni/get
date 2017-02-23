@@ -40,6 +40,8 @@ osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" "Volumio" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
+# setup variables
+
 FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -286,11 +288,10 @@ if [ $debugmode != "no" ]; then
 else
     echo "This script will enable the I2C0 bus on your Raspberry Pi"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source.\n"
-        echo "If you want to see what this script does before"
-        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
+        echo -e "If you want to see what this script does before running it,"
+        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 
@@ -364,10 +365,8 @@ if confirm "Do you wish to continue?"; then
     i2c_check
 
     if $DEVICE_TREE && ! $CURRENT_SETTING; then
-        newline
-        echo "Device Tree Detected"
-        echo "Enabling I2C..."
-        newline
+        echo -e "\nDevice Tree Detected"
+        echo -e "Enabling I2C...\n"
         if grep -q "^dtparam=i2c_arm=off" $CONFIG; then
             sudo sed -i "s|^dtparam=i2c_arm=off|dtparam=i2c_arm=on|" $CONFIG &> /dev/null
         elif grep -q "^#dtparam=i2c_arm=on" $CONFIG; then
@@ -381,20 +380,15 @@ if confirm "Do you wish to continue?"; then
         fi
         sudo sed -i "s|^\(blacklist[[:space:]]*i2c[-_]bcm2708\)|#\1|" $BLACKLIST &> /dev/null
         dtparam i2c_arm=on &> /dev/null
-        newline
-        success "I2C Enabled"
-        warning "Reboot required!"
-        newline
+        inform "\nI2C Enabled"
+        warning "Reboot required\n!"
         ASK_TO_REBOOT=true
     elif  ! $DEVICE_TREE && [ -e $BLACKLIST ] && grep -q "^blacklist[[:space:]]*i2c-bcm2708" $BLACKLIST; then
-        newline
-        echo "No Device Tree Detected"
+        echo -e "\nNo Device Tree Detected"
         echo "Enabling I2C..."
-        newline
-        echo "Commenting out Blacklist entry in "
-        echo "$BLACKLIST"
+        echo -e "\nCommenting out Blacklist entry in\n$BLACKLIST"
         sudo sed -i "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" $BLACKLIST &> /dev/null
-        newline && success "I2C Enabled" && newline
+        inform "\nI2C Enabled\n"
     else
         success "I2C Already Enabled" && newline
     fi
@@ -410,12 +404,12 @@ if confirm "Do you wish to continue?"; then
     sudo modprobe -a i2c-bcm2708 i2c-dev
 
     if [ -e $CONFIG ] && grep -q "^dtparam=i2c_vc=on$" $CONFIG; then
-        newline && echo "i2c0 bus is active"
+        echo -e "\ni2c0 bus is active"
         if confirm "Do you wish to disable it?"; then
             sudo sed -i "s|^dtparam=i2c_vc=on|#dtparam=i2c_vc=on|" $CONFIG &> /dev/null
         fi
     else
-        newline && echo "Enabling i2c0 bus in $CONFIG"
+        echo -e "\nEnabling i2c0 bus in $CONFIG"
         if [ -e $CONFIG ] && grep -q "^#dtparam=i2c_vc=on$" $CONFIG; then
             sudo sed -i "s|^#dtparam=i2c_vc=on|dtparam=i2c_vc=on|" $CONFIG &> /dev/null
         else
@@ -423,7 +417,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 else
-    newline && echo "Aborting..." && newline
+     echo -e "\nAborting...\n"
 fi
 
 exit 0
