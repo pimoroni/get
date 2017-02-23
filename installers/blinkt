@@ -68,7 +68,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222355
+# template 1702231255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -325,7 +325,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
+    sudo apt-get --yes install "$1" 1> /dev/null || { inform "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
 }
 
 apt_deb_chk() {
@@ -502,8 +502,8 @@ else
         inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
         inform "trusted source.\n"
-        echo "If you want to see what this script does before"
-        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+        echo -e "If you want to see what this script does before running it,"
+        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 
@@ -551,7 +551,7 @@ if $IS_RASPBIAN; then
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support\n"
+        echo "for additional information and support" && echo
         exit 1
     fi
 fi
@@ -690,7 +690,7 @@ if confirm "Do you wish to continue?"; then
             inform "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            if sudo raspi-config nonint get_spi | grep -q "1"; then
+            if command -v raspi-config > /dev/null && sudo raspi-config nonint get_spi | grep -q "1"; then
                 sudo raspi-config nonint do_spi 0
                 inform "SPI is now enabled"
             else
@@ -745,7 +745,7 @@ if confirm "Do you wish to continue?"; then
             inform "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            if sudo raspi-config nonint get_i2c | grep -q "1"; then
+            if command -v raspi-config > /dev/null && sudo raspi-config nonint get_i2c | grep -q "1"; then
                 sudo raspi-config nonint do_i2c 0
                 inform "I2C is now enabled"
             else
