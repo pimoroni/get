@@ -61,6 +61,7 @@ declare -A deblibpairs=( \
 
 # setup variables
 
+FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -84,7 +85,7 @@ GETPOOL="https://get.pimoroni.com"
 # function define
 
 confirm() {
-    if [ "$1" == '-y' ]; then
+    if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -198,6 +199,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
@@ -252,8 +255,7 @@ space_chk() {
             echo
             warning  "There is not enough space left to proceed with  installation"
             if confirm "Would you like to attempt to expand your filesystem?"; then
-                \curl -sS $GETPOOL/expandfs | sudo bash
-                exit 1
+                curl -sS $GETPOOL/expandfs | sudo bash && exit 1
             else
                 echo && exit 1
             fi
@@ -268,7 +270,6 @@ timestamp() {
 check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
-
 
 launch_url() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
@@ -287,7 +288,7 @@ get_install() {
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
-    \curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
     read -p "Press Enter to continue..." < /dev/tty
 }
 
@@ -305,8 +306,7 @@ apt_pkg_req() {
 
 apt_pkg_install() {
     echo "Installing $1..."
-    sudo apt-get --yes install "$1" 1> /dev/null || { echo -e "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
-    echo
+    sudo apt-get --yes install "$1" 1> /dev/null || { inform "Apt failed to install $1!\nFalling back on pypi..." && return 1; }
 }
 
 apt_deb_chk() {
@@ -331,7 +331,6 @@ apt_deb_install() {
         wget "$GETPOOL/resources/$1" &> /dev/null
         sudo dpkg -i "$DEBDIR/$1" | grep "Installing $1"
     fi
-    echo
 }
 
 pip_cmd_chk() {
@@ -425,23 +424,15 @@ if [ $debugmode != "no" ]; then
     if [ $debugpoint != "none" ]; then
         gitrepobranch="$debugpoint"
     fi
-    newline
-    inform "DEBUG MODE ENABLED"
-    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
-    newline
+    inform "\nDEBUG MODE ENABLED"
+    echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
-    newline
-    echo "This script will make sure your Raspberry Pi is up to date"
-    newline
+    echo -e "\nThis script will make sure your Raspberry Pi is up to date"
     if [ "$FORCE" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source."
-        newline
-        echo "If you want to see what this script does before"
-        echo "running it, you should run:"
-        echo "\curl -sS $GETPOOL/$scriptname"
-        newline
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
+        echo -e "If you want to see what this script does before running it,"
+        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 
@@ -453,75 +444,92 @@ space_chk
 home_dir
 
 if [ $debugmode != "no" ]; then
-    echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "USER_HOME is $USER_HOME"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
-    newline
+    echo
 fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    warning "Config files have been left untouched"
-    newline && exit 1
+    warning "Config files have been left untouched\n"
+    exit 1
 fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 fi
 
 if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
+    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
+    exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
     if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        newline && warning "--- Warning ---" && newline
+        warning "\n--- Warning ---\n"
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support"
-        newline && exit 1
+        echo "for additional information and support" && echo
+        exit 1
     fi
 fi
 
 if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "Your operating system is not supported, sorry!"
-        newline && exit 1
+    warning "Your operating system is not supported, sorry!\n"
+    exit 1
 fi
 
 if $IS_EXPERIMENTAL; then
     warning "Support for your operating system is experimental. Please visit"
-    warning "forums.pimoroni.com if you experience issues with this product."
-    newline
+    warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
+if [ $uartreq == "yes" ]; then
+    echo "Note: $productname requires UART communication"
+    warning "The serial console will be disabled if you proceed!"
+fi
+if [ $spireq == "yes" ]; then
+    echo -e "Note: $productname requires SPI communication"
+fi
+if [ $i2creq == "yes" ]; then
+    echo -e "Note: $productname requires I2C communication"
+fi
+if [ $i2sreq == "yes" ]; then
+    echo -e "Note: $productname uses the I2S interface"
+    warning "The on-board audio chip will be disabled if you proceed!"
+fi
+
+newline
 if confirm "Do you wish to continue?"; then
+
+# environment preparation
+
     echo -e "\nBringing your system up-to-date..."
     if [ "$FORCE" != '-y' ]; then
         lib_chk
     fi
     sysupdate && sysupgrade
-    success "\nAll done!\n"
+    inform "\nAll done!\n"
     if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
         sysreboot && newline
     fi
 else
-    newline && echo "Aborting..." && newline
+    echo -e "\nAborting...\n"
 fi
 
 exit 0

@@ -40,6 +40,8 @@ osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" "Volumio" ) # list os-r
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
+# setup variables
+
 FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -286,11 +288,10 @@ if [ $debugmode != "no" ]; then
 else
     echo "This script will enable the I2C bus on your Raspberry Pi"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source.\n"
-        echo -e "If you want to see what this script does before"
-        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
+        echo -e "If you want to see what this script does before running it,"
+        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 

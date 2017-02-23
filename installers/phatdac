@@ -1059,13 +1059,12 @@ if confirm "Do you wish to continue?"; then
 
     if [ $customcmd == "no" ]; then
         if [ -n "$pkgremove" ]; then
-            echo -e "\nFinalising Install..."
+            echo -e "\nFinalising Install...\n"
             sysclean && newline
         fi
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-    
         if [ -e $BLACKLIST ]; then
             sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
@@ -1092,7 +1091,7 @@ if confirm "Do you wish to continue?"; then
     
         if [ $bcm2835off == "yes" ]; then
             echo -e "\nWe can now test your $productname"
-            warning "Set your speakers at a low volume!\n"
+            warning "Set your speakers at a low volume!"
             test_audio && newline
         fi
     fi

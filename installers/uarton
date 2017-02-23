@@ -40,6 +40,8 @@ osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" "Volumio" ) # list os-r
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
+# setup variables
+
 FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
@@ -287,11 +289,10 @@ else
     echo "This script will disable the serial console so that"
     echo "serial communication with devices is operational"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source.\n"
-        echo "If you want to see what this script does before"
-        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
+        echo -e "If you want to see what this script does before running it,"
+        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 
@@ -367,16 +368,13 @@ if confirm "Do you wish to continue?"; then
 
     if [ -f $DTBODIR/pi3-disable-bt.dtbo ] && [ $hwgen == "340" ]; then
         if ! grep -q "^dtoverlay=pi3-disable-bt$" $CONFIG && ! grep -q "^dtoverlay=pi3-miniuart-bt$" $CONFIG; then
-            newline
-            warning "Communication needs to run on UART0 for reliable operation!"
-            newline
+            warning "\nCommunication needs to run on UART0 for reliable operation!\n"
             echo "Disabling the on-board Bluetooth adapter can achieve this result."
             echo "We can do this for you now by loading a dedicated overlay."
             if confirm "Would you like the pi3-disable-bt device tree overlay to load on boot?"; then
                 newline
                 echo "dtoverlay=pi3-disable-bt" | sudo tee -a $CONFIG &> /dev/null
-                warning "The on-board Bluetooth adapter has been disabled."
-                newline
+                warning "The on-board Bluetooth adapter has been disabled.\n"
                 echo "If you wish to re-enable it, you may do so by commenting out"
                 echo "the line starting with 'dtoverlay=pi3-disable-bt' in $CONFIG"
             fi
@@ -388,15 +386,11 @@ if confirm "Do you wish to continue?"; then
     fi
     sed -i -e "s|console=ttyAMA0,[0-9]\+ ||" -e "s|console=serial0,[0-9]\+ ||" $BOOTCMD &> /dev/null
     sed -i -e "/^enable_uart=0/d" -e "/^enable_uart=1/d" $CONFIG &> /dev/null
-    newline
-    success "Your Raspberry Pi is ready for UART communication"
-    warning "A reboot is required before this change takes effect."
-    newline
+    echo -e "\nYour Raspberry Pi is ready for UART communication"
+    warning "A reboot is required before this change takes effect.\n"
     ASK_TO_REBOOT=true
 else
-    newline
-    echo "Aborting..."
-    newline
+    echo -e "\nAborting...\n"
 fi
 
 exit 0
