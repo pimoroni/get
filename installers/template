@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702222355
+# template 1702231220
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -690,7 +690,7 @@ if confirm "Do you wish to continue?"; then
             inform "SPI already enabled"
         else
             echo "SPI must be enabled for $productname to work"
-            if sudo raspi-config nonint get_spi | grep -q "1"; then
+            if command -v raspi-config > /dev/null && sudo raspi-config nonint get_spi | grep -q "1"; then
                 sudo raspi-config nonint do_spi 0
                 inform "SPI is now enabled"
             else
@@ -745,7 +745,7 @@ if confirm "Do you wish to continue?"; then
             inform "I2C already enabled"
         else
             echo "I2C must be enabled for $productname to work"
-            if sudo raspi-config nonint get_i2c | grep -q "1"; then
+            if command -v raspi-config > /dev/null && sudo raspi-config nonint get_i2c | grep -q "1"; then
                 sudo raspi-config nonint do_i2c 0
                 inform "I2C is now enabled"
             else
