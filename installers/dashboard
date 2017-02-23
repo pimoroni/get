@@ -68,7 +68,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=( "scrot" "zenity" ) # list of dependencies requiring X server
 
-# template 1702231255
+# template 1702231135
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -980,7 +980,9 @@ if confirm "Do you wish to continue?"; then
             fi
         done
         for moredep in ${somemoredep[@]}; do
-            apt_pkg_install "$moredep"
+            if apt_pkg_req "$moredep"; then
+                apt_pkg_install "$moredep"
+            fi
         done
         if [ -n "$DISPLAY" ]; then
             for x11dep in ${xdisplaydep[@]}; do
