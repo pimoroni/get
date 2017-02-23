@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231405
+# template 1702231440
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -578,19 +578,20 @@ fi
 
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!\n"
+    warning "The serial console will be disabled if you proceed!"
 fi
 if [ $spireq == "yes" ]; then
-    echo -e "Note: $productname requires SPI communication\n"
+    echo -e "Note: $productname requires SPI communication"
 fi
 if [ $i2creq == "yes" ]; then
-    echo -e "Note: $productname requires I2C communication\n"
+    echo -e "Note: $productname requires I2C communication"
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!\n"
+    warning "The on-board audio chip will be disabled if you proceed!"
 fi
 
+newline
 if confirm "Do you wish to continue?"; then
 
 # basic environment preparation

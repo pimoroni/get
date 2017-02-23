@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 debpackage="skywriterhat" # the name of the package in apt repo
 piplibname="skywriter" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "puredata-core" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231405
+# template 1702231440
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -578,19 +578,20 @@ fi
 
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!\n"
+    warning "The serial console will be disabled if you proceed!"
 fi
 if [ $spireq == "yes" ]; then
-    echo -e "Note: $productname requires SPI communication\n"
+    echo -e "Note: $productname requires SPI communication"
 fi
 if [ $i2creq == "yes" ]; then
-    echo -e "Note: $productname requires I2C communication\n"
+    echo -e "Note: $productname requires I2C communication"
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!\n"
+    warning "The on-board audio chip will be disabled if you proceed!"
 fi
 
+newline
 if confirm "Do you wish to continue?"; then
 
 # basic environment preparation
