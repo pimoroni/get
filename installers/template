@@ -62,13 +62,14 @@ repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
-coredeplist=() # list of core dependencies (min install)
+coredeplist=() # list of core dependencies
+pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231135
+# template 1702231215
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -844,9 +845,8 @@ if confirm "Do you wish to continue?"; then
 
 # apt repo install
 
-    echo "Checking install requirements..."
-
-    newline && echo "Checking for dependencies..." && newline
+    echo -e "Checking install requirements..."
+    echo -e "Checking for dependencies...\n"
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgremove[@]}; do
@@ -859,6 +859,17 @@ if confirm "Do you wish to continue?"; then
             apt_pkg_install "$pkgdep"
         fi
     done
+    for pkgdep in ${pythondep[@]}; do
+        if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
+            if apt_pkg_req "$pkgdep"; then
+                apt_pkg_install "python-$pkgdep"
+            fi
+        fi
+        if [ -f "$(which python3)" ] && [ $pip3support == "yes" ]; then
+            if apt_pkg_req "$pkgdep"; then
+                apt_pkg_install "python3-$pkgdep"
+            fi
+        fi
 
     if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
