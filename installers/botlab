@@ -68,8 +68,9 @@ examplesdep=( "mock" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1701291220
+# template 1702221255
 
+FORCE=$1
 ASK_TO_REBOOT=false
 CURRENT_SETTING=false
 MIN_INSTALL=false
@@ -97,7 +98,7 @@ SMBUS3="python3-smbus_3.1.1+svn-2_armhf.deb"
 # function define
 
 confirm() {
-    if [ "$1" == '-y' ]; then
+    if [ "$FORCE" == '-y' ]; then
         true
     else
         read -r -p "$1 [y/N] " response < /dev/tty
@@ -211,6 +212,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
@@ -281,7 +284,6 @@ timestamp() {
 check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
-
 
 launch_url() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
@@ -401,20 +403,32 @@ add_dtoverlay() {
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
         sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
     else
         echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
         echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
     fi
 }
 
 remove_dtoverlay() {
     sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
 }
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
         sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
     fi
 }
 
@@ -469,24 +483,16 @@ if [ $debugmode != "no" ]; then
     if [ $debugpoint != "none" ]; then
         gitrepobranch="$debugpoint"
     fi
-    newline
-    inform "DEBUG MODE ENABLED"
-    echo "git user $gitusername and $gitrepobranch branch/tag will be used"
-    newline
+    inform "\nDEBUG MODE ENABLED"
+    echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
-    newline
-    echo "This script will install everything needed to use your"
-    echo "$productname"
-    newline
-    if [ "$1" != '-y' ]; then
-        inform "Always be careful when running scripts and commands"
+    echo -e "\nThis script will install everything needed to use\n$productname"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
         inform "copied from the internet. Ensure they are from a"
-        inform "trusted source."
-        newline
+        inform "trusted source.\n"
         echo "If you want to see what this script does before"
-        echo "running it, you should run:"
-        echo "\curl -sS $GETPOOL/$scriptname"
-        newline
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
     fi
 fi
 
@@ -498,75 +504,74 @@ space_chk
 home_dir
 
 if [ $debugmode != "no" ]; then
-    echo "USER_HOME is $USER_HOME" && newline
+    echo "USER_HOME is $USER_HOME"
     echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
-    newline
+    echo
 fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    warning "Config files have been left untouched"
-    newline && exit 1
+    warning "Config files have been left untouched\n"
+    exit 1
 fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 fi
 
 if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
+    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
+    exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
     if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        newline && warning "--- Warning ---" && newline
+        warning "\n--- Warning ---\n"
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support"
-        newline && exit 1
+        echo "for additional information and support\n"
+        exit 1
     fi
 fi
 
 if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "Your operating system is not supported, sorry!"
-        newline && exit 1
+    warning "Your operating system is not supported, sorry!\n"
+    exit 1
 fi
 
 if $IS_EXPERIMENTAL; then
     warning "Support for your operating system is experimental. Please visit"
-    warning "forums.pimoroni.com if you experience issues with this product."
-    newline
+    warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-if [ $i2sreq == "yes" ]; then
-    echo "Note: $productname uses the I2S interface" && newline
-fi
-
-if [ $i2creq == "yes" ]; then
-    echo "Note: $productname requires I2C communication" && newline
-fi
-if [ $spireq == "yes" ]; then
-    echo "Note: $productname requires SPI communication" && newline
-fi
 if [ $uartreq == "yes" ]; then
     echo "Note: $productname requires UART communication"
-    warning "The serial console will be disabled if you proceed!" && newline
+    warning "The serial console will be disabled if you proceed!\n"
+fi
+if [ $spireq == "yes" ]; then
+    echo -e "Note: $productname requires SPI communication\n"
+fi
+if [ $i2creq == "yes" ]; then
+    echo -e "Note: $productname requires I2C communication\n"
+fi
+if [ $i2sreq == "yes" ]; then
+    echo -e "Note: $productname uses the I2S interface"
+    warning "The on-board audio chip will be disabled if you proceed!\n"
 fi
 
 if confirm "Do you wish to continue?"; then
@@ -575,7 +580,7 @@ if confirm "Do you wish to continue?"; then
 
     newline && echo "Checking environment..."
 
-    if [ "$1" != '-y' ]; then
+    if [ "$FORCE" != '-y' ]; then
         if ! check_network; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
@@ -707,13 +712,17 @@ if confirm "Do you wish to continue?"; then
                 fi
             fi
         fi
-        if [ -f "$(which python3)" ] && ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 3!"
-            FAILED_PKG=true
-        elif [ -f "$(which python2)" ] && ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
-            warning "Unable to install smbus for python 2!"
-            FAILED_PKG=true
-        else
+        if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
+            if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 3!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
+            if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
+                warning "Unable to install smbus for python 2!"
+                FAILED_PKG=true
+            fi
+        elif [ "$pip2support" == "yes" ] || [ "$pip3support" == "yes" ]; then
             echo "smbus installed and up-to-date" && newline
         fi
     fi

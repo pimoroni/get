@@ -36,7 +36,7 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
+osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" "Volumio" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
@@ -173,6 +173,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "volumio"; then
+        OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
@@ -270,86 +272,95 @@ above this section for clarity, thanks!
 
 MAINSTART
 
+# intro message
+
+if [ $debugmode != "no" ]; then
+    if [ $debuguser != "none" ]; then
+        gitusername="$debuguser"
+    fi
+    if [ $debugpoint != "none" ]; then
+        gitrepobranch="$debugpoint"
+    fi
+    inform "\nDEBUG MODE ENABLED"
+    echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
+else
+    echo "This script will disable the serial console so that"
+    echo "serial communication with devices is operational"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+    fi
+fi
+
 # checks and init
 
 dt_check
 arch_check
 os_check
 
+
 if [ $debugmode != "no" ]; then
-    echo "USER_HOME is $USER_HOME" && newline
-    echo "IS_RASPBIAN is $IS_RASPBIAN"
-    echo "IS_MACOSX is $IS_MACOSX"
+    echo "USER_HOME is $USER_HOME"
+    echo "OS_NAME is $OS_NAME"
     echo "IS_SUPPORTED is $IS_SUPPORTED"
     echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
-    newline
+    echo
 fi
 
 if ! $IS_ARMHF; then
     warning "This hardware is not supported, sorry!"
-    warning "Config files have been left untouched"
-    newline && exit 1
+    warning "Config files have been left untouched\n"
+    exit 1
 fi
 
 if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer"
-    newline && exit 1
+    warning "Sorry, your CPU is not supported by this installer\n"
+    exit 1
 fi
 
 if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
-        warning "This script is intended for Raspbian on a Raspberry Pi!"
-        newline && exit 1
+    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
+    exit 1
 fi
 
 if $IS_RASPBIAN; then
     raspbian_check
     if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        newline && warning "--- Warning ---" && newline
+        warning "\n--- Warning ---\n"
         echo "The $productname installer"
         echo "does not work on this version of Raspbian."
         echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support"
-        newline && exit 1
+        echo "for additional information and support\n"
+        exit 1
     fi
 fi
 
 if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "Your operating system is not supported, sorry!"
-        newline && exit 1
+    warning "Your operating system is not supported, sorry!\n"
+    exit 1
 fi
 
 if $IS_EXPERIMENTAL; then
     warning "Support for your operating system is experimental. Please visit"
-    warning "forums.pimoroni.com if you experience issues with this product."
-    newline
+    warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
 if [ $forcesudo == "yes" ]; then
     sudocheck
 fi
 
-newline
-echo "This script will disable the serial console so that"
-echo "Serial communication with devices is operational."
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
-newline
-
 if confirm "Do you wish to continue?"; then
+
+# environment preparation
 
     get_init_sys
     get_hw_rev

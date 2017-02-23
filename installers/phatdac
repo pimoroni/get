@@ -249,6 +249,60 @@ check_network() {
     sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
 }
 
+
+add_dtoverlay() {
+    if grep -q "^dtoverlay=$1" $CONFIG; then
+        echo -e "\n$1 overlay already active"
+    elif grep -q "^#dtoverlay=$1" $CONFIG; then
+        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    else
+        echo "dtoverlay=$1" | sudo tee -a $CONFIG &> /dev/null
+        echo -e "\nAdding $1 overlay to $CONFIG"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+remove_dtoverlay() {
+    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    ASK_TO_REBOOT=true
+}
+
+enable_pi_audio() {
+    if grep -q "#dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+disable_pi_audio() {
+    if grep -q "^dtparam=audio=on" $CONFIG; then
+        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
+        ASK_TO_REBOOT=true
+    fi
+}
+
+test_audio() {
+    newline
+    if confirm "Do you wish to test your system now?"; then
+        echo -e "\nTesting..."
+        speaker-test -l5 -c2 -t wav
+    fi
+}
+
+disable_pulseaudio() {
+    sudo mv /etc/xdg/autostart/pulseaudio.desktop /etc/xdg/autostart/pulseaudio.disabled &> /dev/null
+    pulseaudio -k &> /dev/null
+}
+
+kill_volumealsa() {
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+}
+
 : <<'MAINSTART'
 
 Perform all variables declarations as well as function definition
@@ -258,20 +312,18 @@ MAINSTART
 
 # intro message
 
-newline
-echo "This script will install everything needed to use"
-echo "$productname"
-newline
-warning "--- Warning ---"
-newline
-echo "Always be careful when running scripts and commands"
-echo "copied from the internet. Ensure they are from a"
-echo "trusted source."
-newline
-echo "If you want to see what this script does before"
-echo "running it, you should run:"
-echo "    \curl -sS get.pimoroni.com/$scriptname"
-newline
+if [ $debugmode != "no" ]; then
+    inform "\nDEBUG MODE ENABLED"
+else
+    echo -e "\nThis script will install everything needed to use $productname"
+    if [ "$FORCE" != '-y' ]; then
+        inform "\nAlways be careful when running scripts and commands"
+        inform "copied from the internet. Ensure they are from a"
+        inform "trusted source.\n"
+        echo "If you want to see what this script does before"
+        echo -e "running it, you should run:\ncurl -sS $GETPOOL/$scriptname\n"
+    fi
+fi
 
 # checks and init
 
@@ -362,32 +414,20 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $DEVICE_TREE; then
-
-        echo -e "\nAdding Device Tree Entry to $CONFIG"
-
-        if [ -e $CONFIG ] && grep -q "^dtoverlay=hifiberry-dac$" $CONFIG; then
-            echo "dtoverlay already active"
-        else
-            echo "dtoverlay=hifiberry-dac" | sudo tee -a $CONFIG
-            ASK_TO_REBOOT=true
-        fi
-
+        add_dtoverlay hifiberry-dac
         if [ -e $BLACKLIST ]; then
-            echo -e "\nCommenting out Blacklist entry in "
-            echo "$BLACKLIST"
             sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
         fi
     else
-        echo -e "\nNo Device Tree Detected, not supported\n"
-        exit 1
+        echo -e "\nNo Device Tree Detected, not supported\n" && exit 1
     fi
 
     if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
         bcm2835off="no"
         echo -e "\nDisabling default sound driver"
-        sudo sed -i "s|^dtparam=audio=on$|#dtparam=audio=on|" $CONFIG &> /dev/null
+        disable_pi_audio && kill_volumealsa
         if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
         fi
@@ -402,15 +442,10 @@ if confirm "Do you wish to continue?"; then
         bcm2835off="yes"
     fi
 
-    echo "Configuring sound output"
-
     if [ $bcm2835off == "yes" ]; then
         echo -e "\nWe can now test your $productname"
-        warning "Set your speakers at a low volume!"
-        if confirm "Do you wish to test your system now?"; then
-            echo "Testing..."
-            speaker-test -l5 -c2 -t wav
-        fi
+        warning "Set your speakers at a low volume!\n"
+        test_audio
     fi
     success "\nAll done!\n"
     echo -e "Enjoy your new $productname!\n"
