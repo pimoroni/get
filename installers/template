@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231240
+# template 1702231255
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -590,7 +590,7 @@ if confirm "Do you wish to continue?"; then
 
 # basic environment preparation
 
-    newline && echo "Checking environment..."
+    echo -e "\nChecking environment..."
 
     if [ "$FORCE" != '-y' ]; then
         if ! check_network; then
@@ -845,8 +845,8 @@ if confirm "Do you wish to continue?"; then
 
 # apt repo install
 
-    echo -e "Checking install requirements..."
-    echo -e "Checking for dependencies...\n"
+    echo "Checking install requirements..."
+    echo "Checking for dependencies..."
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgremove[@]}; do
@@ -854,11 +854,13 @@ if confirm "Do you wish to continue?"; then
             sudo apt-get remove "$pkgrm"
         done
     fi
+
     for pkgdep in ${coredeplist[@]}; do
         if apt_pkg_req "$pkgdep"; then
             apt_pkg_install "$pkgdep"
         fi
     done
+
     for pkgdep in ${pythondep[@]}; do
         if [ -f "$(which python2)" ] && [ $pip2support == "yes" ]; then
             if apt_pkg_req "python-$pkgdep"; then
@@ -871,6 +873,7 @@ if confirm "Do you wish to continue?"; then
             fi
         fi
     done
+
     if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
             apt_deb_install "$debpackage"
@@ -963,7 +966,7 @@ if confirm "Do you wish to continue?"; then
 # additional install
 
     if ! $MIN_INSTALL; then
-        newline && echo "Checking for additional software..." && newline
+        echo "\nChecking for additional software..."
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
                 if ! apt_pkg_install "python-$moredep"; then
@@ -1010,7 +1013,7 @@ if confirm "Do you wish to continue?"; then
         if ! command -v git > /dev/null; then
             apt_pkg_install git
         fi
-        newline && echo "Downloading examples and documentation..."
+        echo -e "\nDownloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
         GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
@@ -1053,24 +1056,21 @@ if confirm "Do you wish to continue?"; then
 
     if [ $customcmd == "no" ]; then
         if [ -n "$pkgremove" ]; then
-            newline && echo "Finalising Install..." && newline
+            echo -e "\nFinalising Install...\n"
             sysclean && newline
         fi
-        newline && echo "All done!" && newline
-        echo "Enjoy your $productname!" && newline
+        echo -e "\nAll done!\nEnjoy your $productname!\n"
     else # custom block starts here
-        newline && echo "Finalising Install..."
+        echo -e "\nFinalising Install...\n"
         # place all custom commands in this scope
-        newline
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!" && newline
+        warning "Some packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product."
-        newline
+        warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
     if [ "$FORCE" != '-y' ]; then
@@ -1079,7 +1079,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 else
-    newline && echo "Aborting..." && newline
+    echo -e "\nAborting...\n"
 fi
 
 exit 0
