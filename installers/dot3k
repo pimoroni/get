@@ -69,7 +69,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1702231255
+# template 1702231330
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -454,6 +454,12 @@ kill_volumealsa() {
     sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
+basic_asound() {
+        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
+        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
+        sudo mv $HOME/.asoundrc /etc/asound.conf
+}
+
 servd_trig() {
     if command -v service > /dev/null; then
         sudo service $1 $2
@@ -500,9 +506,8 @@ if [ $debugmode != "no" ]; then
 else
     echo -e "\nThis script will install everything needed to use\n$productname"
     if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands"
-        inform "copied from the internet. Ensure they are from a"
-        inform "trusted source.\n"
+        inform "\nAlways be careful when running scripts and commands copied"
+        inform "from the internet. Ensure they are from a trusted source.\n"
         echo -e "If you want to see what this script does before running it,"
         echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
@@ -811,9 +816,6 @@ if confirm "Do you wish to continue?"; then
             sudo mv $HOME/.asoundrc $HOME/.asoundrc.backup
             inform "existing config backed up to ~/.asound.conf.backup"
         fi
-        sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
-        sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
-        sudo mv $HOME/.asoundrc /etc/asound.conf
     fi
 
 # minimum install routine
@@ -845,8 +847,7 @@ if confirm "Do you wish to continue?"; then
 
 # apt repo install
 
-    echo "Checking install requirements..."
-    echo "Checking for dependencies..."
+    echo -e "\nChecking for dependencies..."
 
     if $REMOVE_PKG; then
         for pkgrm in ${pkgremove[@]}; do
@@ -966,7 +967,7 @@ if confirm "Do you wish to continue?"; then
 # additional install
 
     if ! $MIN_INSTALL; then
-        echo "\nChecking for additional software..."
+        echo -e "\nChecking for additional software..."
         for moredep in ${examplesdep[@]}; do
             if [ -f "$(which python2)" ] && apt_pkg_req "python-$moredep"; then
                 if ! apt_pkg_install "python-$moredep"; then
