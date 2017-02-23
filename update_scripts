@@ -1,9 +1,9 @@
 #!/bin/bash
 
 startpoint=72
-cmdpoint=1056
-endpoint=1086
-lenient="yes"
+cmdpoint=1057
+endpoint=1087
+lenient="no"
 
 sourcedir="./installers"
 scriptlist=$(ls "$sourcedir")

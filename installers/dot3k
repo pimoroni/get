@@ -69,7 +69,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1702231330
+# template 1702231405
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -876,6 +876,7 @@ if confirm "Do you wish to continue?"; then
     done
 
     if [ $pipoverride != "yes" ] && [ $debpackage != "na" ]; then
+        newline
         if [ $pip2support != "yes" ] && [ $pip3support != "yes" ]; then
             apt_deb_install "$debpackage"
         fi
@@ -1060,7 +1061,7 @@ if confirm "Do you wish to continue?"; then
             echo -e "\nFinalising Install...\n"
             sysclean && newline
         fi
-        echo -e "\nAll done!\nEnjoy your $productname!\n"
+        echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         # place all custom commands in this scope
