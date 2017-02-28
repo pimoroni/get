@@ -32,7 +32,7 @@ promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
-i2creq="yes" # whether the i2c interface is required
+i2creq="no" # whether the i2c interface is required
 i2sreq="yes" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
@@ -46,7 +46,7 @@ oswarning=( "Debian" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os
 osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
 debpackage="phatbeat" # the name of the package in apt repo
 piplibname="phatbeat" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
+pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
@@ -1069,8 +1069,11 @@ if confirm "Do you wish to continue?"; then
         disable_pi_audio
         kill_volumealsa && disable_pulseaudio
         cd $USER_HOME/$topdir
-        git clone --depth=1 https://github.com/$gitusername/pivumeter
-        cd ./pivumeter
+        if [ -d $USER_HOME/$topdir/pivumeter ]; then
+            cd ./pivumeter && git pull
+        else
+            git clone --depth=1 https://github.com/$gitusername/pivumeter && cd ./pivumeter
+        fi
         sudo bash ./setup.sh -y phat-beat
     fi
 
