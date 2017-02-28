@@ -1069,7 +1069,11 @@ if confirm "Do you wish to continue?"; then
         disable_pi_audio
         kill_volumealsa && disable_pulseaudio
         cd $USER_HOME/$topdir
-        git clone --depth=1 https://github.com/$gitusername/pivumeter
+        if [ -d $USER_HOME/$topdir/pivumeter ]; then
+            git pull
+        else
+            git clone --depth=1 https://github.com/$gitusername/pivumeter
+        fi
         cd ./pivumeter
         sudo bash ./setup.sh -y speaker-phat
     fi
