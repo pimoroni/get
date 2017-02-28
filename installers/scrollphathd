@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Scroll pHAT" # the name of the product to install
-scriptname="scrollphat" # the name of this script
+productname="Scroll pHAT HD" # the name of the product to install
+scriptname="scrollphathd" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -44,14 +44,14 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Linaro" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
 oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" ) # list os-releases specifically disallowed
-debpackage="scrollphat" # the name of the package in apt repo
-piplibname="scrollphat" # the name of the lib in pip repo
-pipoverride="no" # whether the script should give priority to pip repo
+debpackage="scrollphathd" # the name of the package in apt repo
+piplibname="scrollphathd" # the name of the lib in pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="scrollphat" # the name of the dir for copy of resources
-gitreponame="scroll-phat" # the name of the git project repo
+localdir="scrollphathd" # the name of the dir for copy of resources
+gitreponame="scroll-phat-hd" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -65,7 +65,7 @@ pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
-examplesdep=( "feedparser" "pil" "psutil" "requests" ) # list of python modules required by examples
+examplesdep=( "pil" "psutil" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 

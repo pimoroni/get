@@ -44,23 +44,23 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
-debpackage="na" # the name of the package in apt repo
-piplibname="na" # the name of the lib in pip repo
+debpackage="sn3218" # the name of the package in apt repo
+piplibname="sn3218" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
-pip2support="na" # whether python2 is supported
-pip3support="na" # whether python3 is supported
+pip2support="yes" # whether python2 is supported
+pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="na" # the name of the dir for copy of resources
-gitreponame="pivumeter" # the name of the git project repo
+localdir="speakerphat" # the name of the dir for copy of resources
+gitreponame="speaker-phat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
-gitrepoclone="yes" # whether the git repo is to be cloned locally
+gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
-copydir=() # subdirectories to copy from repo
+copydir=( "python" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
 coredeplist=( "alsa-utils" "wiringpi" ) # list of core dependencies
 pythondep=() # list of python dependencies
@@ -1065,10 +1065,12 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        cd $installdir/$gitclonedir
         add_dtoverlay hifiberry-dac
         disable_pi_audio
         kill_volumealsa && disable_pulseaudio
+        cd $installdir
+        git clone --depth=1 https://github.com/$gitusername/pivumeter
+        cd ./pivumeter
         sudo bash ./setup.sh -y speaker-phat
     fi
 
