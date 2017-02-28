@@ -1066,14 +1066,11 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         cd $installdir/$gitclonedir
-        if confirm "Are you using a pHAT DAC?"; then
-            add_dtoverlay hifiberry-dac
-            disable_pi_audio
-            kill_volumealsa && disable_pulseaudio
+        sudo mv ./dependencies/home/user/.asoundrc $HOME/.asoundrc
+        if confirm "Are you using a Scroll pHAT HD?"; then
+            sudo bash ./setup.sh -y scroll-phat-hd
         else
-            sudo mv ./dependencies/home/user/.asoundrc $HOME/.asoundrc
-        fi
-        sudo bash ./setup.sh -y scroll-phat
+            sudo bash ./setup.sh -y scroll-phat        
     fi
 
     if $FAILED_PKG; then

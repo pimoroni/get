@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Speaker pHAT" # the name of the product to install
-scriptname="speakerphat" # the name of this script
+productname="pHAT Beat" # the name of the product to install
+scriptname="phatbeat" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -44,14 +44,14 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
-debpackage="sn3218" # the name of the package in apt repo
-piplibname="sn3218" # the name of the lib in pip repo
-pipoverride="no" # whether the script should give priority to pip repo
+debpackage="phatbeat" # the name of the package in apt repo
+piplibname="phatbeat" # the name of the lib in pip repo
+pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="speakerphat" # the name of the dir for copy of resources
-gitreponame="speaker-phat" # the name of the git project repo
+localdir="phatbeat" # the name of the dir for copy of resources
+gitreponame="phat-beat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -59,8 +59,8 @@ gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
-libdir="na" # subdirectory of library in repo
-copydir=( "python" ) # subdirectories to copy from repo
+libdir="library" # subdirectory of library in repo
+copydir=( "documentation" "examples" ) # subdirectories to copy from repo
 pkgremove=() # list of conflicting packages to remove
 coredeplist=( "alsa-utils" "wiringpi" ) # list of core dependencies
 pythondep=() # list of python dependencies
@@ -1071,7 +1071,7 @@ if confirm "Do you wish to continue?"; then
         cd $USER_HOME/$topdir
         git clone --depth=1 https://github.com/$gitusername/pivumeter
         cd ./pivumeter
-        sudo bash ./setup.sh -y speaker-phat
+        sudo bash ./setup.sh -y phat-beat
     fi
 
     if $FAILED_PKG; then
