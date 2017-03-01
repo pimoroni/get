@@ -51,11 +51,14 @@ declare -A deblibpairs=( \
 ["mote"]="mote" \
 ["motephat"]="motephat" \
 ["pantilthat"]="pantilthat" \
+["phatbeat"]="phatbeat" \
 ["pianohat"]="pianohat" \
 ["pibrella"]="pibrella" \
 ["piglow"]="piglow" \
 ["propellerhat"]="p1" \
+["rainbowhat"]="rainbowhat" \
 ["scrollphat"]="scrollphat" \
+["scrollphathd"]="scrollphathd" \
 ["skywriterhat"]="skywriter" \
 ["unicornhat"]="unicornhat" )
 
@@ -283,7 +286,7 @@ launch_url() {
 get_install() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
     if [ "$1" != diagnostic ];then
-        sysupdate && UPDATE_DB=true
+        sysupdate
     fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
@@ -373,14 +376,13 @@ pip3_lib_req() {
 }
 
 lib_chk() {
-    newline && pip_cmd_chk
-    sysupdate && UPDATE_DB=true
-    echo "Checking for installed libraries..."
+    sysupdate && pip_cmd_chk
+    echo -e "\nChecking for installed libraries..."
     for debpkg in "${!deblibpairs[@]}"; do
         progress 3
         if command -v $PIP2_BIN > /dev/null && ! pip2_lib_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python-$debpkg"; then
-                PIP2_MSG=$(sudo $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
+                PIP2_MSG=$(sudo -H $PIP2_BIN install -U "${deblibpairs[$debpkg]}" \
                 | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
                 if [[ "$PIP2_MSG" == *"up-to-date"* ]]; then
                     echo "${deblibpairs[$debpkg]} for Python 2 is already the newest version"
@@ -393,7 +395,7 @@ lib_chk() {
         fi
         if command -v $PIP3_BIN > /dev/null && ! pip3_lib_req "${deblibpairs[$debpkg]}"; then
             if ! apt_deb_chk "python3-$debpkg"; then
-                PIP3_MSG=$(sudo $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
+                PIP3_MSG=$(sudo -H $PIP3_BIN install -U "${deblibpairs[$debpkg]}" \
                 | grep -i -e "installed ${deblibpairs[$debpkg]}" -i -e "up-to-date: ${deblibpairs[$debpkg]}")
                 if [[ "$PIP3_MSG" == *"up-to-date"* ]]; then
                     echo "${deblibpairs[$debpkg]} for Python 3 is already the newest version"
@@ -405,7 +407,7 @@ lib_chk() {
             fi
         fi
     done
-    newline && inform "all libraries are now up-to-date!" && newline
+    inform "\nall libraries are now up-to-date!\n"
 }
 
 : <<'MAINSTART'
