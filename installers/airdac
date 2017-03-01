@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231440
+# template 1702281920
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -303,7 +303,7 @@ launch_url() {
 get_install() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
     if [ "$1" != diagnostic ];then
-        sysupdate && UPDATE_DB=true
+        sysupdate
     fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
@@ -1073,16 +1073,20 @@ if confirm "Do you wish to continue?"; then
         sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
-        echo "1 : pHAT DAC"
-        echo "2 : Speaker pHAT"
+        echo "1 : pHAT BEAT"
+        echo "2 : pHAT DAC"
+        echo "3 : Speaker pHAT"
         newline
-        read -r -p "Enter an option [0-2]:" choice < /dev/tty
+        read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if [[ $choice =~ ^(0)$ ]]; then
             inform "\nThe Raspberry Pi audio setup has been preserved!\n"
         elif [[ $choice =~ ^(1)$ ]]; then
+            inform "\nSetting up pHAT BEAT..."
+            get_install phatbeat
+        elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up pHAT DAC..."
             get_install phatdac
-        elif [[ $choice =~ ^(2)$ ]]; then
+        elif [[ $choice =~ ^(3)$ ]]; then
             inform "\nSetting up Speaker pHAT..."
             sudo adduser shairport-sync i2c
             get_install speakerphat
