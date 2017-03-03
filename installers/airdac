@@ -1082,6 +1082,7 @@ if confirm "Do you wish to continue?"; then
             inform "\nThe Raspberry Pi audio setup has been preserved!\n"
         elif [[ $choice =~ ^(1)$ ]]; then
             inform "\nSetting up pHAT BEAT..."
+            sudo adduser shairport-sync gpio
             get_install phatbeat
         elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up pHAT DAC..."
