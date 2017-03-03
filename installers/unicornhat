@@ -1068,7 +1068,7 @@ if confirm "Do you wish to continue?"; then
         if $IS_SUPPORTED; then
             warning "We need to reconfigure your audio configuration!"
             echo "This is a necessary step to ensure $productname works correctly"
-            \curl -sS $GETPOOL/audio | sudo bash -s - "3"
+            \curl -sS $GETPOOL/audio | bash -s - "3"
             ASK_TO_REBOOT=true
             newline
         fi
