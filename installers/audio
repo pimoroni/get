@@ -495,7 +495,7 @@ if confirm "Do you wish to continue?"; then
     if [ $bcm2835off == "no" ]; then
         newline
         route_audio
-        if [ "$FORCE" != '-y' ]; then
+        if [ "$FORCE" != '-y' ] && [ "$FORCE" != '3' ]; then
             test_audio
         fi
         newline
