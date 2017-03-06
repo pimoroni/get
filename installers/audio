@@ -507,7 +507,7 @@ if confirm "Do you wish to continue?"; then
             remove_dtoverlay i2s-mmap
             remove_dtoverlay hifiberry-dac
             sudo rm /etc/asound.conf &> /dev/null
-            sudo ~/.asound.rc &> /dev/null
+            sudo rm ~/.asound.rc &> /dev/null
             newline
         else
             exit 1
