@@ -1094,7 +1094,6 @@ if confirm "Do you wish to continue?"; then
         else
             warning "Invalid option!" && exit 1
         fi
-        sudo sed -i "s|rate.*$|rate 44100|" /etc/asound.conf
     fi
 
     if $FAILED_PKG; then
