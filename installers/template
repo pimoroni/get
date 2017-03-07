@@ -69,7 +69,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702281920
+# template 1703070140
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -303,7 +303,7 @@ launch_url() {
 get_install() {
     check_network || (error_box "You don't appear to be connected to the internet, please check your connection and try again!" && exit 1)
     if [ "$1" != diagnostic ];then
-        sysupdate
+        sysupdate && UPDATE_DB=true
     fi
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
@@ -830,6 +830,8 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    else
+        MIN_INSTALL=true        
     fi
 
     if [ $localdir != "na" ]; then
