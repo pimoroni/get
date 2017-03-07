@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="pHAT Beat" # the name of the product to install
-scriptname="phatbeat" # the name of this script
+productname="VLC Radio" # the name of the product to install
+scriptname="vlcradio" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -1075,6 +1075,8 @@ if confirm "Do you wish to continue?"; then
             git clone --depth=1 https://github.com/$gitusername/pivumeter && cd ./pivumeter
         fi
         sudo bash ./setup.sh -y phat-beat
+        cd $installdir/projects/vlc-radio/ && ./setup.sh
+        $ASK_TO_REBOOT=true
     fi
 
     if $FAILED_PKG; then
