@@ -31,7 +31,7 @@ forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="yes" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
-gpioreq="yes" # whether low-level gpio access is required
+gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
@@ -44,11 +44,11 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
-debpackage="phatbeat" # the name of the package in apt repo
-piplibname="phatbeat" # the name of the lib in pip repo
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+pip2support="no" # whether python2 is supported
+pip3support="no" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="phatbeat" # the name of the dir for copy of resources
 gitreponame="phat-beat" # the name of the git project repo
@@ -1066,7 +1066,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         get_install phatbeat
-        cd $USER_HOME/$topdir/phatbeat/vlc-radio/ && ./setup.sh
+        cd $USER_HOME/$topdir/phatbeat/projects/vlc-radio/ && ./setup.sh
     fi
 
     if $FAILED_PKG; then
