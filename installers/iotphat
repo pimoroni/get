@@ -61,6 +61,7 @@ repoclean="no" # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
 copydir=( "firmware" ) # subdirectories to copy from repo
+copyhead="no" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
 pythondep=( "serial" ) # list of python dependencies
