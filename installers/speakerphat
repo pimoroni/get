@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231440
+# template 1703071110
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -831,6 +831,8 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    else
+        MIN_INSTALL=true        
     fi
 
     if [ $localdir != "na" ]; then
@@ -1020,7 +1022,9 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nDownloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        if [ $copyhead != "yes" ]; then
+            GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        fi
         if [ -n "$GITTAG" ]; then
             git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
         else

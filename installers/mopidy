@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Pirate Radio" # the name of the product to install
-scriptname="pirateradio" # the name of this script
+productname="Spotify Server" # the name of the product to install
+scriptname="mopidy" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -1116,6 +1116,7 @@ if confirm "Do you wish to continue?"; then
             get_install speakerphat
         else
             warning "Invalid option!" && exit 1
+        fi
     fi
 
     if $FAILED_PKG; then
