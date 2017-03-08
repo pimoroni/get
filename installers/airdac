@@ -1085,7 +1085,7 @@ if confirm "Do you wish to continue?"; then
         newline
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if [[ $choice =~ ^(0)$ ]]; then
-            inform "\nThe Raspberry Pi audio setup has been preserved!\n"
+            inform "\nThe existing audio setup has been preserved!\n"
         elif [[ $choice =~ ^(1)$ ]]; then
             inform "\nSetting up pHAT BEAT..."
             sudo adduser shairport-sync gpio

@@ -48,7 +48,7 @@ debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+pip3support="no" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="phatbeat" # the name of the dir for copy of resources
 gitreponame="phat-beat" # the name of the git project repo
@@ -1072,27 +1072,23 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nFinalising Install...\n"
         wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
-        inform "Installing spotipy...\n"
+        inform "Setting up spotipy...\n"
         UPDATE_DB=false && sysupdate
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
         apt_pkg_install mopidy-spotify
         sudo rm /etc/apt/sources.list.d/mopidy.list
-        if [ -f "$(which python2)" ]; then
-            sudo -H $PIP2_BIN install "mopidy-iris"
-            sudo -H $PIP2_BIN install "mopidy-ttsgpio"
-        fi
-        if [ -f "$(which python3)" ]; then
-            sudo -H $PIP3_BIN install "mopidy-iris"
-            sudo -H $PIP3_BIN install "mopidy-ttsgpio"
-        fi
+        sudo -H $PIP2_BIN install "mopidy-iris"
+        sudo -H $PIP2_BIN install "mopidy-ttsgpio"
         inform "\nConfiguring mopidy...\n"
         mopidy config > /dev/null
-        read -r -p "Enter your Spotify account user name" spotifyname < /dev/tty
+        read -r -p "Enter your Spotify account user name: " spotifyname < /dev/tty
         echo "this is the username $spotifyname"
-        read -r -p "Enter your Spotify account password" spotifypswd < /dev/tty
+        echo $spotifyname > ~/spotify.txt
+        read -r -p "Enter your Spotify account password: " spotifypswd < /dev/tty
         echo "this is the password $spotifypswd"
+        echo $spotifypswd >> ~/spotify.txt
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
         echo "1 : pHAT BEAT"
@@ -1101,7 +1097,7 @@ if confirm "Do you wish to continue?"; then
         echo
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if [[ $choice =~ ^(0)$ ]]; then
-            inform "\nThe Raspberry Pi audio setup has been preserved!\n"
+            inform "\nThe existing audio setup has been preserved!\n"
         elif [[ $choice =~ ^(1)$ ]]; then
             inform "\nSetting up pHAT BEAT...\n"
             get_install phatbeat
