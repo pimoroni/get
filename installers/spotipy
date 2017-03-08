@@ -1086,60 +1086,61 @@ if confirm "Do you wish to continue?"; then
             rm $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
             mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
         fi; mopidy config > /dev/null
-        patch $HOME/.config/mopidy/mopidy.conf <<EOT
-@@ -67,10 +67,10 @@
- [ttsgpio]
--#enabled = true
-+enabled = true
- #debug_gpio_simulate = false
--#pin_button_main = 17
--#pin_button_next = 22
--#pin_button_previous = 23
--#pin_button_vol_up = 24
--#pin_button_vol_down = 25
--#pin_play_led = 18
-+pin_button_main = 6
-+pin_button_next = 5
-+pin_button_previous = 13
-+pin_button_vol_up = 16
-+pin_button_vol_down = 26
-+pin_play_led = 12
- #tts_default_volume = 2
-@@ -108,5 +108,5 @@
- [http]
--#enabled = true
--#hostname = 127.0.0.1
--#port = 6680
-+enabled = true
-+hostname = 127.0.0.1
-+port = 6680
- #static_dir =
-@@ -166,5 +166,5 @@
- [alsamixer]
--#enabled = true
--#card = 0
--#control = Master
-+enabled = true
-+card = 0
-+control = PCM
-
-@@ -171,5 +171,5 @@
- [spotify]
--#enabled = true
--#username = 
--#password = 
-+enabled = true
-+username = namevar
-+password = passvar
- #bitrate = 160
+        patch $HOME/.config/mopidy/mopidy.conf \
+<<EOT
+        @@ -67,10 +67,10 @@
+         [ttsgpio]
+        -#enabled = true
+        +enabled = true
+         #debug_gpio_simulate = false
+        -#pin_button_main = 17
+        -#pin_button_next = 22
+        -#pin_button_previous = 23
+        -#pin_button_vol_up = 24
+        -#pin_button_vol_down = 25
+        -#pin_play_led = 18
+        +pin_button_main = 6
+        +pin_button_next = 5
+        +pin_button_previous = 13
+        +pin_button_vol_up = 16
+        +pin_button_vol_down = 26
+        +pin_play_led = 12
+         #tts_default_volume = 2
+        @@ -108,5 +108,5 @@
+         [http]
+        -#enabled = true
+        -#hostname = 127.0.0.1
+        -#port = 6680
+        +enabled = true
+        +hostname = 127.0.0.1
+        +port = 6680
+         #static_dir =
+        @@ -166,5 +166,5 @@
+         [alsamixer]
+        -#enabled = true
+        -#card = 0
+        -#control = Master
+        +enabled = true
+        +card = 0
+        +control = PCM
+        
+        @@ -171,5 +171,5 @@
+         [spotify]
+        -#enabled = true
+        -#username = 
+        -#password = 
+        +enabled = true
+        +username = namevar
+        +password = passvar
+         #bitrate = 160
 EOT
         newline
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
         echo "this is the username $namevar"
-        sed -i "s|username = namevar$|username = $namevar|" /
+        sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
         echo "this is the password $passvar"
-        sed -i "s|password = passvar$|password = $passvar|" /
+        sed -i "s|password = passvar$|password = $passvar|" $HOME/.config/mopidy/mopidy.conf
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
         echo "1 : pHAT BEAT"
