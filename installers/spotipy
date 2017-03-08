@@ -1133,12 +1133,13 @@ if confirm "Do you wish to continue?"; then
 +password = passvar
  #bitrate = 160
 EOT
-        read -r -p "Enter your Spotify account user name: " spotifyname < /dev/tty
-        echo "this is the username $spotifyname"
-        echo $spotifyname > ~/spotify.txt
-        read -r -p "Enter your Spotify account password: " spotifypswd < /dev/tty
-        echo "this is the password $spotifypswd"
-        echo $spotifypswd >> ~/spotify.txt
+        newline
+        read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
+        echo "this is the username $namevar"
+        sed -i "s|username = namevar$|username = $namevar|" /
+        read -r -p "Enter your Spotify account password: " passvar < /dev/tty
+        echo "this is the password $passvar"
+        sed -i "s|password = passvar$|password = $passvar|" /
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
         echo "1 : pHAT BEAT"
