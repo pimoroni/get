@@ -1076,7 +1076,7 @@ if confirm "Do you wish to continue?"; then
         sudo apt-get update # refresh must be explicitly called
 
         inform "Installing Modipy...\n"
-        apt_pkg_install modipy
+        apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
         apt_pkg_install mopidy-spotify
