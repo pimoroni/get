@@ -1069,7 +1069,8 @@ if confirm "Do you wish to continue?"; then
         fi
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
-        echo -e "\nFinalising Install...\n"
+        echo -e "\nFinalising Install..."
+        echo -e "Installing shairport-sync...\n"
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
         wget -q $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2k-1_armhf.deb
