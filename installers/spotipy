@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Spotify Server" # the name of the product to install
-scriptname="mopidy" # the name of this script
+productname="Spotify Python Server" # the name of the product to install
+scriptname="spotipy" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -1074,7 +1074,7 @@ if confirm "Do you wish to continue?"; then
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         inform "Refreshing apt-sources...\n"
         $UPDATE_DB=false && sysupdate
-        echo -e "Installing Mopidy...\n"
+        echo -e "Installing Spotipy...\n"
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
