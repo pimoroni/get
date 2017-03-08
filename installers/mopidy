@@ -64,7 +64,7 @@ copydir=( "projects" ) # subdirectories to copy from repo
 copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
-pythondep=( "dev" ) # list of python dependencies
+pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
@@ -1089,6 +1089,7 @@ if confirm "Do you wish to continue?"; then
             sudo -H $PIP3_BIN install "mopidy-iris"
         fi
 
+        newline
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
         echo "1 : pHAT BEAT"
