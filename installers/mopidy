@@ -1073,22 +1073,19 @@ if confirm "Do you wish to continue?"; then
         wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         inform "Refreshing apt-sources...\n"
-        sudo apt-get update # refresh must be explicitly called
-
+        $UPDATE_DB=false && sysupdate
         echo -e "Installing Mopidy...\n"
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
         apt_pkg_install mopidy-spotify
         sudo rm /etc/apt/sources.list.d/mopidy.list
-
         if [ -f "$(which python2)" ]; then
             sudo -H $PIP2_BIN install "mopidy-iris"
         fi
         if [ -f "$(which python3)" ]; then
             sudo -H $PIP3_BIN install "mopidy-iris"
         fi
-
         newline
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
