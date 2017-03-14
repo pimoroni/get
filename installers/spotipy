@@ -1086,61 +1086,99 @@ if confirm "Do you wish to continue?"; then
         inform "\nConfiguring mopidy...\n"
         if [ -f $HOME/.config/mopidy/mopidy.conf ]; then
             rm $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
-            mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
-        fi; mopidy config > /dev/null
-        patch $HOME/.config/mopidy/mopidy.conf \
+            mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
+        fi; mopidy config > /dev/null # generate fresh config file
+        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
+        sudo mv $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
+        patch /etc/mopidy/mopidy.conf \
 <<EOT
-@@ -67,10 +67,10 @@
- [ttsgpio]
+@@ -25,3 +25,3 @@
+-#cache_dir = \$XDG_CACHE_DIR/mopidy
+-#config_dir = \$XDG_CONFIG_DIR/mopidy
+-#data_dir = \$XDG_DATA_DIR/mopidy
++cache_dir = /var/cache/mopidy
++config_dir = /etc/mopidy
++data_dir = /var/lib/mopidy
+@@ -35,2 +35,2 @@
+-#debug_file = mopidy.log
+-#config_file =
++debug_file = /var/log/mopidy/mopidy-debug.log
++config_file = /etc/mopidy/logging.conf
+@@ -39,3 +39,3 @@
+-#mixer = software
+-#mixer_volume = 
+-#output = autoaudiosink
++mixer = software
++mixer_volume = 35
++output = autoaudiosink
+@@ -52,4 +52,4 @@
+-#enabled = true
+-#pusherport = 6681
+-#country = NZ
+-#locale = en_NZ
++enabled = true
++pusherport = 6681
++country = GB
++locale = en_GB
+@@ -68,1 +68,1 @@
 -#enabled = true
 +enabled = true
- #debug_gpio_simulate = false
+@@ -70,7 +70,7 @@
 -#pin_button_main = 17
 -#pin_button_next = 22
 -#pin_button_previous = 23
 -#pin_button_vol_up = 24
 -#pin_button_vol_down = 25
 -#pin_play_led = 18
+-#tts_default_volume = 2
 +pin_button_main = 6
 +pin_button_next = 5
 +pin_button_previous = 13
 +pin_button_vol_up = 16
 +pin_button_vol_down = 26
 +pin_play_led = 12
- #tts_default_volume = 2
-@@ -108,5 +108,5 @@
- [http]
++tts_default_volume = 0
+@@ -109,3 +109,3 @@
 -#enabled = true
 -#hostname = 127.0.0.1
 -#port = 6680
 +enabled = true
-+hostname = 127.0.0.1
++hostname = ::
 +port = 6680
- #static_dir =
-@@ -166,5 +166,5 @@
- [alsamixer]
+@@ -132,1 +132,1 @@
+-#playlists_dir =
++#playlists_dir = /var/lib/mopidy/playlists
+@@ -135,1 +135,1 @@
+-#enabled = true
++enabled = true
+@@ -150,3 +150,3 @@
+-#enabled = true
+-#library = json
+-#media_dir =
++enabled = true
++library = json
++media_dir = /var/lib/mopidy/media
+@@ -167,3 +167,3 @@
 -#enabled = true
 -#card = 0
 -#control = Master
 +enabled = true
 +card = 0
 +control = PCM
-
-@@ -171,5 +171,5 @@
- [spotify]
+@@ -172,3 +172,3 @@
 -#enabled = true
 -#username = 
 -#password = 
 +enabled = true
 +username = namevar
 +password = passvar
- #bitrate = 160
 EOT
+        sudo systemctl enable mopidy
         echo
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
+        sed -i "s|username = namevar$|username = $namevar|"/etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sed -i "s|password = passvar$|password = $passvar|" $HOME/.config/mopidy/mopidy.conf
+        sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
         echo
         echo "What product would you like to configure?"
         echo
@@ -1154,12 +1192,14 @@ EOT
             inform "\nThe existing audio setup has been preserved!\n"
         elif [[ $choice =~ ^(1)$ ]]; then
             inform "\nSetting up pHAT BEAT...\n"
+            sudo adduser mopidy gpio
             get_install phatbeat
         elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up pHAT DAC..."
             get_install phatdac
         elif [[ $choice =~ ^(3)$ ]]; then
             inform "\nSetting up Speaker pHAT..."
+            sudo adduser mopidy i2c
             get_install speakerphat
         else
             warning "Invalid option!" && exit 1
