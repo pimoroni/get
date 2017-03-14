@@ -1111,7 +1111,10 @@ if confirm "Do you wish to continue?"; then
 +mixer = software
 +mixer_volume = 35
 +output = autoaudiosink
-@@ -64,7 +64,7 @@
+@@ -61,9 +61,9 @@
+-[ttsgpio]
+-#enabled = true
+-#debug_gpio_simulate = false
 -#pin_button_main = 17
 -#pin_button_next = 22
 -#pin_button_previous = 23
@@ -1119,6 +1122,9 @@ if confirm "Do you wish to continue?"; then
 -#pin_button_vol_down = 25
 -#pin_play_led = 18
 -#tts_default_volume = 2
++[ttsgpio]
+-enabled = true
++#debug_gpio_simulate = false
 +pin_button_main = 6
 +pin_button_next = 5
 +pin_button_previous = 13
@@ -1126,9 +1132,6 @@ if confirm "Do you wish to continue?"; then
 +pin_button_vol_down = 26
 +pin_play_led = 12
 +tts_default_volume = 0
-@@ -68,1 +68,1 @@
--#enabled = true
-+enabled = true
 @@ -73,4 +73,4 @@
 -#enabled = true
 -#pusherport = 6681
