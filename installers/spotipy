@@ -832,7 +832,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -1089,8 +1089,8 @@ if confirm "Do you wish to continue?"; then
             mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
         fi; mopidy config > /dev/null # generate fresh config file
         mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
-        sudo mv $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
-        patch /etc/mopidy/mopidy.conf \
+        sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
+        sudo patch /etc/mopidy/mopidy.conf \
 <<EOT
 @@ -25,3 +25,3 @@
 -#cache_dir = \$XDG_CACHE_DIR/mopidy
@@ -1176,9 +1176,9 @@ EOT
         sudo systemctl enable mopidy
         echo
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sed -i "s|username = namevar$|username = $namevar|"/etc/mopidy/mopidy.conf
+        sudo sed -i "s|username = namevar$|username = $namevar|"/etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
+        sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
         echo
         echo "What product would you like to configure?"
         echo
