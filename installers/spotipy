@@ -1111,19 +1111,7 @@ if confirm "Do you wish to continue?"; then
 +mixer = software
 +mixer_volume = 35
 +output = autoaudiosink
-@@ -52,4 +52,4 @@
--#enabled = true
--#pusherport = 6681
--#country = NZ
--#locale = en_NZ
-+enabled = true
-+pusherport = 6681
-+country = GB
-+locale = en_GB
-@@ -68,1 +68,1 @@
--#enabled = true
-+enabled = true
-@@ -70,7 +70,7 @@
+@@ -64,7 +64,7 @@
 -#pin_button_main = 17
 -#pin_button_next = 22
 -#pin_button_previous = 23
@@ -1138,6 +1126,18 @@ if confirm "Do you wish to continue?"; then
 +pin_button_vol_down = 26
 +pin_play_led = 12
 +tts_default_volume = 0
+@@ -68,1 +68,1 @@
+-#enabled = true
++enabled = true
+@@ -73,4 +73,4 @@
+-#enabled = true
+-#pusherport = 6681
+-#country = NZ
+-#locale = en_NZ
++enabled = true
++pusherport = 6681
++country = GB
++locale = en_GB
 @@ -109,3 +109,3 @@
 -#enabled = true
 -#hostname = 127.0.0.1
@@ -1148,8 +1148,10 @@ if confirm "Do you wish to continue?"; then
 @@ -132,1 +132,1 @@
 -#playlists_dir =
 +#playlists_dir = /var/lib/mopidy/playlists
-@@ -135,1 +135,1 @@
+@@ -134,2 +134,2 @@
+-[softwaremixer]
 -#enabled = true
++[softwaremixer]
 +enabled = true
 @@ -150,3 +150,3 @@
 -#enabled = true
@@ -1176,7 +1178,7 @@ EOT
         sudo systemctl enable mopidy
         echo
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sudo sed -i "s|username = namevar$|username = $namevar|"/etc/mopidy/mopidy.conf
+        sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
         sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
         echo
