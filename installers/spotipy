@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703071110
+# template 1703161635
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -451,8 +451,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
@@ -832,7 +832,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true
+        MIN_INSTALL=true        
     fi
 
     if [ $localdir != "na" ]; then

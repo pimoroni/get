@@ -320,8 +320,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
