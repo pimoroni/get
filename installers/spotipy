@@ -21,18 +21,18 @@ DISCLAIMER
 
 # script control variables
 
-productname="Automation HAT" # the name of the product to install
-scriptname="automationhat" # the name of this script
+productname="Spotify Python Server" # the name of the product to install
+scriptname="spotipy" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
-mininstall="no" # whether the script enforces minimum install routine
-customcmd="no" # whether to execute commands specified before exit
-gpioreq="yes" # whether low-level gpio access is required
-i2creq="yes" # whether the i2c interface is required
+promptreboot="yes" # whether the script should always prompt user to reboot
+mininstall="yes" # whether the script enforces minimum install routine
+customcmd="yes" # whether to execute commands specified before exit
+gpioreq="no" # whether low-level gpio access is required
+i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
@@ -41,30 +41,30 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
-debpackage="automationhat" # the name of the package in apt repo
-piplibname="automationhat" # the name of the lib in pip repo
+osreleases=( "Raspbian" ) # list os-releases supported
+oswarning=( "Debian" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
+osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+pip3support="no" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="automationhat" # the name of the dir for copy of resources
-gitreponame="automation-hat" # the name of the git project repo
+localdir="phatbeat" # the name of the dir for copy of resources
+gitreponame="phat-beat" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
 gitrepoclone="no" # whether the git repo is to be cloned locally
 gitclonedir="source" # the name of the local dir for repo
-repoclean="no" # whether any git repo clone found should be cleaned up
+repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
-copydir=( "documentation" "examples" ) # subdirectories to copy from repo
-copyhead="no" # whether to use the latest repo commit or release tag
+copydir=( "projects" ) # subdirectories to copy from repo
+copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
-pythondep=( "sn3218" ) # list of python dependencies
+pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
@@ -832,7 +832,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -1070,24 +1070,160 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        # place all custom commands in this scope
+        inform "Setting up spotipy...\n"
+        wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
+        sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
+        echo "Refreshing sources..."
+        progress 3 && UPDATE_DB=false
+        sysupdate
+        apt_pkg_install mopidy
+        apt_pkg_install mopidy-alsamixer
+        apt_pkg_install mopidy-local-sqlite
+        apt_pkg_install mopidy-spotify
+        sudo rm /etc/apt/sources.list.d/mopidy.list
+        sudo -H $PIP2_BIN install "mopidy-iris"
+        sudo -H $PIP2_BIN install "mopidy-ttsgpio"
+        inform "\nConfiguring mopidy...\n"
+        if [ -f $HOME/.config/mopidy/mopidy.conf ]; then
+            rm $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
+            mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
+        fi; mopidy config > /dev/null # generate fresh config file
+        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
+        sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
+        sudo patch /etc/mopidy/mopidy.conf \
+<<EOT
+@@ -25,3 +25,3 @@
+-#cache_dir = \$XDG_CACHE_DIR/mopidy
+-#config_dir = \$XDG_CONFIG_DIR/mopidy
+-#data_dir = \$XDG_DATA_DIR/mopidy
++cache_dir = /var/cache/mopidy
++config_dir = /etc/mopidy
++data_dir = /var/lib/mopidy
+@@ -35,2 +35,2 @@
+-#debug_file = mopidy.log
+-#config_file =
++debug_file = /var/log/mopidy/mopidy-debug.log
++config_file = /etc/mopidy/logging.conf
+@@ -39,3 +39,3 @@
+-#mixer = software
+-#mixer_volume = 
+-#output = autoaudiosink
++mixer = software
++mixer_volume = 35
++output = autoaudiosink
+@@ -61,8 +61,8 @@
+-[ttsgpio]
+-#enabled = true
+-#debug_gpio_simulate = false
+-#pin_button_main = 17
+-#pin_button_next = 22
+-#pin_button_previous = 23
+-#pin_button_vol_up = 24
+-#pin_button_vol_down = 25
++[ttsgpio]
++enabled = true
++#debug_gpio_simulate = false
++pin_button_main = 6
++pin_button_next = 5
++pin_button_previous = 13
++pin_button_vol_up = 16
++pin_button_vol_down = 26
+@@ -73,4 +73,4 @@
+-#enabled = true
+-#pusherport = 6681
+-#country = NZ
+-#locale = en_NZ
++enabled = true
++pusherport = 6681
++country = GB
++locale = en_GB
+@@ -109,3 +109,3 @@
+-#enabled = true
+-#hostname = 127.0.0.1
+-#port = 6680
++enabled = true
++hostname = ::
++port = 6680
+@@ -132,1 +132,1 @@
+-#playlists_dir =
++#playlists_dir = /var/lib/mopidy/playlists
+@@ -134,2 +134,2 @@
+-[softwaremixer]
+-#enabled = true
++[softwaremixer]
++enabled = true
+@@ -150,3 +150,3 @@
+-#enabled = true
+-#library = json
+-#media_dir =
++enabled = true
++library = json
++media_dir = /var/lib/mopidy/media
+@@ -167,3 +167,3 @@
+-#enabled = true
+-#card = 0
+-#control = Master
++enabled = true
++card = 0
++control = PCM
+@@ -172,3 +172,3 @@
+-#enabled = true
+-#username = 
+-#password = 
++enabled = true
++username = namevar
++password = passvar
+EOT
+        sudo systemctl enable mopidy
+        echo
+        read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
+        sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
+        read -r -p "Enter your Spotify account password: " passvar < /dev/tty
+        sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
+        echo
+        echo "What product would you like to configure?"
+        echo
+        echo "0 : (leave audio unconfigured)"
+        echo "1 : pHAT BEAT"
+        echo "2 : pHAT DAC"
+        echo "3 : Speaker pHAT"
+        echo
+        read -r -p "Enter an option [0-3]:" choice < /dev/tty
+        if [[ $choice =~ ^(0)$ ]]; then
+            inform "\nThe existing audio setup has been preserved!\n"
+        elif [[ $choice =~ ^(1)$ ]]; then
+            inform "\nSetting up pHAT BEAT...\n"
+            sudo adduser mopidy gpio
+            get_install phatbeat
+        elif [[ $choice =~ ^(2)$ ]]; then
+            inform "\nSetting up pHAT DAC..."
+            get_install phatdac
+        elif [[ $choice =~ ^(3)$ ]]; then
+            inform "\nSetting up Speaker pHAT..."
+            sudo adduser mopidy i2c
+            get_install speakerphat
+        else
+            warning "Invalid option!" && exit 1
+        fi
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!\n"
+        warning "Some packages could not be installed, review the output for details!"
+        newline
     fi
     if $IS_EXPERIMENTAL; then
         warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product.\n"
+        warning "forums.pimoroni.com if you experience issues with this product."
+        newline
     fi
 
-    if [ "$FORCE" != '-y' ]; then
+    if [ "$1" != '-y' ]; then
         if [ $promptreboot == "yes" ] || $ASK_TO_REBOOT; then
             sysreboot && newline
         fi
     fi
 else
-    echo -e "\nAborting...\n"
+    newline && echo "Aborting..." && newline
 fi
 
 exit 0
