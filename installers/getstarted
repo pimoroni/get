@@ -28,7 +28,7 @@ debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
-promptreboot="no" # whether the script should always prompt user to reboot
+promptreboot="yes" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
@@ -46,12 +46,12 @@ oswarning=() # list experimental os-releases
 osdeny=( "Darwin" "Debian" "Kali" "Linaro" "Ubuntu" "Volumio" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
+pipoverride="no" # whether the script should give priority to pip repo
 pip2support="na" # whether python2 is supported
 pip3support="na" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="getstarted" # the name of the dir for copy of resources
-gitreponame="get" # the name of the git project repo
+localdir="na" # the name of the dir for copy of resources
+gitreponame="na" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "alsa-utils" ) # list of additional dependencies
 xdisplaydep=( "scrot" ) # list of dependencies requiring X server
 
-# template 1702231440
+# template 1703071110
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -831,6 +831,8 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    else
+        MIN_INSTALL=true        
     fi
 
     if [ $localdir != "na" ]; then
@@ -1020,7 +1022,9 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nDownloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        if [ $copyhead != "yes" ]; then
+            GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        fi
         if [ -n "$GITTAG" ]; then
             git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
         else
@@ -1069,9 +1073,9 @@ if confirm "Do you wish to continue?"; then
         usb_max_power
         echo "Installing Pimoroni Dashboard..."
         get_install dashboard
+        get_install blinkt
         newline && echo "Bringing your system up-to-date..."
         get_install uptodate
-        pimoroni-dashboard
     fi
 
     if $FAILED_PKG; then
