@@ -1075,7 +1075,7 @@ if confirm "Do you wish to continue?"; then
                         -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
                         -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
         fi
-    
+
         if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
             bcm2835off="no"
             echo -e "Disabling default sound driver"
@@ -1093,7 +1093,7 @@ if confirm "Do you wish to continue?"; then
             echo -e "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
-    
+
         if [ $bcm2835off == "yes" ]; then
             echo -e "\nWe can now test your $productname"
             warning "Set your speakers at a low volume!"

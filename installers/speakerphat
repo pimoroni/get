@@ -60,8 +60,8 @@ gitclonedir="source" # the name of the local dir for repo
 repoclean="no"  # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="na" # subdirectory of library in repo
-copydir=( "python" ) # subdirectories to copy from repo
-copyhead="no" # whether to use the latest repo commit or release tag
+copydir=( "python" "test" ) # subdirectories to copy from repo
+copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
 coredeplist=( "alsa-utils" "espeak" "wiringpi" ) # list of core dependencies
 pythondep=() # list of python dependencies
@@ -832,7 +832,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
