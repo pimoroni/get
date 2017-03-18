@@ -33,7 +33,7 @@ mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="yes" # whether low-level gpio access is required
 i2creq="yes" # whether the i2c interface is required
-i2sreq="yes" # whether the i2s interface is required
+i2sreq="no" # whether the i2s interface is required
 spireq="no" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231440
+# template 1703161635
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -451,8 +451,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
@@ -831,6 +831,8 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    else
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -1020,7 +1022,9 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nDownloading examples and documentation..."
         TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $TMPDIR
-        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        if [ $copyhead != "yes" ]; then
+            GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
+        fi
         if [ -n "$GITTAG" ]; then
             git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
         else
@@ -1068,10 +1072,19 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nFinalising Install...\n"
         cd $installdir/$gitclonedir
         sudo mv ./dependencies/home/user/.asoundrc $HOME/.asoundrc
-        if confirm "Are you using a Scroll pHAT HD?"; then
-            sudo bash ./setup.sh -y scroll-phat-hd
+        echo "What product would you like to configure?" && newline
+        echo "1 : Scroll pHAT HD (17-band FFT-based EQ)"
+        echo "2 : Scroll pHAT (11-band FFT-based EQ)" && newline
+        read -r -p "Enter an option [1-2]:" choice < /dev/tty
+        if [[ $choice =~ ^(1)$ ]]; then
+            inform "\nSetting up Scroll pHAT HD..."
+            get_install scrollphathd
+        elif [[ $choice =~ ^(2)$ ]]; then
+            inform "\nSetting up Scroll pHAT..."
+            get_install scrollphat
         else
-            sudo bash ./setup.sh -y scroll-phat        
+            warning "Invalid option!" && exit 1
+        fi
     fi
 
     if $FAILED_PKG; then
