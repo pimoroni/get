@@ -1071,7 +1071,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         cd $installdir/$gitclonedir
-        sudo mv ./dependencies/home/user/.asoundrc $HOME/.asoundrc
+        sudo cp ./dependencies/home/user/.asoundrc $HOME/.asoundrc
         echo "What product would you like to configure?" && newline
         echo "1 : Scroll pHAT HD (17-band FFT-based EQ)"
         echo "2 : Scroll pHAT (11-band FFT-based EQ)" && newline
