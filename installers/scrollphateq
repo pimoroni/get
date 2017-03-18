@@ -1079,9 +1079,11 @@ if confirm "Do you wish to continue?"; then
         if [[ $choice =~ ^(1)$ ]]; then
             inform "\nSetting up Scroll pHAT HD..."
             get_install scrollphathd
+            sudo bash ./setup.sh -y scroll-phat-hd
         elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up Scroll pHAT..."
             get_install scrollphat
+            sudo bash ./setup.sh -y scroll-phat
         else
             warning "Invalid option!" && exit 1
         fi
