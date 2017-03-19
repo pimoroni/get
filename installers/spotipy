@@ -1129,7 +1129,7 @@ if confirm "Do you wish to continue?"; then
 +pin_button_previous = 13
 +pin_button_vol_up = 16
 +pin_button_vol_down = 26
-+pin_play_led = 
++pin_play_led = 20
 @@ -73,4 +73,4 @@
 -#enabled = true
 -#pusherport = 6681
