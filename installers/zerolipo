@@ -1070,7 +1070,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        cd $installdir/$gitclonedir && ./setup.sh
+        cd $installdir/$gitclonedir && ./setup.sh -y
         sudo sed -i "s|trigger_delay=.*$|trigger_delay=5|" /etc/cleanshutd.conf
     fi
 
