@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Zero LiPo" # the name of the product to install
-scriptname="zerolipo" # the name of this script
+productname="Clean Shutdown" # the name of the product to install
+scriptname="cleanshutdown" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -1070,8 +1070,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        cd $installdir/$gitclonedir && ./setup.sh -y
-        sudo sed -i "s|shutdown_delay=.*$|shutdown_delay=5|" /etc/cleanshutd.conf
+        cd $installdir/$gitclonedir && ./setup.sh
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
     fi
 
