@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703161635
+# template 1703242155
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -841,7 +841,7 @@ if confirm "Do you wish to continue?"; then
         installdir="$USER_HOME/$topdir"
     fi
 
-    if ! $MIN_INSTALL;then
+    if ! $MIN_INSTALL || [ $gitrepoclone == "yes" ]; then
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
