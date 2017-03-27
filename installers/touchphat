@@ -21,7 +21,7 @@ DISCLAIMER
 
 # script control variables
 
-productname="Touch HAT" # the name of the product to install
+productname="Touch pHAT" # the name of the product to install
 scriptname="touchphat" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
