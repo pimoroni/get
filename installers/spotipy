@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703161635
+# template 1703282320
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -406,7 +406,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i '/^#dtoverlay=$1$/ s|#||' $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +417,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i '/^dtoverlay=$1$/ s|^|#|' $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i '/^#dtparam=audio=on$/ s|#||' $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,14 +431,14 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i '/^dtparam=audio=on$/ s|^|#|' $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
 }
 
 test_audio() {
-    newline
+    echo
     if confirm "Do you wish to test your system now?"; then
         echo -e "\nTesting..."
         speaker-test -l5 -c2 -t wav
@@ -451,8 +451,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -832,7 +832,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -841,7 +841,7 @@ if confirm "Do you wish to continue?"; then
         installdir="$USER_HOME/$topdir"
     fi
 
-    if ! $MIN_INSTALL;then
+    if ! $MIN_INSTALL || [ $gitrepoclone == "yes" ]; then
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
@@ -1106,7 +1106,7 @@ if confirm "Do you wish to continue?"; then
 +config_file = /etc/mopidy/logging.conf
 @@ -39,3 +39,3 @@
 -#mixer = software
--#mixer_volume = 
+-#mixer_volume =
 -#output = autoaudiosink
 +mixer = software
 +mixer_volume = 35
@@ -1170,8 +1170,8 @@ if confirm "Do you wish to continue?"; then
 +control = PCM
 @@ -172,3 +172,3 @@
 -#enabled = true
--#username = 
--#password = 
+-#username =
+-#password =
 +enabled = true
 +username = namevar
 +password = passvar
@@ -1179,9 +1179,9 @@ EOT
         sudo systemctl enable mopidy
         echo
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
+        sudo sed -i 's|username = namevar$|username = $namevar|' /etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
+        sudo sed -i 's|password = passvar$|password = $passvar|' /etc/mopidy/mopidy.conf
         echo
         echo "What product would you like to configure?"
         echo

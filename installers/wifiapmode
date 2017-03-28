@@ -1079,6 +1079,15 @@ if confirm "Do you wish to continue?"; then
                 sudo systemctl disable hostapd
                 sudo systemctl disable dnsmasq
                 echo && sysreboot && echo && exit 1
+            elif prompt "Would you like to redefine the SSDI and password?"; then
+                apssid=$(hostname)
+                sudo sed -i 's|^ssid=.*$|ssid=$apssid|' /etc/hostapd/hostapd.conf
+                echo "SSDI set to $apssid (hostname)"
+                read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
+                sudo sed -i 's|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|' /etc/hostapd/hostapd.conf
+                echo && sysreboot && echo && exit 1
+            else
+                echo -e "Nothing to do then!\n" && exit 1
             fi
         else
             sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
@@ -1088,12 +1097,12 @@ interface=wlan0
 hw_mode=g
 channel=10
 auth_algs=1
+ssid=raspberrypi
+wpa_passphrase=raspberry
 wpa=2
 wpa_key_mgmt=WPA-PSK
 wpa_pairwise=CCMP
 rsn_pairwise=CCMP
-wpa_passphrase=raspberry
-ssid=raspberrypi
 EOF'
             sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
