@@ -1070,7 +1070,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        sudo cat > /etc/systemd/system/hostapd.service <<EOF
+        sudo bash -c 'cat > /etc/systemd/system/hostapd.service <<EOF
 [Unit]
 Description=Hostapd IEEE 802.11 Access Point
 After=sys-subsystem-net-devices-wlan0.device
@@ -1084,9 +1084,9 @@ ExecStart=/usr/sbin/hostapd -B /etc/hostapd/hostapd.conf -P /var/run/hostapd.pid
 [Install]
 WantedBy=multi-user.target
 
-EOF
+EOF'
         sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
-        sudo cat > /etc/hostapd/hostapd.conf <<EOF
+        sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlan0
 hw_mode=g
 channel=10
@@ -1097,21 +1097,23 @@ wpa_pairwise=CCMP
 rsn_pairwise=CCMP
 wpa_passphrase=raspberry
 ssid=raspberrypi
-EOF
-        sudo cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
+EOF'
+        sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
 dhcp-range=10.0.0.2,10.0.0.5,255.255.255.0,12h
-EOF
+EOF'
         sudo sed -i -e '/^allow-hotplug wlan0$/,+2 s/^/#/' /etc/network/interfaces
-        sudo cat > /etc/network/interfaces.d/wlan0static <<EOF
+        sudo bash -c 'cat > /etc/network/interfaces.d/wlan0static <<EOF
 allow-hotplug wlan0
 iface wlan0 inet static
 	address 10.0.0.1
 	netmask 255.255.255.0
 	network 10.0.0.0
 	broadcast 10.0.0.255
-EOF
-        sudo echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf
+EOF'
+        if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+            sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+        fi
         sudo systemctl enable hostapd
     fi
 
