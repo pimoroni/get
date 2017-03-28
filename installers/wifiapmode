@@ -1070,7 +1070,16 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        sudo bash -c 'cat > /etc/systemd/system/hostapd.service <<EOF
+        if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -ge 1 ]; then
+            if confirm "AP mode seems enabled, do you want to disable it?"
+                sudo sed -i "s|^denyinterfaces wlan0|#denyinterfaces wlan0|" /etc/dhcpcd.conf
+                sudo sed -i "s|^denyinterfaces wlan0|#denyinterfaces wlan0|" /etc/dhcpcd.conf
+                sudo sed -i -e "/^source-directory \/etc\/network\/interfaces.d$/ s|^|#|" /etc/network/interfaces
+                sudo sed -i -e '/^#allow-hotplug wlan0$/,+2 s|#||' /etc/network/interfaces
+                sudo systemctl disable hostapd
+                sudo systemctl disable dnsmasq
+            else
+                sudo bash -c 'cat > /etc/systemd/system/hostapd.service <<EOF
 [Unit]
 Description=Hostapd IEEE 802.11 Access Point
 After=sys-subsystem-net-devices-wlan0.device
@@ -1085,8 +1094,8 @@ ExecStart=/usr/sbin/hostapd -B /etc/hostapd/hostapd.conf -P /var/run/hostapd.pid
 WantedBy=multi-user.target
 
 EOF'
-        sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
-        sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
+                sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
+                sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlan0
 hw_mode=g
 channel=10
@@ -1098,12 +1107,13 @@ rsn_pairwise=CCMP
 wpa_passphrase=raspberry
 ssid=raspberrypi
 EOF'
-        sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
+                sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
 dhcp-range=10.0.0.2,10.0.0.5,255.255.255.0,12h
 EOF'
-        sudo sed -i -e '/^allow-hotplug wlan0$/,+2 s/^/#/' /etc/network/interfaces
-        sudo bash -c 'cat > /etc/network/interfaces.d/wlan0static <<EOF
+                sudo sed -i -e "/^#source-directory \/etc\/network\/interfaces.d$/ s|#||" /etc/network/interfaces
+                sudo sed -i -e '/^allow-hotplug wlan0$/,+2 s|^|#|' /etc/network/interfaces
+                sudo bash -c 'cat > /etc/network/interfaces.d/wlan0static <<EOF
 allow-hotplug wlan0
 iface wlan0 inet static
 	address 10.0.0.1
@@ -1111,10 +1121,14 @@ iface wlan0 inet static
 	network 10.0.0.0
 	broadcast 10.0.0.255
 EOF'
-        if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
-            sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+                if [ $(grep -c "^#denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+                    sudo sed -i -e "/^#source-directory \/etc\/network\/interfaces.d$/ s|#||" /etc/network/interfaces
+                elif [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+                    sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+                fi
+                sudo systemctl enable hostapd
+            fi
         fi
-        sudo systemctl enable hostapd
     fi
 
     if $FAILED_PKG; then
