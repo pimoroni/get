@@ -1079,7 +1079,7 @@ if confirm "Do you wish to continue?"; then
                 sudo sed -i -e '/^#allow-hotplug wlan0$/,+2 s|#||' /etc/network/interfaces
                 sudo systemctl disable hostapd
                 sudo systemctl disable dnsmasq
-                sysreboot && exit 1
+                echo && sysreboot && echo && exit 1
             fi
         else
             sudo bash -c 'cat > /etc/systemd/system/hostapd.service <<EOF
