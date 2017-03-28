@@ -1123,7 +1123,7 @@ iface wlan0 inet static
 	network 10.0.0.0
 	broadcast 10.0.0.255
 EOF'
-            if [ $(grep -c "^#denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+            if [ $(grep -c "^#denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 1 ]; then
                 sudo sed -i -e "/^#source-directory \/etc\/network\/interfaces.d$/ s|#||" /etc/network/interfaces
             elif [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
                 sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
