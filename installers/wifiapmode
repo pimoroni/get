@@ -1129,6 +1129,7 @@ EOF'
                 sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
             fi
             sudo systemctl enable hostapd
+            sudo systemctl enable dnsmasq
         fi
     fi
 
