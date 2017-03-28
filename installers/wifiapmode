@@ -1098,38 +1098,20 @@ rsn_pairwise=CCMP
 wpa_passphrase=raspberry
 ssid=raspberrypi
 EOF
-        sudo mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.backup &> /dev/null
-        sudo cat > /etc/dnsmasq.conf <<EOF
+        sudo cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
 dhcp-range=10.0.0.2,10.0.0.5,255.255.255.0,12h
 EOF
-
-        sudo cat >> /etc/network/interfaces <<EOF
-	wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
-
+        sudo sed -i -e '/^allow-hotplug wlan0$/,+2 s/^/#/' /etc/network/interfaces
+        sudo cat > /etc/network/interfaces.d/wlan0static <<EOF
 allow-hotplug wlan0
 iface wlan0 inet static
 	address 10.0.0.1
 	netmask 255.255.255.0
 	network 10.0.0.0
 	broadcast 10.0.0.255
-
 EOF
-        sudo sed -i -- 's/allow-hotplug wlan0//g' /etc/network/interfaces
-        sudo sed -i -- 's/iface wlan0 inet manual//g' /etc/network/interfaces
-        sudo sed -i -- 's/    wpa-conf \/etc\/wpa_supplicant\/wpa_supplicant.conf//g' /etc/network/interfaces
-        sudo cat >> /etc/network/interfaces <<EOF
-	wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
-
-allow-hotplug wlan0
-iface wlan0 inet static
-	address 10.0.0.1
-	netmask 255.255.255.0
-	network 10.0.0.0
-	broadcast 10.0.0.255
-
-EOF
-        sudo echo "denyinterfaces wlan0" >> /etc/dhcpcd.conf
+        sudo echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf
         sudo systemctl enable hostapd
     fi
 
