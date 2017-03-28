@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703242155
+# template 1703282320
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -406,7 +406,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i '/^#dtoverlay=$1$/ s|#||' $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +417,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i '/^dtoverlay=$1$/ s|^|#|' $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i '/^#dtparam=audio=on$/ s|#||' $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,14 +431,14 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i '/^dtparam=audio=on$/ s|^|#|' $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
 }
 
 test_audio() {
-    newline
+    echo
     if confirm "Do you wish to test your system now?"; then
         echo -e "\nTesting..."
         speaker-test -l5 -c2 -t wav
@@ -451,8 +451,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -1073,29 +1073,15 @@ if confirm "Do you wish to continue?"; then
         if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -ge 1 ]; then
             if prompt "AP mode seems enabled, do you want to disable it?"; then
                 echo
-                sudo sed -i "s|^denyinterfaces wlan0|#denyinterfaces wlan0|" /etc/dhcpcd.conf
-                sudo sed -i -e "/^source-directory \/etc\/network\/interfaces.d$/ s|^|#|" /etc/network/interfaces
-                sudo sed -i -e '/^#allow-hotplug wlan0$/,+2 s|#||' /etc/network/interfaces
+                sudo sed -i '/^denyinterfaces wlan0$/ s|^|#|' /etc/dhcpcd.conf
+                sudo sed -i '/^source-directory.*/ s|^|#|' /etc/network/interfaces
+                sudo sed -i '/^#allow-hotplug wlan0$/,+2 s|#||' /etc/network/interfaces
                 sudo systemctl disable hostapd
                 sudo systemctl disable dnsmasq
                 echo && sysreboot && echo && exit 1
             fi
         else
-            sudo bash -c 'cat > /etc/systemd/system/hostapd.service <<EOF
-[Unit]
-Description=Hostapd IEEE 802.11 Access Point
-After=sys-subsystem-net-devices-wlan0.device
-BindsTo=sys-subsystem-net-devices-wlan0.device
-
-[Service]
-Type=forking
-PIDFile=/var/run/hostapd.pid
-ExecStart=/usr/sbin/hostapd -B /etc/hostapd/hostapd.conf -P /var/run/hostapd.pid
-
-[Install]
-WantedBy=multi-user.target
-
-EOF'
+            sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
             sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
             sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlan0
@@ -1111,10 +1097,10 @@ ssid=raspberrypi
 EOF'
             sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
-dhcp-range=10.0.0.2,10.0.0.5,255.255.255.0,12h
+dhcp-range=10.0.0.2,10.0.0.12,255.255.255.0,12h
 EOF'
-            sudo sed -i -e "/^#source-directory \/etc\/network\/interfaces.d$/ s|#||" /etc/network/interfaces
-            sudo sed -i -e '/^allow-hotplug wlan0$/,+2 s|^|#|' /etc/network/interfaces
+            sudo sed -i 's|.*source-directory.*|source-directory /etc/network/interfaces.d|' /etc/network/interfaces
+            sudo sed -i '/^allow-hotplug wlan0$/,+2 s|^|#|' /etc/network/interfaces
             sudo bash -c 'cat > /etc/network/interfaces.d/wlan0static <<EOF
 allow-hotplug wlan0
 iface wlan0 inet static
@@ -1123,10 +1109,10 @@ iface wlan0 inet static
 	network 10.0.0.0
 	broadcast 10.0.0.255
 EOF'
-            if [ $(grep -c "^#denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 1 ]; then
-                sudo sed -i -e "/^#denyinterfaces wlan0/ s|#||" /etc/dhcpcd.conf
-            elif [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+            if [ $(grep -c "denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
                 sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+            else
+                sudo sed -i 's|.*denyinterfaces wlan0$|denyinterfaces wlan0|' /etc/dhcpcd.conf
             fi
             sudo systemctl enable hostapd
             sudo systemctl enable dnsmasq
