@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703282320
+# template 1703290025
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -406,7 +406,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i '/^#dtoverlay=$1$/ s|#||' $CONFIG
+        sudo sed -i "/^#dtoverlay=$1$/ s|#||" $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +417,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i '/^dtoverlay=$1$/ s|^|#|' $CONFIG
+    sudo sed -i "/^dtoverlay=$1$/ s|^|#|" $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i '/^#dtparam=audio=on$/ s|#||' $CONFIG
+        sudo sed -i "/^#dtparam=audio=on$/ s|#||" $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,7 +431,7 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i '/^dtparam=audio=on$/ s|^|#|' $CONFIG
+        sudo sed -i "/^dtparam=audio=on$/ s|^|#|" $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
@@ -451,8 +451,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE/panels/panel
-    sed -i 's|type=volumealsa|type=space|' $HOME/.config/lxpanel/LXDE-pi/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -1179,9 +1179,9 @@ EOT
         sudo systemctl enable mopidy
         echo
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sudo sed -i 's|username = namevar$|username = $namevar|' /etc/mopidy/mopidy.conf
+        sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sudo sed -i 's|password = passvar$|password = $passvar|' /etc/mopidy/mopidy.conf
+        sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
         echo
         echo "What product would you like to configure?"
         echo
