@@ -1131,6 +1131,7 @@ EOF'
             fi
             sudo systemctl enable hostapd
             sudo systemctl enable dnsmasq
+            echo
         fi
     fi
 
