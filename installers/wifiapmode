@@ -1071,7 +1071,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -ge 1 ]; then
-            if confirm "AP mode seems enabled, do you want to disable it?"; then
+            if prompt "AP mode seems enabled, do you want to disable it?"; then
                 sudo sed -i "s|^denyinterfaces wlan0|#denyinterfaces wlan0|" /etc/dhcpcd.conf
                 sudo sed -i "s|^denyinterfaces wlan0|#denyinterfaces wlan0|" /etc/dhcpcd.conf
                 sudo sed -i -e "/^source-directory \/etc\/network\/interfaces.d$/ s|^|#|" /etc/network/interfaces
