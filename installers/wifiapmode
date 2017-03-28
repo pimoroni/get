@@ -1077,7 +1077,12 @@ if confirm "Do you wish to continue?"; then
                 sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
                 echo "SSDI set to $apssid (hostname)"
                 read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
-                sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
+                if [ $ssidpass -ge 8 ]; then
+                    sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
+                else
+                    echo "Not enough characters, setting password to 'raspberry'!"
+                    sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
+                fi
                 echo && sysreboot && echo && exit 1
             elif prompt "AP mode seems enabled, do you want to disable it?"; then
                 echo
@@ -1091,20 +1096,11 @@ if confirm "Do you wish to continue?"; then
                 echo -e "Nothing to do then!\n" && exit 1
             fi
         else
-            sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
-            sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
-            sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
-interface=wlan0
-hw_mode=g
-channel=10
-auth_algs=1
-ssid=raspberrypi
-wpa_passphrase=raspberry
-wpa=2
-wpa_key_mgmt=WPA-PSK
-wpa_pairwise=CCMP
-rsn_pairwise=CCMP
-EOF'
+            if [ $(grep -c "denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
+                sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+            else
+                sudo sed -i "s|.*denyinterfaces wlan0$|denyinterfaces wlan0|" /etc/dhcpcd.conf
+            fi
             sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
 dhcp-range=10.0.0.2,10.0.0.12,255.255.255.0,12h
@@ -1119,10 +1115,29 @@ iface wlan0 inet static
 	network 10.0.0.0
 	broadcast 10.0.0.255
 EOF'
-            if [ $(grep -c "denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
-                sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
+            sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
+            sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
+            sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
+interface=wlan0
+hw_mode=g
+channel=10
+auth_algs=1
+ssid=raspberrypi
+wpa_passphrase=raspberry
+wpa=2
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=CCMP
+rsn_pairwise=CCMP
+EOF'
+            apssid=$(hostname)
+            sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
+            echo "SSDI set to $apssid (hostname)"
+            read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
+            if [ $ssidpass -ge 8 ]; then
+                sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
             else
-                sudo sed -i "s|.*denyinterfaces wlan0$|denyinterfaces wlan0|" /etc/dhcpcd.conf
+                echo "Not enough characters, setting password to 'raspberry'!"
+                sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
             fi
             sudo systemctl enable hostapd
             sudo systemctl enable dnsmasq
