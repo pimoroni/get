@@ -70,7 +70,7 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703291215
+# template 1703291225
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -145,7 +145,7 @@ newline() {
 
 progress() {
     count=0
-    until [ $count -eq 3 ]; do
+    until [ $count -eq 10 ]; do
         echo -n "..." && sleep 1
         ((count++))
     done; echo
