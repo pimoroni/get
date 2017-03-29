@@ -1077,7 +1077,7 @@ if confirm "Do you wish to continue?"; then
                 sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
                 echo "SSDI set to $apssid (hostname)"
                 read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
-                if [ $ssidpass -ge 8 ]; then
+                if [ ${#ssidpass} -ge 8 ]; then
                     sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
                 else
                     echo "Not enough characters, setting password to 'raspberry'!"
@@ -1131,13 +1131,13 @@ rsn_pairwise=CCMP
 EOF'
             apssid=$(hostname)
             sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
-            echo "SSDI set to $apssid (hostname)"
+            inform "SSDI set to $apssid (hostname)"
             read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
-            if [ $ssidpass -ge 8 ]; then
+            if [ ${#ssidpass} -ge 8 ]; then
                 sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
             else
-                echo "Not enough characters, setting password to 'raspberry'!"
                 sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
+                inform "Not enough characters, password set to 'raspberry'!"
             fi
             sudo systemctl enable hostapd
             sudo systemctl enable dnsmasq
