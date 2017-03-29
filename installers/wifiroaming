@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="WiFi AP mode" # the name of the product to install
-scriptname="wifiapmode" # the name of this script
+productname="WiFi Roaming" # the name of the product to install
+scriptname="wifiroaming" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703291225
+# template 1703292105
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -591,7 +591,9 @@ if [ $i2creq == "yes" ]; then
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!"
+    if [ $OS_NAME != "Volumio" ]; then
+        warning "The on-board audio chip will be disabled if you proceed!"
+    fi
 fi
 
 newline
@@ -809,7 +811,6 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
-        add_dtoverlay hifiberry-dac
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -1072,54 +1073,17 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        if [ $(grep -c "^denyinterfaces wlan0" /etc/dhcpcd.conf) -ge 1 ]; then
-            inform "This Raspberry Pi seems to be in AP mode already!"
-            if prompt "Would you like to redefine the SSDI and password?"; then
-                apssid=$(hostname)
-                sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
-                inform "SSDI set to $apssid (hostname)"
-                read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
-                if [ ${#ssidpass} -ge 8 ]; then
-                    sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
-                else
-                    sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
-                    inform "Not enough characters, password set to 'raspberry'!"
-                fi
-                echo && sysreboot && echo && exit 1
-            elif prompt "Do you want to disable AP mode?"; then
-                echo
-                sudo sed -i "/^denyinterfaces wlan0$/ s|^|#|" /etc/dhcpcd.conf
-                sudo sed -i "/^source-directory.*/ s|^|#|" /etc/network/interfaces
-                sudo sed -i "/^#allow-hotplug wlan0$/,+2 s|#||" /etc/network/interfaces
-                sudo systemctl disable hostapd
-                sudo systemctl disable dnsmasq
-                echo && sysreboot && echo && exit 1
-            else
-                echo -e "Nothing to do then!\n" && exit 1
-            fi
-        else
-            if [ $(grep -c "denyinterfaces wlan0" /etc/dhcpcd.conf) -eq 0 ]; then
-                sudo bash -c 'echo -e "\n#Configuration for AP mode\ndenyinterfaces wlan0" >> /etc/dhcpcd.conf'
-            else
-                sudo sed -i "s|.*denyinterfaces wlan0$|denyinterfaces wlan0|" /etc/dhcpcd.conf
-            fi
-            sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
+        sudo systemctl disable dnsmasq
+        sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
+no-resolv
+bind-interfaces
 dhcp-range=10.0.0.2,10.0.0.12,255.255.255.0,12h
 EOF'
-            sudo sed -i "s|.*source-directory.*|source-directory /etc/network/interfaces.d|" /etc/network/interfaces
-            sudo sed -i "/^allow-hotplug wlan0$/,+2 s|^|#|" /etc/network/interfaces
-            sudo bash -c 'cat > /etc/network/interfaces.d/wlan0static <<EOF
-allow-hotplug wlan0
-iface wlan0 inet static
-	address 10.0.0.1
-	netmask 255.255.255.0
-	network 10.0.0.0
-	broadcast 10.0.0.255
-EOF'
-            sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
-            sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
-            sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
+        sudo systemctl disable hostapd
+        sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
+        sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
+        sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlan0
 hw_mode=g
 channel=10
@@ -1131,20 +1095,56 @@ wpa_key_mgmt=WPA-PSK
 wpa_pairwise=CCMP
 rsn_pairwise=CCMP
 EOF'
-            apssid=$(hostname)
-            sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
-            inform "SSDI set to $apssid (hostname)"
-            read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
-            if [ ${#ssidpass} -ge 8 ]; then
-                sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
-            else
-                sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
-                inform "Not enough characters, password set to 'raspberry'!"
-            fi
-            sudo systemctl enable hostapd
-            sudo systemctl enable dnsmasq
-            echo
+        apssid=$(hostname)
+        sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
+        inform "SSDI set to $apssid (hostname)"
+        read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
+        if [ ${#ssidpass} -ge 8 ]; then
+            sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
+        else
+            sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=raspberry|" /etc/hostapd/hostapd.conf
+            inform "Not enough characters, password set to 'raspberry'!"
         fi
+        sudo sed -i "/^allow-hotplug wlan0$/,+2 s|^|#|" /etc/network/interfaces
+        sudo sed -i "/^#allow-hotplug wlan0$/,+1 s|#||" /etc/network/interfaces
+        sudo bash -c 'cat > /usr/bin/apfallback <<EOF
+#!/bin/bash
+
+connected=false
+ssidlist=( $(grep "ssid" /etc/wpa_supplicant/wpa_supplicant.conf | tr -s [:space:] | cut -c 7- | tr -d \\n | sed 's/""/" "/'))
+
+for ssid in "${ssidlist[@]}"; do
+    if iw dev wlan0 scan ap-force | grep $ssid > /dev/null; then
+        wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf > /dev/null 2>&1
+        if dhclient -1 wlan0; then
+            connected=true && break
+            echo "connected to $ssid"
+        else
+            wpa_cli terminate && break
+            echo "not connected to $ssid"
+        fi
+    fi
+done
+
+if ! $connected; then
+    ip link set dev wlan0 down
+    ip a add 10.0.0.5/24 dev wlan0
+    ip link set dev wlan0 up
+    systemctl start dnsmasq
+    systemctl start hostapd
+fi
+EOF'
+        sudo bash -c 'cat > /etc/systemd/system/apfallback.service <<EOF
+Unit]
+Description=Activate Access Point mode when no known network are in range.
+After=network-online.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/apfallback
+[Install]
+WantedBy=multi-user.target
+EOF'
     fi
 
     if $FAILED_PKG; then
