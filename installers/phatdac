@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703161635
+# template 1703292105
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -145,12 +145,15 @@ newline() {
 
 progress() {
     count=0
-    until [ $count -eq $1 ]; do
+    until [ $count -eq 6 ]; do
         echo -n "..." && sleep 1
         ((count++))
-    done
-    echo
+    done; echo
+    if ps -C $1 > /dev/null; then
+        progress $1
+    fi
 }
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -165,10 +168,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        echo "Updating apt indexes..." && progress 3 &
+        echo "Updating apt indexes..." && progress apt-get &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
-        echo "Reading package lists..."
-        progress 3 && UPDATE_DB=true
+        sleep 3 && UPDATE_DB=true
     fi
 }
 
@@ -406,7 +408,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtoverlay=$1$/ s|#||" $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +419,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i "/^dtoverlay=$1$/ s|^|#|" $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtparam=audio=on$/ s|#||" $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,14 +433,14 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^dtparam=audio=on$/ s|^|#|" $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
 }
 
 test_audio() {
-    newline
+    echo
     if confirm "Do you wish to test your system now?"; then
         echo -e "\nTesting..."
         speaker-test -l5 -c2 -t wav
@@ -451,8 +453,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -589,7 +591,9 @@ if [ $i2creq == "yes" ]; then
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!"
+    if [ $OS_NAME != "Volumio" ]; then
+        warning "The on-board audio chip will be disabled if you proceed!"
+    fi
 fi
 
 newline
@@ -807,7 +811,6 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
-        add_dtoverlay hifiberry-dac
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -832,7 +835,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -841,7 +844,7 @@ if confirm "Do you wish to continue?"; then
         installdir="$USER_HOME/$topdir"
     fi
 
-    if ! $MIN_INSTALL;then
+    if ! $MIN_INSTALL || [ $gitrepoclone == "yes" ]; then
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
@@ -1070,30 +1073,24 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        if [ -e $BLACKLIST ]; then
-            sudo sed -i -e "s|^blacklist[[:space:]]*i2c-bcm2708.*|#blacklist i2c-bcm2708|" \
-                        -e "s|^blacklist[[:space:]]*snd-soc-pcm512x.*|#blacklist snd-soc-pcm512x|" \
-                        -e "s|^blacklist[[:space:]]*snd-soc-wm8804.*|#blacklist snd-soc-wm8804|" $BLACKLIST &> /dev/null
-        fi
-
+        add_dtoverlay hifiberry-dac
         if [ -e $CONFIG ] && grep -q -E "^dtparam=audio=on$" $CONFIG; then
             bcm2835off="no"
             echo -e "Disabling default sound driver"
             disable_pi_audio && kill_volumealsa && newline
             if [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
-                sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+                sudo sed -i "/^snd-bcm2835$/ s|^|#|" $LOADMOD
             fi
             ASK_TO_REBOOT=true
         elif [ -e $LOADMOD ] && grep -q "^snd-bcm2835" $LOADMOD; then
             bcm2835off="no"
             echo -e "Disabling default sound module"
-            sudo sed -i "s|^snd-bcm2835|#snd-bcm2835|" $LOADMOD &> /dev/null
+            sudo sed -i "/^snd-bcm2835$/ s|^|#|" $LOADMOD
             ASK_TO_REBOOT=true
         else
             echo -e "Default sound driver currently not loaded"
             bcm2835off="yes"
         fi
-
         if [ $bcm2835off == "yes" ]; then
             echo -e "\nWe can now test your $productname"
             warning "Set your speakers at a low volume!"
