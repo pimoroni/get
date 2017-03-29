@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703291225
+# template 1703292105
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -591,7 +591,9 @@ if [ $i2creq == "yes" ]; then
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!"
+    if [ $OS_NAME != "Volumio" ]; then
+        warning "The on-board audio chip will be disabled if you proceed!"
+    fi
 fi
 
 newline
@@ -809,7 +811,6 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
-        add_dtoverlay hifiberry-dac
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
