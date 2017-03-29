@@ -70,7 +70,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703071110
+# template 1703291050
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -165,6 +165,7 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
+        sudo apt-get check 1> /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
         echo "Updating apt indexes..." && progress 3 &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
         echo "Reading package lists..."
@@ -406,7 +407,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtoverlay=$1$/ s|#||" $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +418,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i "/^dtoverlay=$1$/ s|^|#|" $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtparam=audio=on$/ s|#||" $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,14 +432,14 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^dtparam=audio=on$/ s|^|#|" $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
 }
 
 test_audio() {
-    newline
+    echo
     if confirm "Do you wish to test your system now?"; then
         echo -e "\nTesting..."
         speaker-test -l5 -c2 -t wav
@@ -451,8 +452,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -832,7 +833,7 @@ if confirm "Do you wish to continue?"; then
             MIN_INSTALL=true
         fi
     else
-        MIN_INSTALL=true        
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -841,7 +842,7 @@ if confirm "Do you wish to continue?"; then
         installdir="$USER_HOME/$topdir"
     fi
 
-    if ! $MIN_INSTALL;then
+    if ! $MIN_INSTALL || [ $gitrepoclone == "yes" ]; then
         [ -d $installdir ] || mkdir -p $installdir
     fi
 

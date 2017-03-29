@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703290025
+# template 1703291050
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -165,6 +165,7 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
+        sudo apt-get check 1> /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
         echo "Updating apt indexes..." && progress 3 &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
         echo "Reading package lists..."
