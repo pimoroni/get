@@ -70,7 +70,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703291050
+# template 1703291130
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -167,9 +167,9 @@ sysupdate() {
     if ! $UPDATE_DB; then
         sudo apt-get check 1> /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
         echo "Updating apt indexes..." && progress 3 &
-        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
-        echo "Reading package lists..."
-        progress 3 && UPDATE_DB=true
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; } &
+        while ps -C apt-get >/dev/null; do progress 3; done
+        UPDATE_DB=true
     fi
 }
 
