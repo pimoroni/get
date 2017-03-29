@@ -70,7 +70,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703291130
+# template 1703291155
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -144,13 +144,11 @@ newline() {
 }
 
 progress() {
-    count=0
-    until [ $count -eq $1 ]; do
-        echo -n "..." && sleep 1
-        ((count++))
+    while ps -C $1 > /dev/null; do
+        sleep 1 && echo -n "..."
     done
-    echo
 }
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -165,10 +163,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get check 1> /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
-        echo "Updating apt indexes..." && progress 3 &
-        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; } &
-        while ps -C apt-get >/dev/null; do progress 3; done
+        sudo apt-get check > /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
+        echo "Updating apt indexes..." && progress apt-get &
+        sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
     fi
 }
