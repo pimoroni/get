@@ -1084,7 +1084,7 @@ if confirm "Do you wish to continue?"; then
                     inform "Not enough characters, password set to 'raspberry'!"
                 fi
                 echo && sysreboot && echo && exit 1
-            elif prompt "AP mode seems enabled, do you want to disable it?"; then
+            elif prompt "Do you want to disable AP mode?"; then
                 echo
                 sudo sed -i "/^denyinterfaces wlan0$/ s|^|#|" /etc/dhcpcd.conf
                 sudo sed -i "/^source-directory.*/ s|^|#|" /etc/network/interfaces
