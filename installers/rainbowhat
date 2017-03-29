@@ -170,7 +170,7 @@ sysupdate() {
     if ! $UPDATE_DB; then
         echo "Updating apt indexes..." && progress apt-get &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
-        UPDATE_DB=true
+        sleep 3 && UPDATE_DB=true
     fi
 }
 
