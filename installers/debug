@@ -144,9 +144,14 @@ newline() {
 }
 
 progress() {
-    while ps -C $1 > /dev/null; do
-        sleep 1 && echo -n "..."
-    done
+    count=0
+    until [ $count -eq 3 ]; do
+        echo -n "..." && sleep 1
+        ((count++))
+    done; echo
+    if ps -C $1 > /dev/null; then
+        progress $1
+    fi
 }
 
 sudocheck() {
@@ -163,7 +168,6 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        sudo apt-get check > /dev/null || { warning "Apt sanity check failed! Try repairing using 'sudo apt-get install -f'" && exit 1; }
         echo "Updating apt indexes..." && progress apt-get &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
         UPDATE_DB=true
