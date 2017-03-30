@@ -1134,8 +1134,9 @@ if ! $connected; then
     systemctl start hostapd
 fi
 EOF'
+        sudo chmod +x /usr/bin/apfallback
         sudo bash -c 'cat > /etc/systemd/system/apfallback.service <<EOF
-Unit]
+[Unit]
 Description=Activate Access Point mode when no known network are in range.
 After=network-online.target
 [Service]
