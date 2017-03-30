@@ -1073,14 +1073,14 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        sudo systemctl disable dnsmasq
+        sudo systemctl disable dnsmasq &> /dev/null
         sudo bash -c 'cat > /etc/dnsmasq.d/wlan0ap.conf <<EOF
 interface=wlan0
 no-resolv
 bind-interfaces
 dhcp-range=10.0.0.2,10.0.0.12,255.255.255.0,12h
 EOF'
-        sudo systemctl disable hostapd
+        sudo systemctl disable hostapd &> /dev/null
         sudo sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
         sudo mv -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.backup &> /dev/null
         sudo bash -c 'cat > /etc/hostapd/hostapd.conf <<EOF
@@ -1111,7 +1111,7 @@ EOF'
 #!/bin/bash
 
 connected=false
-ssidlist=( $(grep "ssid" /etc/wpa_supplicant/wpa_supplicant.conf | tr -s [:space:] | cut -c 7- | tr -d \\n | sed 's/""/" "/'))
+ssidlist=( $(grep "ssid" /etc/wpa_supplicant/wpa_supplicant.conf | tr -s [:space:] | cut -c 7- | tr -d \\n | sed "s|\"\"|\" \"|"))
 
 for ssid in "${ssidlist[@]}"; do
     if iw dev wlan0 scan ap-force | grep $ssid > /dev/null; then
