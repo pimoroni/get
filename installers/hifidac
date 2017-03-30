@@ -103,12 +103,15 @@ newline() {
 
 progress() {
     count=0
-    until [ $count -eq $1 ]; do
+    until [ $count -eq 7 ]; do
         echo -n "..." && sleep 1
         ((count++))
-    done
-    echo
+    done;
+    if ps -C $1 > /dev/null; then
+        echo -en "\r\e[K" && progress $1
+    fi
 }
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -123,10 +126,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        echo "Updating apt indexes..." && progress 3 &
+        echo "Updating apt indexes..." && progress apt-get &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
-        echo "Reading package lists..."
-        progress 3 && UPDATE_DB=true
+        sleep 3 && UPDATE_DB=true
     fi
 }
 
@@ -254,7 +256,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtoverlay=$1$/ s|#||" $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -265,13 +267,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i "/^dtoverlay=$1$/ s|^|#|" $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtparam=audio=on$/ s|#||" $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -279,7 +281,7 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^dtparam=audio=on$/ s|^|#|" $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi

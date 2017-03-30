@@ -70,7 +70,7 @@ examplesdep=( "flask" "requests" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1702231440
+# template 1703300135
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -145,12 +145,15 @@ newline() {
 
 progress() {
     count=0
-    until [ $count -eq $1 ]; do
+    until [ $count -eq 7 ]; do
         echo -n "..." && sleep 1
         ((count++))
-    done
-    echo
+    done;
+    if ps -C $1 > /dev/null; then
+        echo -en "\r\e[K" && progress $1
+    fi
 }
+
 sudocheck() {
     if [ $(id -u) -ne 0 ]; then
         echo -e "Install must be run as root. Try 'sudo ./$scriptname'\n"
@@ -165,10 +168,9 @@ sysclean() {
 
 sysupdate() {
     if ! $UPDATE_DB; then
-        echo "Updating apt indexes..." && progress 3 &
+        echo "Updating apt indexes..." && progress apt-get &
         sudo apt-get update 1> /dev/null || { warning "Apt failed to update indexes!" && exit 1; }
-        echo "Reading package lists..."
-        progress 3 && UPDATE_DB=true
+        sleep 3 && UPDATE_DB=true
     fi
 }
 
@@ -406,7 +408,7 @@ add_dtoverlay() {
     if grep -q "^dtoverlay=$1" $CONFIG; then
         echo -e "\n$1 overlay already active"
     elif grep -q "^#dtoverlay=$1" $CONFIG; then
-        sudo sed -i "s|^#dtoverlay=$1|dtoverlay=$1|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtoverlay=$1$/ s|#||" $CONFIG
         echo -e "\nAdding $1 overlay to $CONFIG"
         ASK_TO_REBOOT=true
     else
@@ -417,13 +419,13 @@ add_dtoverlay() {
 }
 
 remove_dtoverlay() {
-    sudo sed -i "s|^dtoverlay=$1|#dtoverlay=$1|" $CONFIG &> /dev/null
+    sudo sed -i "/^dtoverlay=$1$/ s|^|#|" $CONFIG
     ASK_TO_REBOOT=true
 }
 
 enable_pi_audio() {
     if grep -q "#dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|#dtparam=audio=on|dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^#dtparam=audio=on$/ s|#||" $CONFIG
         echo -e "\nsnd_bcm2835 loaded (on-board audio enabled)"
         ASK_TO_REBOOT=true
     fi
@@ -431,14 +433,14 @@ enable_pi_audio() {
 
 disable_pi_audio() {
     if grep -q "^dtparam=audio=on" $CONFIG; then
-        sudo sed -i "s|^dtparam=audio=on|#dtparam=audio=on|" $CONFIG &> /dev/null
+        sudo sed -i "/^dtparam=audio=on$/ s|^|#|" $CONFIG
         echo -e "\nsnd_bcm2835 unloaded (on-board audio disabled)"
         ASK_TO_REBOOT=true
     fi
 }
 
 test_audio() {
-    newline
+    echo
     if confirm "Do you wish to test your system now?"; then
         echo -e "\nTesting..."
         speaker-test -l5 -c2 -t wav
@@ -451,8 +453,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
-    sudo sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
 }
 
 basic_asound() {
@@ -589,7 +591,9 @@ if [ $i2creq == "yes" ]; then
 fi
 if [ $i2sreq == "yes" ]; then
     echo -e "Note: $productname uses the I2S interface"
-    warning "The on-board audio chip will be disabled if you proceed!"
+    if [ $OS_NAME != "Volumio" ]; then
+        warning "The on-board audio chip will be disabled if you proceed!"
+    fi
 fi
 
 newline
@@ -807,7 +811,6 @@ if confirm "Do you wish to continue?"; then
 
     if [ $i2sreq == "yes" ]; then
         add_dtoverlay i2s-mmap
-        add_dtoverlay hifiberry-dac
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -831,6 +834,8 @@ if confirm "Do you wish to continue?"; then
         if ! confirm "Do you wish to perform a full install?"; then
             MIN_INSTALL=true
         fi
+    else
+        MIN_INSTALL=true
     fi
 
     if [ $localdir != "na" ]; then
@@ -839,7 +844,7 @@ if confirm "Do you wish to continue?"; then
         installdir="$USER_HOME/$topdir"
     fi
 
-    if ! $MIN_INSTALL;then
+    if ! $MIN_INSTALL || [ $gitrepoclone == "yes" ]; then
         [ -d $installdir ] || mkdir -p $installdir
     fi
 
@@ -1009,51 +1014,6 @@ if confirm "Do you wish to continue?"; then
                 fi
             done
         fi
-    fi
-
-# resources install
-
-    if ! $MIN_INSTALL && [ -n "$copydir" ]; then
-        if ! command -v git > /dev/null; then
-            apt_pkg_install git
-        fi
-        echo -e "\nDownloading examples and documentation..."
-        TMPDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
-        cd $TMPDIR
-        GITTAG=$(git ls-remote -t https://github.com/$gitusername/$gitreponame v\?.?.? | tail -n 1 | rev | cut -c -6 | rev)
-        if [ -n "$GITTAG" ]; then
-            git clone https://github.com/$gitusername/$gitreponame -b $GITTAG &> /dev/null
-        else
-            git clone --depth=1 https://github.com/$gitusername/$gitreponame &> /dev/null
-        fi
-        cd $installdir
-        for repodir in ${copydir[@]}; do
-            if [ -d $repodir ] && [ $repodir != "documentation" ]; then
-                newline
-                if [ -d $installdir/$repodir-backup ]; then
-                    rm -R $installdir/$repodir-old &> /dev/null
-                    mv $installdir/$repodir-backup $installdir/$repodir-old &> /dev/null
-                fi
-                mv $installdir/$repodir $installdir/$repodir-backup &> /dev/null
-                if [ $gitrepotop != "root" ]; then
-                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
-                else
-                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
-                fi
-                inform "The $repodir directory already exists on your system!"
-                echo -e "We've backed them up as $repodir-backup, just in case you've changed anything!\n"
-            else
-                rm -R $installdir/$repodir &> /dev/null
-                if [ $gitrepotop != "root" ]; then
-                    cp -R $TMPDIR/$gitreponame/$gitrepotop/$repodir $installdir/$repodir &> /dev/null
-                else
-                    cp -R $TMPDIR/$gitreponame/$repodir $installdir/$repodir &> /dev/null
-                fi
-            fi
-        done
-        echo "Resources for your $productname were copied to"
-        inform "$installdir"
-        rm -rf $TMPDIR
     fi
 
 # script custom routines
