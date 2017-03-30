@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703292105
+# template 1703300135
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -1145,7 +1145,8 @@ ExecStart=/usr/bin/apfallback
 [Install]
 WantedBy=multi-user.target
 EOF'
-        sudo systemctl enable apfallback && echo
+        sudo systemctl daemon-reload
+        sudo systemctl enable apfallback.service && echo
     fi
 
     if $FAILED_PKG; then
