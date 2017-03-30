@@ -1107,11 +1107,11 @@ EOF'
         fi
         sudo sed -i "/^allow-hotplug wlan0$/,+2 s|^|#|" /etc/network/interfaces
         sudo sed -i "/^#allow-hotplug wlan0$/,+1 s|#||" /etc/network/interfaces
-        sudo bash -c 'cat > /usr/bin/apfallback <<EOF
+        sudo cat > $HOME/apfallback.tmp <<'EOF'
 #!/bin/bash
 
 connected=false
-ssidlist=( $(grep "ssid" /etc/wpa_supplicant/wpa_supplicant.conf | tr -s [:space:] | cut -c 7- | tr -d \\n | sed "s|\"\"|\" \"|"))
+ssidlist=( $(grep "ssid" /etc/wpa_supplicant/wpa_supplicant.conf | tr -s [:space:] | cut -c 7- | tr -d \\n | sed "s|\"\"|\" \"|") )
 
 for ssid in "${ssidlist[@]}"; do
     if iw dev wlan0 scan ap-force | grep $ssid > /dev/null; then
@@ -1133,7 +1133,8 @@ if ! $connected; then
     systemctl start dnsmasq
     systemctl start hostapd
 fi
-EOF'
+EOF
+        sudo mv $HOME/apfallback.tmp /usr/bin/apfallback
         sudo chmod +x /usr/bin/apfallback
         sudo bash -c 'cat > /etc/systemd/system/apfallback.service <<EOF
 [Unit]
