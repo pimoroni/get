@@ -1146,7 +1146,7 @@ ExecStart=/usr/bin/apfallback
 [Install]
 WantedBy=multi-user.target
 EOF'
-        sudo systemctl daemon-reload
+        echo && sudo systemctl daemon-reload
         sudo systemctl enable apfallback.service && echo
     fi
 
