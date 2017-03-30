@@ -1145,6 +1145,7 @@ ExecStart=/usr/bin/apfallback
 [Install]
 WantedBy=multi-user.target
 EOF'
+        sudo systemctl enable apfallback && echo
     fi
 
     if $FAILED_PKG; then
