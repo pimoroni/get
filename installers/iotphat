@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=( "minicom" ) # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1703300135
+# template 1704060015
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -607,7 +607,7 @@ if confirm "Do you wish to continue?"; then
         if ! check_network; then
             warning "We can't connect to the Internet, check your network!" && exit 1
         fi
-        sysupdate
+        sysupdate && newline
     fi
 
     if apt_pkg_req "apt-utils" &> /dev/null; then
@@ -623,22 +623,26 @@ if confirm "Do you wish to continue?"; then
     if [ "$pip2support" == "yes" ]; then
         if ! [ -f "$(which python2)" ]; then
             if confirm "Python 2 is not installed. Would like to install it?"; then
+                progress apt-get &
                 apt_pkg_install "python-pip"
             else
                 pip2support="na"
             fi
         elif apt_pkg_req "python-pip" &> /dev/null; then
+            progress apt-get &
             apt_pkg_install "python-pip"
         fi
     fi
     if [ "$pip3support" == "yes" ]; then
         if ! [ -f "$(which python3)" ]; then
             if prompt "Python 3 is not installed. Would like to install it?"; then
+                progress apt-get &
                 apt_pkg_install "python3-pip"
             else
                 pip3support="na"
             fi
         elif apt_pkg_req "python3-pip" &> /dev/null; then
+            progress apt-get &
             apt_pkg_install "python3-pip"
         fi
     fi
