@@ -1074,7 +1074,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         curl -sSL https://deb.nodesource.com/setup_7.x | sudo bash
-        sudo apt-get install nodejs
+        sudo apt_pkg_install "nodejs"
         cd $installdir/$gitclonedir
         make electron-develop
         echo "node installed $(node -v); npm installed $(npm -v)"
