@@ -43,7 +43,7 @@ armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+osdeny=( "Darwin" "Kali" "Linaro" "OSMC" "Volumio" ) # list os-releases specifically disallowed
 debpackage="aptdebname" # the name of the package in apt repo
 piplibname="piplibname" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705152155
+# template 1705160225
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -222,9 +222,11 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
-    elif cat /etc/os-release | grep -q "volumio"; then
+    elif cat /etc/os-release | grep -q "ID=osmc"; then
+        OS_NAME="OSMC"
+    elif cat /etc/os-release | grep -q "ID=volumio"; then
         OS_NAME="Volumio"
-    elif cat /etc/os-release | grep -q "Raspbian"; then
+    elif cat /etc/os-release | grep -q "ID=raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
     elif cat /etc/os-release | grep -q "Debian"; then
         OS_NAME="Debian"
