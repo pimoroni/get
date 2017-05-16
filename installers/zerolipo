@@ -1079,7 +1079,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        cd $installdir/$gitclonedir && ./setup.sh zerolipo
+        cd $installdir/$gitclonedir && ./setup.sh -y zerolipo
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
     fi
 
