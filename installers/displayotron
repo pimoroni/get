@@ -51,7 +51,7 @@ pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="displayotron" # the name of the dir for copy of resources
-gitreponame="dot3k" # the name of the git project repo
+gitreponame="displayotron" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -61,7 +61,7 @@ repoclean="no" # whether any git repo clone found should be cleaned up
 repoinstall="no" # whether the library should be installed from repo
 libdir="library" # subdirectory of library in repo
 copydir=( "documentation" "examples" ) # subdirectories to copy from repo
-copyhead="no" # whether to use the latest repo commit or release tag
+copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
 pythondep=( "sn3218" "st7036" ) # list of python dependencies
@@ -70,7 +70,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1704060015
+# template 1705161420
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -222,6 +222,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -291,7 +293,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
+    sudo ping -q -w 1 -c 1 8.8.8.8 | grep "1 received" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -299,7 +301,7 @@ launch_url() {
     if command -v xdg-open > /dev/null; then
         xdg-open "$1" && return 0
     else
-      error_box "There was an error attempting to launch your browser!"
+        error_box "There was an error attempting to launch your browser!"
     fi
 }
 
@@ -453,8 +455,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
