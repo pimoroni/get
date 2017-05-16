@@ -70,7 +70,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1704060015
+# template 1705161420
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -222,6 +222,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -291,7 +293,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
+    sudo ping -q -w 1 -c 1 8.8.8.8 | grep "1 received" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -299,7 +301,7 @@ launch_url() {
     if command -v xdg-open > /dev/null; then
         xdg-open "$1" && return 0
     else
-      error_box "There was an error attempting to launch your browser!"
+        error_box "There was an error attempting to launch your browser!"
     fi
 }
 
@@ -453,8 +455,8 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
