@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705161840
+# template 1705162120
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -293,7 +293,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 8.8.8.8 | grep "1 received" &> /dev/null && return 0 || return 1
+    sudo ping -q -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
