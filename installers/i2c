@@ -179,7 +179,7 @@ os_check() {
         OS_NAME="RetroPie"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
-    elif cat /etc/os-release | grep -q "volumio"; then
+    elif cat /etc/os-release | grep -q "OSMC"; then
         OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "Raspbian"; then
         OS_NAME="Raspbian" && IS_RASPBIAN=true
