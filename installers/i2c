@@ -301,7 +301,7 @@ fi
 
 dt_check
 arch_check
-os_check
+#os_check
 
 
 if [ $debugmode != "no" ]; then
