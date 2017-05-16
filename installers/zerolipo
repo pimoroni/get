@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705161420
+# template 1705161840
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -463,6 +463,14 @@ basic_asound() {
         sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
         sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
         sudo mv $HOME/.asoundrc /etc/asound.conf
+}
+
+config_set() {
+    if [ -n $defaultconf ]; then
+        sudo sed -i "s|$1=.*$|$1=$2|" $defaultconf
+    else
+        sudo sed -i "s|$1=.*$|$1=$2|" $3
+    fi
 }
 
 servd_trig() {
