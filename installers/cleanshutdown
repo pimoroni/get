@@ -1092,7 +1092,6 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        echo "target_pin $2"
         cd $installdir/$gitclonedir && ./setup.sh -y $2
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
     fi

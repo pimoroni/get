@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705171345
+# template 1705171815
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -314,7 +314,7 @@ get_install() {
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
-    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y" $2
     read -p "Press Enter to continue..." < /dev/tty
 }
 

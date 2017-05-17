@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705171345
+# template 1705171815
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -1092,7 +1092,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        inform "Setting up spotipy...\n"
+        echo -e "Setting up spotipy...\n"
         wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         echo "Refreshing sources..."
@@ -1109,9 +1109,11 @@ if confirm "Do you wish to continue?"; then
         if [ -f $HOME/.config/mopidy/mopidy.conf ]; then
             rm $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
             mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
-        fi; mopidy config > /dev/null # generate fresh config file
-        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
+        fi
+        mopidy config > /dev/null # generate fresh config file
         sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
+        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
+        sed -i -e "s|[[:space:]]*$||" /etc/mopidy/mopidy.conf # strip trailing spaces
         sudo patch /etc/mopidy/mopidy.conf \
 <<EOT
 @@ -25,3 +25,3 @@
@@ -1133,7 +1135,7 @@ if confirm "Do you wish to continue?"; then
 +mixer = software
 +mixer_volume = 35
 +output = autoaudiosink
-@@ -61,9 +61,9 @@
+@@ -51,9 +51,9 @@
 -[ttsgpio]
 -#enabled = true
 -#debug_gpio_simulate = false
@@ -1161,57 +1163,53 @@ if confirm "Do you wish to continue?"; then
 +pusherport = 6681
 +country = GB
 +locale = en_GB
-@@ -109,3 +109,3 @@
--#enabled = true
--#hostname = 127.0.0.1
--#port = 6680
-+enabled = true
-+hostname = ::
-+port = 6680
-@@ -132,1 +132,1 @@
--#playlists_dir =
-+#playlists_dir = /var/lib/mopidy/playlists
-@@ -134,2 +134,2 @@
--[softwaremixer]
--#enabled = true
-+[softwaremixer]
-+enabled = true
-@@ -150,3 +150,3 @@
--#enabled = true
--#library = json
--#media_dir =
-+enabled = true
-+library = json
-+media_dir = /var/lib/mopidy/media
-@@ -167,3 +167,3 @@
--#enabled = true
--#card = 0
--#control = Master
-+enabled = true
-+card = 0
-+control = PCM
-@@ -172,3 +172,3 @@
+@@ -79,3 +79,3 @@
 -#enabled = true
 -#username =
 -#password =
 +enabled = true
 +username = namevar
 +password = passvar
+@@ -125,3 +125,3 @@
+-#enabled = true
+-#hostname = 127.0.0.1
+-#port = 6680
++enabled = true
++hostname = ::
++port = 6680
+@@ -148,1 +148,1 @@
+-#playlists_dir =
++#playlists_dir = /var/lib/mopidy/playlists
+@@ -150,2 +150,2 @@
+-[softwaremixer]
+-#enabled = true
++[softwaremixer]
++enabled = true
+@@ -166,3 +166,3 @@
+-#enabled = true
+-#library = json
+-#media_dir =
++enabled = true
++library = json
++media_dir = /var/lib/mopidy/media
+@@ -183,2 +183,2 @@
+-#enabled = true
+-#card = 0
++enabled = true
++card = 0
 EOT
-        sudo systemctl enable mopidy
-        echo
+        newline
+        sed -i -e "s|#control = Master$|control = PCM|" /etc/mopidy/mopidy.conf # last line workaround
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
         sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
         sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
-        echo
-        echo "What product would you like to configure?"
-        echo
-        echo "0 : (leave audio unconfigured)"
-        echo "1 : pHAT BEAT"
-        echo "2 : pHAT DAC"
-        echo "3 : Speaker pHAT"
-        echo
+        sudo systemctl enable mopidy
+        echo -e "\nWhat product would you like to configure?\n"
+        echo -e "0 : (leave audio unconfigured)"
+        echo -e "1 : pHAT BEAT"
+        echo -e "2 : pHAT DAC"
+        echo -e "3 : Speaker pHAT\n"
         read -r -p "Enter an option [0-3]:" choice < /dev/tty
         if [[ $choice =~ ^(0)$ ]]; then
             inform "\nThe existing audio setup has been preserved!\n"
