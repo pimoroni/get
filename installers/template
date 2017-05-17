@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705162120
+# template 1705170025
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -581,7 +581,7 @@ if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
 fi
 
 if $IS_EXPERIMENTAL; then
-    warning "Support for your operating system is experimental. Please visit"
+    warning "\nSupport for your operating system is experimental. Please visit"
     warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
@@ -824,7 +824,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $i2sreq == "yes" ]; then
-        add_dtoverlay i2s-mmap
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -1091,10 +1090,10 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!\n"
+        warning "\nSome packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
+        warning "\nSupport for your operating system is experimental. Please visit"
         warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
