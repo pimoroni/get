@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Kano" "Mate" "OSMC" "PiTop" "RetroPie" ) # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Ubuntu" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+oswarning=( "Kano" "Mate" "PiTop" "RetroPie" ) # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Ubuntu" "Kali" "Linaro" "OSMC" "Volumio" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
@@ -63,14 +63,14 @@ libdir="library" # subdirectory of library in repo
 copydir=( "projects" ) # subdirectories to copy from repo
 copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
-coredeplist=() # list of core dependencies
+coredeplist=( "patch" ) # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705171815
+# template 1705171930
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -100,7 +100,7 @@ SMBUS35="python3-smbus1_1.1+35dbg-1_armhf.deb"
 SPIDEV2="python-spidev_2.0~git20150907_armhf.deb"
 SPIDEV3="python3-spidev_2.0~git20150907_armhf.deb"
 
-RASPGPIO="raspi-gpio_0.20170105_armhf.deb"
+RPIGPIO1="raspi-gpio_0.20170105_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
@@ -671,9 +671,9 @@ if confirm "Do you wish to continue?"; then
     if [ $gpioreq == "yes" ]; then
         echo -e "\nChecking for packages required for GPIO control..."
         if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
-                echo "package raspi-gpio can't be found, fetching from alternative location..."
-                wget $RPIPOOL/main/r/raspi-gpio/$RASPGPIO &> /dev/null
-                sudo dpkg -i $DEBDIR/$RASPGPIO && FAILED_PKG=false
+            echo "package raspi-gpio can't be found, fetching from alternative location..."
+            wget $RPIPOOL/main/r/raspi-gpio/$RPIGPIO1 &> /dev/null
+            sudo dpkg -i $DEBDIR/$RPIGPIO1 && FAILED_PKG=false
         fi
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
