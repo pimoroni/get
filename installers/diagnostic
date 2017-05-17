@@ -36,7 +36,7 @@ armv6="yes" # whether armv6 processors are supported
 armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
-osreleases=( "Debian" "Kali" "Linaro" "Mate" "PiTop" "Raspbian" "RetroPie" "Ubuntu" ) # list os-releases supported
+osreleases=( "Debian" "Kali" "Linaro" "Mate" "PiTop" "OSMC" "Raspbian" "RetroPie" "Ubuntu" ) # list os-releases supported
 oswarning=() # list experimental os-releases
 osdeny=( "Darwin" ) # list os-releases specifically disallowed
 
@@ -177,6 +177,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -251,20 +253,22 @@ get_hw_rev() {
     if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
         if [ "$hwrid" == "00" ];then
-            hwgen="126" # P1
+            hwgen="1260" # P1
         elif [ "$hwrid" == "01" ];then
-            hwgen="140" # J8
+            hwgen="1400" # J8
         fi
     else
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-6 | rev)"
         if [ "$hwrid" == "04" ];then # Pi 2
-            hwgen="240"
+            hwgen="2400"
         elif [ "$hwrid" == "08" ];then # Pi 3
-            hwgen="340"
+            hwgen="3401"
         elif [ "$hwrid" == "09" ];then # Pi 0
-            hwgen="040"
+            hwgen="0400"
+        elif [ "$hwrid" == "0c" ];then # Pi 0 W
+            hwgen="0401"
         else # Unknown
-            hwgen="000"
+            hwgen="0000"
         fi
     fi
 }

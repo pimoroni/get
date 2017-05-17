@@ -21,7 +21,7 @@ DISCLAIMER
 
 # script control variables
 
-productname="na" # the name of the product to install
+productname="Serial Console" # the name of the product to install
 scriptname="uartoff" # the name of this script
 spacereq=1 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
@@ -251,20 +251,22 @@ get_hw_rev() {
     if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
         if [ "$hwrid" == "00" ];then
-            hwgen="126" # P1
+            hwgen="1260" # P1
         elif [ "$hwrid" == "01" ];then
-            hwgen="140" # J8
+            hwgen="1400" # J8
         fi
     else
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-6 | rev)"
         if [ "$hwrid" == "04" ];then # Pi 2
-            hwgen="240"
+            hwgen="2400"
         elif [ "$hwrid" == "08" ];then # Pi 3
-            hwgen="340"
+            hwgen="3401"
         elif [ "$hwrid" == "09" ];then # Pi 0
-            hwgen="040"
+            hwgen="0400"
+        elif [ "$hwrid" == "0c" ];then # Pi 0 W
+            hwgen="0401"
         else # Unknown
-            hwgen="000"
+            hwgen="0000"
         fi
     fi
 }
@@ -289,12 +291,6 @@ if [ $debugmode != "no" ]; then
     echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
     echo "This script will enable the serial console login on your Raspberry Pi"
-    if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands copied"
-        inform "from the internet. Ensure they are from a trusted source.\n"
-        echo -e "If you want to see what this script does before running it,"
-        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
-    fi
 fi
 
 # checks and init
