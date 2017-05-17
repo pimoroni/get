@@ -1134,7 +1134,18 @@ if confirm "Do you wish to continue?"; then
 +mixer = software
 +mixer_volume = 35
 +output = autoaudiosink
-@@ -51,9 +51,9 @@
+@@ -61,5 +61,5 @@
+-[iris]
+-#enabled = true
+-#pusherport = 6681
+-#country = NZ
+-#locale = en_NZ
++[iris]
++enabled = true
++pusherport = 6681
++country = GB
++locale = en_GB
+@@ -67,9 +67,9 @@
 -[ttsgpio]
 -#enabled = true
 -#debug_gpio_simulate = false
@@ -1153,15 +1164,6 @@ if confirm "Do you wish to continue?"; then
 +pin_button_vol_up = 16
 +pin_button_vol_down = 26
 +pin_play_led = 20
-@@ -73,4 +73,4 @@
--#enabled = true
--#pusherport = 6681
--#country = NZ
--#locale = en_NZ
-+enabled = true
-+pusherport = 6681
-+country = GB
-+locale = en_GB
 @@ -79,3 +79,3 @@
 -#enabled = true
 -#username =
