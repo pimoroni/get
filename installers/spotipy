@@ -1113,6 +1113,7 @@ if confirm "Do you wish to continue?"; then
         fi
         mopidy config > /dev/null # generate fresh config file
         sed -i -e "s|[[:space:]]*$||" $HOME/.config/mopidy/mopidy.conf # strip trailing spaces
+        echo >> $HOME/.config/mopidy/mopidy.conf # last line workaround
         patch $HOME/.config/mopidy/mopidy.conf \
 <<EOT
 @@ -25,3 +25,3 @@
@@ -1194,11 +1195,12 @@ if confirm "Do you wish to continue?"; then
 @@ -183,2 +183,2 @@
 -#enabled = true
 -#card = 0
+-#control = Master
 +enabled = true
 +card = 0
++control = PCM
 EOT
         newline
-        sed -i -e "s|#control = Master$|control = PCM|" $HOME/.config/mopidy/mopidy.conf # last line workaround
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
         sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
