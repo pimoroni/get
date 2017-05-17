@@ -1210,6 +1210,7 @@ EOT
         sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
         mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
         sudo systemctl enable mopidy
+        newline
         echo -e "\nWhat product would you like to configure?\n"
         echo -e "0 : (leave audio unconfigured)"
         echo -e "1 : pHAT BEAT"
