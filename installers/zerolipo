@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705171930
+# template 1705171955
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -672,6 +672,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nChecking for packages required for GPIO control..."
         if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
             echo "package raspi-gpio can't be found, fetching from alternative location..."
+            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
             wget $RPIPOOL/main/r/raspi-gpio/$RPIGPIO1 &> /dev/null
             sudo dpkg -i $DEBDIR/$RPIGPIO1 && FAILED_PKG=false
         fi
