@@ -1098,7 +1098,7 @@ if confirm "Do you wish to continue?"; then
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         echo "Refreshing sources..."
         progress apt-get &
-        UPDATE_DB=false && sysupdate && sleep 5
+        UPDATE_DB=false && sysupdate && sleep 5 && newline
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
@@ -1192,7 +1192,7 @@ if confirm "Do you wish to continue?"; then
 +enabled = true
 +library = json
 +media_dir = /var/lib/mopidy/media
-@@ -183,2 +183,2 @@
+@@ -183,3 +183,3 @@
 -#enabled = true
 -#card = 0
 -#control = Master
