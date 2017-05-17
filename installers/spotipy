@@ -1097,8 +1097,8 @@ if confirm "Do you wish to continue?"; then
         wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         echo "Refreshing sources..."
-        progress 3 && UPDATE_DB=false
-        sysupdate
+        progress apt-get &
+        UPDATE_DB=false && sysupdate
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
