@@ -21,7 +21,7 @@ DISCLAIMER
 
 # script control variables
 
-productname="na" # the name of the product to install
+productname="I2C0 bus" # the name of the product to install
 scriptname="i2c0" # the name of this script
 spacereq=1 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
@@ -37,7 +37,7 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
-oswarning=( "Debian" "Kano" "Mate" "PiTop" "RetroPie" "Ubuntu" "Volumio" ) # list experimental os-releases
+oswarning=( "Debian" "Kano" "Mate" "OSMC" "PiTop" "RetroPie" "Ubuntu" "Volumio" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
 
 # setup variables
@@ -177,6 +177,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -251,20 +253,22 @@ get_hw_rev() {
     if [ "$hwrid" == "00" ] || [ "$hwrid" == "01" ];then # Pi 1
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-4 | rev)"
         if [ "$hwrid" == "00" ];then
-            hwgen="126" # P1
+            hwgen="1260" # P1
         elif [ "$hwrid" == "01" ];then
-            hwgen="140" # J8
+            hwgen="1400" # J8
         fi
     else
         hwver="$(grep "^Revision" /proc/cpuinfo | rev | cut -c 1-6 | rev)"
         if [ "$hwrid" == "04" ];then # Pi 2
-            hwgen="240"
+            hwgen="2400"
         elif [ "$hwrid" == "08" ];then # Pi 3
-            hwgen="340"
+            hwgen="3401"
         elif [ "$hwrid" == "09" ];then # Pi 0
-            hwgen="040"
+            hwgen="0400"
+        elif [ "$hwrid" == "0c" ];then # Pi 0 W
+            hwgen="0401"
         else # Unknown
-            hwgen="000"
+            hwgen="0000"
         fi
     fi
 }
@@ -289,12 +293,6 @@ if [ $debugmode != "no" ]; then
     echo -e "git user $gitusername and $gitrepobranch branch/tag will be used\n"
 else
     echo "This script will enable the I2C0 bus on your Raspberry Pi"
-    if [ "$FORCE" != '-y' ]; then
-        inform "\nAlways be careful when running scripts and commands copied"
-        inform "from the internet. Ensure they are from a trusted source.\n"
-        echo -e "If you want to see what this script does before running it,"
-        echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
-    fi
 fi
 
 # checks and init
@@ -376,7 +374,6 @@ if confirm "Do you wish to continue?"; then
         else
             echo "dtparam=i2c_arm=on" | sudo tee -a $CONFIG &> /dev/null
         fi
-        echo "$BLACKLIST"
         if ! [ -e $BLACKLIST ]; then
             touch $BLACKLIST
         fi
