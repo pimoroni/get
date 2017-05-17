@@ -1098,7 +1098,7 @@ if confirm "Do you wish to continue?"; then
         sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
         echo "Refreshing sources..."
         progress apt-get &
-        UPDATE_DB=false && sysupdate
+        UPDATE_DB=false && sysupdate && sleep 5
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
@@ -1112,10 +1112,8 @@ if confirm "Do you wish to continue?"; then
             mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
         fi
         mopidy config > /dev/null # generate fresh config file
-        sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
-        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
-        sudo sed -i -e "s|[[:space:]]*$||" /etc/mopidy/mopidy.conf # strip trailing spaces
-        sudo patch /etc/mopidy/mopidy.conf \
+        sed -i -e "s|[[:space:]]*$||" $HOME/.config/mopidy/mopidy.conf # strip trailing spaces
+        patch $HOME/.config/mopidy/mopidy.conf \
 <<EOT
 @@ -25,3 +25,3 @@
 -#cache_dir = \$XDG_CACHE_DIR/mopidy
@@ -1200,11 +1198,13 @@ if confirm "Do you wish to continue?"; then
 +card = 0
 EOT
         newline
-        sudo sed -i -e "s|#control = Master$|control = PCM|" /etc/mopidy/mopidy.conf # last line workaround
+        sed -i -e "s|#control = Master$|control = PCM|" $HOME/.config/mopidy/mopidy.conf # last line workaround
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sudo sed -i "s|username = namevar$|username = $namevar|" /etc/mopidy/mopidy.conf
+        sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sudo sed -i "s|password = passvar$|password = $passvar|" /etc/mopidy/mopidy.conf
+        sed -i "s|password = passvar$|password = $passvar|" $HOME/.config/mopidy/mopidy.conf
+        sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
+        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
         sudo systemctl enable mopidy
         echo -e "\nWhat product would you like to configure?\n"
         echo -e "0 : (leave audio unconfigured)"
