@@ -1206,6 +1206,7 @@ EOT
         sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
         sed -i "s|password = passvar$|password = $passvar|" $HOME/.config/mopidy/mopidy.conf
+        sudo mkdir /etc/mopidy &> /dev/null
         sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
         mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
         sudo systemctl enable mopidy
