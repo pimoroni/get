@@ -1,8 +1,8 @@
 #!/bin/bash
 
 startpoint=73
-cmdpoint=1070
-endpoint=1100
+cmdpoint=1079
+endpoint=1109
 lenient="no"
 
 sourcedir="./installers"
@@ -23,17 +23,17 @@ for script in ${scriptlist[@]}; do
     validcheck=$(sed -n "$startpoint","$startpoint"p "$sourcedir/$script" | grep "template")
     if [ -n "$validcheck" ]; then
         if [ "$lenient" == "yes" ]; then
-            endpoint=$((endpoint + 10)) 
+            endpoint=$((endpoint + 10))
             blockcheck=$(sed -n "$startpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
         else
             blockcheck=$(sed -n "$cmdpoint","$endpoint"p "$sourcedir/$script" | grep "custom commands in this scope")
         fi
-    
+
         if [ -n "$blockcheck" ]; then
             echo "processing $script ..."
             variable=$(head -n "$startpoint" "$sourcedir/$script" | sed -e "$ d")
             common=$(sed -n "$startpoint","$endpoint"p "$template")
-    
+
             { echo "$variable" ; echo "" ; echo "$common"; } > "$sourcedir/$script"
         fi
     fi

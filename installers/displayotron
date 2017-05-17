@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
+oswarning=( "OSMC" "Volumio" ) # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Ubuntu" "Kali" "Linaro" ) # list os-releases specifically disallowed
 debpackage="displayotron" # the name of the package in apt repo
 piplibname="dot3k" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
@@ -70,7 +70,7 @@ examplesdep=( "psutil" ) # list of python modules required by examples
 somemoredep=( "libudev-dev" ) # list of additional dependencies
 xdisplaydep=( "vlc" ) # list of dependencies requiring X server
 
-# template 1705161420
+# template 1705170025
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -293,7 +293,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 8.8.8.8 | grep "1 received" &> /dev/null && return 0 || return 1
+    sudo ping -q -w 10 -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -465,6 +465,14 @@ basic_asound() {
         sudo mv $HOME/.asoundrc /etc/asound.conf
 }
 
+config_set() {
+    if [ -n $defaultconf ]; then
+        sudo sed -i "s|$1=.*$|$1=$2|" $defaultconf
+    else
+        sudo sed -i "s|$1=.*$|$1=$2|" $3
+    fi
+}
+
 servd_trig() {
     if command -v service > /dev/null; then
         sudo service $1 $2
@@ -573,7 +581,7 @@ if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
 fi
 
 if $IS_EXPERIMENTAL; then
-    warning "Support for your operating system is experimental. Please visit"
+    warning "\nSupport for your operating system is experimental. Please visit"
     warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
@@ -816,7 +824,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $i2sreq == "yes" ]; then
-        add_dtoverlay i2s-mmap
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -1083,10 +1090,10 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!\n"
+        warning "\nSome packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
+        warning "\nSupport for your operating system is experimental. Please visit"
         warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 

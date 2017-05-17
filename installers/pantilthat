@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "Kano" "Mate" "PiTop" "RetroPie" ) # list os-releases supported
-oswarning=( "Debian" "Ubuntu" "Volumio" ) # list experimental os-releases
-osdeny=( "Darwin" "Kali" "Linaro" ) # list os-releases specifically disallowed
+oswarning=( "OSMC" "Volumio" ) # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Ubuntu" "Kali" "Linaro" ) # list os-releases specifically disallowed
 debpackage="pantilthat" # the name of the package in apt repo
 piplibname="pantilthat" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
@@ -70,7 +70,7 @@ examplesdep=( "picamera" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1704060015
+# template 1705170025
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -222,6 +222,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -291,7 +293,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
+    sudo ping -q -w 10 -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -299,7 +301,7 @@ launch_url() {
     if command -v xdg-open > /dev/null; then
         xdg-open "$1" && return 0
     else
-      error_box "There was an error attempting to launch your browser!"
+        error_box "There was an error attempting to launch your browser!"
     fi
 }
 
@@ -453,14 +455,22 @@ disable_pulseaudio() {
 }
 
 kill_volumealsa() {
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel
-    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE/panels/panel &> /dev/null
+    sed -i "s|type=volumealsa|type=space|" $HOME/.config/lxpanel/LXDE-pi/panels/panel &> /dev/null
 }
 
 basic_asound() {
         sudo echo -e "pcm.\041default {\n type hw\n card 1\n}" > $HOME/.asoundrc
         sudo echo -e "ctl.\041default {\n type hw\n card 1\n}" >> $HOME/.asoundrc
         sudo mv $HOME/.asoundrc /etc/asound.conf
+}
+
+config_set() {
+    if [ -n $defaultconf ]; then
+        sudo sed -i "s|$1=.*$|$1=$2|" $defaultconf
+    else
+        sudo sed -i "s|$1=.*$|$1=$2|" $3
+    fi
 }
 
 servd_trig() {
@@ -571,7 +581,7 @@ if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
 fi
 
 if $IS_EXPERIMENTAL; then
-    warning "Support for your operating system is experimental. Please visit"
+    warning "\nSupport for your operating system is experimental. Please visit"
     warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
@@ -814,7 +824,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $i2sreq == "yes" ]; then
-        add_dtoverlay i2s-mmap
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -1081,10 +1090,10 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!\n"
+        warning "\nSome packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
+        warning "\nSupport for your operating system is experimental. Please visit"
         warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
