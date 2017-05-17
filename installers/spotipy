@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705152155
+# template 1705171345
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -100,6 +100,7 @@ SMBUS35="python3-smbus1_1.1+35dbg-1_armhf.deb"
 SPIDEV2="python-spidev_2.0~git20150907_armhf.deb"
 SPIDEV3="python3-spidev_2.0~git20150907_armhf.deb"
 
+RASPGPIO="raspi-gpio_0.20170105_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
@@ -222,6 +223,8 @@ os_check() {
         OS_NAME="PiTop"
     elif command -v emulationstation > /dev/null; then
         OS_NAME="RetroPie"
+    elif cat /etc/os-release | grep -q "OSMC"; then
+        OS_NAME="OSMC"
     elif cat /etc/os-release | grep -q "volumio"; then
         OS_NAME="Volumio"
     elif cat /etc/os-release | grep -q "Raspbian"; then
@@ -291,7 +294,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3 | head -n 1` &> /dev/null && return 0 || return 1
+    sudo ping -q -w 10 -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -299,7 +302,7 @@ launch_url() {
     if command -v xdg-open > /dev/null; then
         xdg-open "$1" && return 0
     else
-      error_box "There was an error attempting to launch your browser!"
+        error_box "There was an error attempting to launch your browser!"
     fi
 }
 
@@ -463,6 +466,14 @@ basic_asound() {
         sudo mv $HOME/.asoundrc /etc/asound.conf
 }
 
+config_set() {
+    if [ -n $defaultconf ]; then
+        sudo sed -i "s|$1=.*$|$1=$2|" $defaultconf
+    else
+        sudo sed -i "s|$1=.*$|$1=$2|" $3
+    fi
+}
+
 servd_trig() {
     if command -v service > /dev/null; then
         sudo service $1 $2
@@ -571,7 +582,7 @@ if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
 fi
 
 if $IS_EXPERIMENTAL; then
-    warning "Support for your operating system is experimental. Please visit"
+    warning "\nSupport for your operating system is experimental. Please visit"
     warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
@@ -659,9 +670,14 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         echo -e "\nChecking for packages required for GPIO control..."
+        if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
+                echo "package raspi-gpio can't be found, fetching from alternative location..."
+                wget $RPIPOOL/main/r/raspi-gpio/$RASPGPIO &> /dev/null
+                sudo dpkg -i $DEBDIR/$RASPGPIO && FAILED_PKG=false
+        fi
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-rpi.gpio can't be found, fetching from alternative location..."
+                echo "package python-rpi.gpio can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO2 && FAILED_PKG=false
@@ -671,7 +687,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-rpi.gpio can't be found, fetching from alternative location..."
+                echo "package python3-rpi.gpio can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO3 && FAILED_PKG=false
@@ -716,7 +732,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nChecking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-spidev can't be found, fetching from alternative location..."
+                echo "package python-spidev can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/s/spidev/$SPIDEV2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV2 && FAILED_PKG=false
@@ -726,7 +742,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-spidev can't be found, fetching from alternative location..."
+                echo "package python3-spidev can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/s/spidev/$SPIDEV3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV3 && FAILED_PKG=false
@@ -771,7 +787,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nChecking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-smbus can't be found, fetching from alternative location..."
+                echo "package python-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS2 && FAILED_PKG=false
@@ -779,13 +795,13 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-smbus can't be found, fetching from alternative location..."
+                echo "package python3-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SMBUS3 && FAILED_PKG=false
             elif [ -n $(python3 --version 2>&1 | grep -q "3.5") ]; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
-                    echo "python3-smbus can't be found, fetching from alternative location..."
+                    echo "package python3-smbus can't be found, fetching from alternative location..."
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                     wget $GETPOOL/resources/$SMBUS35 &> /dev/null
                     sudo dpkg -i $DEBDIR/$SMBUS35 && FAILED_PKG=false
@@ -814,7 +830,6 @@ if confirm "Do you wish to continue?"; then
     fi
 
     if [ $i2sreq == "yes" ]; then
-        add_dtoverlay i2s-mmap
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup
@@ -1204,6 +1219,7 @@ EOT
             inform "\nSetting up pHAT BEAT...\n"
             sudo adduser mopidy gpio
             get_install phatbeat
+            get_install cleanshutdown
         elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up pHAT DAC..."
             get_install phatdac
@@ -1217,13 +1233,11 @@ EOT
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!"
-        newline
+        warning "\nSome packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product."
-        newline
+        warning "\nSupport for your operating system is experimental. Please visit"
+        warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
     if [ "$1" != '-y' ]; then
