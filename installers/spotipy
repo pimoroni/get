@@ -314,7 +314,7 @@ get_install() {
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
-    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y" $2
     read -p "Press Enter to continue..." < /dev/tty
 }
 
@@ -1219,7 +1219,7 @@ EOT
             inform "\nSetting up pHAT BEAT...\n"
             sudo adduser mopidy gpio
             get_install phatbeat
-            get_install cleanshutdown
+            get_install cleanshutdown 12
         elif [[ $choice =~ ^(2)$ ]]; then
             inform "\nSetting up pHAT DAC..."
             get_install phatdac
