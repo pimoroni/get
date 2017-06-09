@@ -1095,9 +1095,15 @@ wpa_key_mgmt=WPA-PSK
 wpa_pairwise=CCMP
 rsn_pairwise=CCMP
 EOF'
-        apssid=$(hostname)
-        sudo sed -i "s|^ssid=.*$|ssid=$apssid|" /etc/hostapd/hostapd.conf
-        inform "SSDI set to $apssid (hostname)"
+        read -r -p "What SSID/hostname would you like to use (default is raspberrypi): " ssidhost < /dev/tty
+        if [ ${#ssidhost} -ge 1 ]; then
+            sudo echo $ssidhost > /etc/hostname
+        else
+            echo "Your input couldn't be read, using default!"
+            ssidhost="raspberrypi"
+        fi
+        sudo sed -i "s|^ssid=.*$|ssid=$ssidhost|" /etc/hostapd/hostapd.conf
+        inform "SSDI/hostname set to $ssidhost"
         read -r -p "Password to join network (8 characters minimum): " ssidpass < /dev/tty
         if [ ${#ssidpass} -ge 8 ]; then
             sudo sed -i "s|^wpa_passphrase=.*$|wpa_passphrase=$ssidpass|" /etc/hostapd/hostapd.conf
