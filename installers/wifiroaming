@@ -1097,7 +1097,7 @@ rsn_pairwise=CCMP
 EOF'
         read -r -p "What SSID/hostname would you like to use (default is raspberrypi): " ssidhost < /dev/tty
         if [ ${#ssidhost} -ge 1 ]; then
-            sudo echo $ssidhost > /etc/hostname
+            sudo bash -c "echo $ssidhost > /etc/hostname"
         else
             echo "Your input couldn't be read, using default!"
             ssidhost="raspberrypi"
