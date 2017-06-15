@@ -21,8 +21,8 @@ DISCLAIMER
 
 # script control variables
 
-productname="Unicorn HAT/pHAT" # the name of the product to install
-scriptname="unicornhat" # the name of this script
+productname="Unicorn HAT HD" # the name of the product to install
+scriptname="unicornhathd" # the name of this script
 spacereq=50 # minimum size required on root partition in MB
 debugmode="no" # whether the script should use debug routines
 debuguser="none" # optional test git user to use in debug mode
@@ -31,10 +31,10 @@ forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
 mininstall="no" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
-gpioreq="yes" # whether low-level gpio access is required
+gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
 i2sreq="no" # whether the i2s interface is required
-spireq="no" # whether the spi interface is required
+spireq="yes" # whether the spi interface is required
 uartreq="no" # whether uart communication is required
 armhfonly="yes" # whether the script is allowed to run on other arch
 armv6="yes" # whether armv6 processors are supported
@@ -45,13 +45,13 @@ osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "PiTop" "RetroPie" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" "Mate" "Ubuntu" "Volumio" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
-piplibname="unicornhat" # the name of the lib in pip repo
+piplibname="unicornhathd" # the name of the lib in pip repo
 pipoverride="yes" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
 pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
-localdir="unicornhat" # the name of the dir for copy of resources
-gitreponame="unicorn-hat" # the name of the git project repo
+localdir="unicornhathd" # the name of the dir for copy of resources
+gitreponame="unicorn-hat-hd" # the name of the git project repo
 gitusername="pimoroni" # the name of the git user to fetch repo from
 gitrepobranch="master" # repo branch to checkout
 gitrepotop="root" # the name of the dir to base repo from
@@ -1094,22 +1094,15 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
-        if $IS_SUPPORTED; then
-            warning "We need to reconfigure your audio configuration!"
-            echo "This is a necessary step to ensure $productname works correctly"
-            \curl -sS $GETPOOL/audio | bash -s - "3"
-            ASK_TO_REBOOT=true
-            newline
-        fi
+        # place all custom commands in this scope
     fi
 
     if $FAILED_PKG; then
-        warning "Some packages could not be installed, review the output for details!" && newline
+        warning "\nSome packages could not be installed, review the output for details!\n"
     fi
     if $IS_EXPERIMENTAL; then
-        warning "Support for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product."
-        newline
+        warning "\nSupport for your operating system is experimental. Please visit"
+        warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
     if [ "$FORCE" != '-y' ]; then
@@ -1118,7 +1111,7 @@ if confirm "Do you wish to continue?"; then
         fi
     fi
 else
-    newline && echo "Aborting..." && newline
+    echo -e "\nAborting...\n"
 fi
 
 exit 0
