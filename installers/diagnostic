@@ -362,13 +362,14 @@ if [ -n $hwver ] && [ $hwver != "0000" ];then
        "0007"|"0008"|"0009") echo "Revision match: Pi 1 Model A 256MB";;
        "000d"|"000e"|"000f") echo "Revision match: Pi 1 Model B 512MB";;
        "0010") echo "Revision match: Pi 1 Model B+ Rev 1.0";;
-       "0011"|"0014") echo "Revision match: Compute Module";;
+       "0011"|"0014") echo "Revision match: Compute Module 1";;
        "0012"|"0015") echo "Revision match: Pi 1 Model A+";;
        "0013") echo "Revision match: Pi 1 Model B+ Rev 1.2";;
        "a01040") echo "Revision match: Pi 2 Model B Rev 1.0";;
        "a01041"|"a21041") echo "Revision match: Pi 2 Model B Rev 1.1";;
        "a22042") echo "Revision match: Pi 2 Model B Rev 1.2";;
-       "a02082"|"a22082") echo "Revision match: Pi 3 Model B Rev 1.2";;
+       "a02082"|"a22082"|"a32082") echo "Revision match: Pi 3 Model B Rev 1.2";;
+       "a020a0") echo "Revision match: Compute Module 3";;
        "900092") echo "Revision match: Pi Zero Rev 1.2";;
        "900093"|"920093") echo "Revision match: Pi Zero Rev 1.3";;
        "9000c1"|"9200c1") echo "Revision match: Pi Zero W Rev 1.1";;
