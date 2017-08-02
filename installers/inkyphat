@@ -70,7 +70,7 @@ examplesdep=( "requests" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705171955
+# template 1708021050
 
 FORCE=$1
 ASK_TO_REBOOT=false
