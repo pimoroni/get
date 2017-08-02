@@ -44,7 +44,7 @@ raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Debian" "Kano" "PiTop" "RetroPie" ) # list experimental os-releases
 osdeny=( "Darwin" "Kali" "Linaro" "Mate" "Ubuntu" "Volumio" ) # list os-releases specifically disallowed
-debpackage="na" # the name of the package in apt repo
+debpackage="unicornhathd" # the name of the package in apt repo
 piplibname="unicornhathd" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
@@ -66,7 +66,7 @@ pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
-examplesdep=( "flask" "numpy" "pil" ) # list of python modules required by examples
+examplesdep=( "flask" "numpy" "picamera" "pil" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
