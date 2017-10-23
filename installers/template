@@ -105,6 +105,8 @@ RPIGPIO1="raspi-gpio_0.20170105_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
+PIP_FORMAT=legacy
+
 # function define
 
 confirm() {
@@ -377,8 +379,6 @@ pip_cmd_chk() {
     elif command -v pip-3.2 > /dev/null; then
         PIP3_BIN="pip-3.2"
     fi
-    PIP2_BIN="$PIP2_BIN --format=legacy"
-    PIP3_BIN="$PIP3_BIN --format=legacy"
 }
 
 pip2_lib_req() {
