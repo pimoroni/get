@@ -29,7 +29,7 @@ debuguser="none" # optional test git user to use in debug mode
 debugpoint="none" # optional git repo branch or tag to checkout
 forcesudo="no" # whether the script requires to be ran with root privileges
 promptreboot="no" # whether the script should always prompt user to reboot
-mininstall="no" # whether the script enforces minimum install routine
+mininstall="yes" # whether the script enforces minimum install routine
 customcmd="yes" # whether to execute commands specified before exit
 gpioreq="no" # whether low-level gpio access is required
 i2creq="no" # whether the i2c interface is required
@@ -44,11 +44,11 @@ raspbianonly="yes" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" ) # list os-releases supported
 oswarning=( "Kano" "Mate" "PiTop" "RetroPie" ) # list experimental os-releases
 osdeny=( "Darwin" "Debian" "Kali" "Linaro" "OSMC"  "Ubuntu" "Volumio" ) # list os-releases specifically disallowed
-debpackage="aptdebname" # the name of the package in apt repo
-piplibname="piplibname" # the name of the lib in pip repo
-pipoverride="yes" # whether the script should give priority to pip repo
-pip2support="yes" # whether python2 is supported
-pip3support="yes" # whether python3 is supported
+debpackage="na" # the name of the package in apt repo
+piplibname="na" # the name of the lib in pip repo
+pipoverride="no" # whether the script should give priority to pip repo
+pip2support="no" # whether python2 is supported
+pip3support="no" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="na" # the name of the dir for copy of resources
 gitreponame="na" # the name of the git project repo
@@ -63,7 +63,7 @@ libdir="na" # subdirectory of library in repo
 copydir=() # subdirectories to copy from repo
 copyhead="yes" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "pulseaudio" ) # list of core dependencies
+coredeplist=( "patch" "pulseaudio" ) # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
@@ -1156,7 +1156,7 @@ EOF
             warning "File $service_file already exists, skipping!"
         else
             inform "Creating Pulse Audio service config $service_file"
-            echo <<EOF
+            $pulse_daemon_config=<<EOF
 [Unit]
 Description=PulseAudio Daemon
 After=sound.target
@@ -1171,7 +1171,8 @@ Type=simple
 PrivateTmp=false
 ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit --log-target=syslog
 ExecStop=/usr/bin/pulseaudio --kill
-EOF | sudo tee /etc/systemd/system/pulseaudio.service
+EOF
+            echo $pulse_daemon_config | sudo tee /etc/systemd/system/pulseaudio.service
             sudo systemctl daemon-reload
             sudo systemctl enable pulseaudio
             sudo systemctl start pulseaudio
