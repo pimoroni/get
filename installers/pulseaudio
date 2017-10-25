@@ -1195,13 +1195,13 @@ EOF
         newline
         if [ -f $conf_file ]; then
             inform "Adding configuration to $conf_file"
-            echo "autospawn = no" | sudo tee --append $conf_file
-            echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file
+            echo "autospawn = no" | sudo tee --append $conf_file &> /dev/null
+            echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file &> /dev/null
         else
             inform "Creating new file $conf_file"
             sudo touch $conf_file
-            echo "autospawn = no" | sudo tee --append $conf_file
-            echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file
+            echo "autospawn = no" | sudo tee --append $conf_file &> /dev/null
+            echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file &> /dev/null
         fi
 
         newline
@@ -1227,11 +1227,14 @@ ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit --log-ta
 ExecStop=/usr/bin/pulseaudio --kill
 EOF
 `
-            echo "$pulse_daemon_config" | sudo tee /etc/systemd/system/pulseaudio.service
+            echo "$pulse_daemon_config" | sudo tee /etc/systemd/system/pulseaudio.service &> /dev/null
             sudo systemctl daemon-reload
             sudo systemctl enable pulseaudio
             sudo systemctl start pulseaudio
         fi
+
+        newline
+        inform "All done!"
     fi
 
     if $FAILED_PKG; then
