@@ -1106,7 +1106,9 @@ if confirm "Do you wish to continue?"; then
             pulse_default_temp=`tempfile`
             pulse_default_bkp=`tempfile`
             cp $default_file $pulse_default_temp
-            patch $pulse_default_temp \
+            if [[ `aplay -L | grep pivumeter` == "" ]]; then
+                # Patch withput Pi VU Meter support
+                patch --quiet $pulse_default_temp \
 <<EOF
 @@ -79,12 +79,12 @@
  .ifexists module-esound-protocol-unix.so
@@ -1133,6 +1135,47 @@ if confirm "Do you wish to continue?"; then
  ### If autoexit on idle is enabled we want to make sure we only quit
  ### when no local session needs us anymore.
 EOF
+            else
+                # Patch with Pi VU Meter support
+                inform "Pi VU Meter detected, using it for default audio sink."
+                patch --quiet $pulse_default_temp \
+<<EOF
+@@ -51,6 +51,9 @@
+ #load-module module-null-sink
+ #load-module module-pipe-sink
+
++### Try to load pivumeter if it exists
++load-module module-alsa-sink device=pivumeter
++
+ ### Automatically load driver modules depending on the hardware available
+ .ifexists module-udev-detect.so
+ load-module module-udev-detect
+@@ -79,12 +82,12 @@
+ .ifexists module-esound-protocol-unix.so
+ load-module module-esound-protocol-unix
+ .endif
+-load-module module-native-protocol-unix
++load-module module-native-protocol-unix auth-anonymous=1 socket=/tmp/pulseaudio.socket
+
+ ### Network access (may be configured with paprefs, so leave this commented
+ ### here if you plan to use paprefs)
+ #load-module module-esound-protocol-tcp
+-#load-module module-native-protocol-tcp
++load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1
+ #load-module module-zeroconf-publish
+
+ ### Load the RTP receiver module (also configured via paprefs, see above)
+@@ -120,7 +123,7 @@
+ load-module module-intended-roles
+
+ ### Automatically suspend sinks/sources that become idle for too long
+-load-module module-suspend-on-idle
++load-module module-suspend-on-idle timeout=604800
+
+ ### If autoexit on idle is enabled we want to make sure we only quit
+ ### when no local session needs us anymore.
+EOF
+            fi
             PATCH_STATUS=$?
             if [ $PATCH_STATUS -eq 0 ]; then
                 inform "Successfully patched $default_file"
