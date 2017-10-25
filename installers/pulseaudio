@@ -1100,9 +1100,13 @@ if confirm "Do you wish to continue?"; then
         conf_file="/etc/pulse/client.conf"
         default_file="/etc/pulse/default.pa"
 
+        newline
         if [ -f $default_file ]; then
             inform "Attempting to patch $default_file"
-            patch $default_file \
+            pulse_default_temp=`tempfile`
+            pulse_default_bkp=`tempfile`
+            cp $default_file $pulse_default_temp
+            patch $pulse_default_temp \
 <<EOF
 @@ -79,12 +79,12 @@
  .ifexists module-esound-protocol-unix.so
@@ -1132,31 +1136,38 @@ EOF
             PATCH_STATUS=$?
             if [ $PATCH_STATUS -eq 0 ]; then
                 inform "Successfully patched $default_file"
+                cp $default_file $pulse_default_bkp
+                inform "Temporary backup copied to $pulse_default_bkp"
+                sudo cp $pulse_default_temp $default_file
+                rm $pulse_default_temp
             else
-            newline
                 warning "Failed to patch $default_file, has it been modified?"
                 warning "Try \"sudo apt purge pulseaudio\" and run this installer again." && exit 1
             fi
+        else
+            warning "Pulse config file $default_file does not exist!"
+            warning "Try \"sudo apt purge pulseaudio\" and run this installer again." && exit 1
         fi
 
+        newline
         if [ -f $conf_file ]; then
             inform "Adding configuration to $conf_file"
             echo "autospawn = no" | sudo tee --append $conf_file
             echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file
         else
-            newline
-            warning "Unable to find $conf_file"
-            warning "Try \"sudo apt purge pulseaudio\" and run this installer again." && exit 1
+            inform "Creating new file $conf_file"
+            sudo touch $conf_file
+            echo "autospawn = no" | sudo tee --append $conf_file
+            echo "default-server = unix:/tmp/pulseaudio.socket" | sudo tee --append $conf_file
         fi
 
         newline
         inform "Configuring Pulse Audio as a service..."
         if [ -f $service_file ]; then
-            newline
             warning "File $service_file already exists, skipping!"
         else
             inform "Creating Pulse Audio service config $service_file"
-            $pulse_daemon_config=<<EOF
+            pulse_daemon_config=`cat <<EOF
 [Unit]
 Description=PulseAudio Daemon
 After=sound.target
@@ -1172,7 +1183,8 @@ PrivateTmp=false
 ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit --log-target=syslog
 ExecStop=/usr/bin/pulseaudio --kill
 EOF
-            echo $pulse_daemon_config | sudo tee /etc/systemd/system/pulseaudio.service
+`
+            echo "$pulse_daemon_config" | sudo tee /etc/systemd/system/pulseaudio.service
             sudo systemctl daemon-reload
             sudo systemctl enable pulseaudio
             sudo systemctl start pulseaudio
