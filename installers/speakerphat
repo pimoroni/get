@@ -1103,8 +1103,7 @@ if confirm "Do you wish to continue?"; then
         if [ $OS_NAME == "Raspbian" ]; then
             kill_volumealsa && disable_pulseaudio
             mkdir -p $USER_HOME/$topdir/$scriptname
-            cp /etc/pulse/default.pa $USER_HOME/$topdir/$scriptname
-            cp /etc/pulse/client.conf $USER_HOME/$topdir/$scriptname
+            cp /etc/pulse/* $USER_HOME/$topdir/$scriptname
             echo -e "\nPulse config backed up to: $USER_HOME/$topdir/$scriptname\n"
             echo -e "\nPurging existing Pulse Audio config...\n"
             sudo apt-get -y purge pulseaudio &> /dev/null
