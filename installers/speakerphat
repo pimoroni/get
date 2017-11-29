@@ -1101,7 +1101,7 @@ if confirm "Do you wish to continue?"; then
         if [ $OS_NAME == "Raspbian" ]; then
             kill_volumealsa && disable_pulseaudio
             echo -e "\nInstalling Pulse Audio...\n"
-            curl -sS $GETPOOL/pulseaudio | sudo bash
+            curl -sS $GETPOOL/pulseaudio | bash -s - "-y"
         fi
         cd $USER_HOME/$topdir
         if [ -d $USER_HOME/$topdir/pivumeter ]; then
