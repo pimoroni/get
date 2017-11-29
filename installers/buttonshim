@@ -105,6 +105,8 @@ RPIGPIO1="raspi-gpio_0.20170105_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
+PIP_FORMAT=legacy
+
 # function define
 
 confirm() {
