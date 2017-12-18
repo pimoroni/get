@@ -1,0 +1,7 @@
+#!/bin/bash
+
+git diff installers/template | tail -n +2 > update.patch
+
+find installers/ -exec patch {} update.patch \;
+
+rm update.patch
