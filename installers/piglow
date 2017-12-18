@@ -254,7 +254,7 @@ raspbian_check() {
         if cat /etc/os-release | grep -q "/sid"; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
         elif cat /etc/os-release | grep -q "stretch"; then
-            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep -q "jessie"; then
             IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep -q "wheezy"; then
