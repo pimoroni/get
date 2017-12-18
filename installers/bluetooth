@@ -103,7 +103,7 @@ SPIDEV3="python3-spidev_2.0~git20150907_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
-PIP_FORMAT=legacy
+export PIP_FORMAT=legacy
 
 # function define
 
