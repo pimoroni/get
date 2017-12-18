@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1705161420
+# template 1712181300
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -83,6 +83,7 @@ UPDATE_DB=false
 AUTOSTART=~/.config/lxsession/LXDE-pi/autostart
 BOOTCMD=/boot/cmdline.txt
 CONFIG=/boot/config.txt
+DTBODIR=/boot/overlays
 APTSRC=/etc/apt/sources.list
 INITABCONF=/etc/inittab
 BLACKLIST=/etc/modprobe.d/raspi-blacklist.conf
@@ -100,6 +101,7 @@ SMBUS35="python3-smbus1_1.1+35dbg-1_armhf.deb"
 SPIDEV2="python-spidev_2.0~git20150907_armhf.deb"
 SPIDEV3="python3-spidev_2.0~git20150907_armhf.deb"
 
+RPIGPIO1="raspi-gpio_0.20170105_armhf.deb"
 RPIGPIO2="python-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 RPIGPIO3="python3-rpi.gpio_0.6.3~jessie-1_armhf.deb"
 
@@ -295,7 +297,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 1 -c 1 8.8.8.8 | grep "1 received" &> /dev/null && return 0 || return 1
+    sudo ping -q -w 10 -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
@@ -315,7 +317,7 @@ get_install() {
     if ! command -v curl > /dev/null; then
         apt_pkg_install "curl"
     fi
-    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y"
+    curl -sS https://get.pimoroni.com/$1 | bash -s - "-y" $2
     read -p "Press Enter to continue..." < /dev/tty
 }
 
@@ -467,6 +469,14 @@ basic_asound() {
         sudo mv $HOME/.asoundrc /etc/asound.conf
 }
 
+config_set() {
+    if [ -n $defaultconf ]; then
+        sudo sed -i "s|$1=.*$|$1=$2|" $defaultconf
+    else
+        sudo sed -i "s|$1=.*$|$1=$2|" $3
+    fi
+}
+
 servd_trig() {
     if command -v service > /dev/null; then
         sudo service $1 $2
@@ -575,7 +585,7 @@ if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
 fi
 
 if $IS_EXPERIMENTAL; then
-    warning "Support for your operating system is experimental. Please visit"
+    warning "\nSupport for your operating system is experimental. Please visit"
     warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
@@ -663,9 +673,15 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         echo -e "\nChecking for packages required for GPIO control..."
+        if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
+            echo "package raspi-gpio can't be found, fetching from alternative location..."
+            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+            wget $RPIPOOL/main/r/raspi-gpio/$RPIGPIO1 &> /dev/null
+            sudo dpkg -i $DEBDIR/$RPIGPIO1 && FAILED_PKG=false
+        fi
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-rpi.gpio can't be found, fetching from alternative location..."
+                echo "package python-rpi.gpio can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO2 && FAILED_PKG=false
@@ -675,7 +691,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-rpi.gpio" &> /dev/null; then
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-rpi.gpio can't be found, fetching from alternative location..."
+                echo "package python3-rpi.gpio can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/r/rpi.gpio/$RPIGPIO3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$RPIGPIO3 && FAILED_PKG=false
@@ -720,7 +736,7 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nChecking packages required by SPI interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-spidev" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-spidev can't be found, fetching from alternative location..."
+                echo "package python-spidev can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/s/spidev/$SPIDEV2 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV2 && FAILED_PKG=false
@@ -730,7 +746,7 @@ if confirm "Do you wish to continue?"; then
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-spidev" &> /dev/null; then
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-spidev can't be found, fetching from alternative location..."
+                echo "package python3-spidev can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/s/spidev/$SPIDEV3 &> /dev/null
                 sudo dpkg -i $DEBDIR/$SPIDEV3 && FAILED_PKG=false
@@ -774,51 +790,47 @@ if confirm "Do you wish to continue?"; then
         fi
         echo -e "\nChecking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
+            FAILED_PKG=false
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
-                echo "python-smbus can't be found, fetching from alternative location..."
+                echo "package python-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
-                sudo dpkg -i $DEBDIR/$SMBUS2 && FAILED_PKG=false
+                sudo dpkg -i $DEBDIR/$SMBUS2 || FAILED_PKG=true
             fi
+            if $FAILED_PKG; then
+                warning "Unable to install smbus for python 2!"
+            else
+                echo -e "Python 2 smbus installed and up-to-date"
+            fi
+        else
+            echo -e "Python 2 smbus installed and up-to-date"
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
+            FAILED_PKG=false
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
-                echo "python3-smbus can't be found, fetching from alternative location..."
+                echo "package python3-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
-                sudo dpkg -i $DEBDIR/$SMBUS3 && FAILED_PKG=false
+                sudo dpkg -i $DEBDIR/$SMBUS3 || FAILED_PKG=true
             elif [ -n $(python3 --version 2>&1 | grep -q "3.5") ]; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
-                    echo "python3-smbus can't be found, fetching from alternative location..."
+                    echo "package python3-smbus can't be found, fetching from alternative location..."
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                     wget $GETPOOL/resources/$SMBUS35 &> /dev/null
-                    sudo dpkg -i $DEBDIR/$SMBUS35 && FAILED_PKG=false
+                    sudo dpkg -i $DEBDIR/$SMBUS35 || FAILED_PKG=true
                 fi
             fi
-        fi
-        if [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
-            if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
-                warning "Unable to install smbus for python 2!" && FAILED_PKG=true
+            if $FAILED_PKG; then
+                warning "Unable to install smbus for python 3!"
             else
-                SMBUS2="install ok installed"
+                echo -e "Python 3 smbus installed and up-to-date"
             fi
-        fi
-        if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
-            if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
-                warning "Unable to install smbus for python 3!" && FAILED_PKG=true
-            else
-                SMBUS3="install ok installed"
-            fi
-        fi
-        if [ "$SMBUS2" == "install ok installed" ] || [ "$SMBUS3" == "install ok installed" ]; then
-            if ! $FAILED_PKG; then
-                echo -e "smbus installed and up-to-date"
-            fi
+        else
+            echo -e "Python 3 smbus installed and up-to-date"
         fi
     fi
 
     if [ $i2sreq == "yes" ]; then
-        add_dtoverlay i2s-mmap
         if [ -f /etc/asound.conf ]; then
             sudo rm -f /etc/asound.conf.backup &> /dev/null
             sudo mv /etc/asound.conf /etc/asound.conf.backup

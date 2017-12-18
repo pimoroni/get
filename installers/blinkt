@@ -70,7 +70,7 @@ examplesdep=( "numpy" "psutil" "requests" "tweepy" ) # list of python modules re
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1708021050
+# template 1712181300
 
 FORCE=$1
 ASK_TO_REBOOT=false

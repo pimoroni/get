@@ -70,7 +70,7 @@ examplesdep=() # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
-# template 1708021050
+# template 1712181300
 
 FORCE=$1
 ASK_TO_REBOOT=false
@@ -790,46 +790,43 @@ if confirm "Do you wish to continue?"; then
         fi
         echo -e "\nChecking packages required by I2C interface..."
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-smbus" &> /dev/null; then
+            FAILED_PKG=false
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then
                 echo "package python-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS2 &> /dev/null
-                sudo dpkg -i $DEBDIR/$SMBUS2 && FAILED_PKG=false
+                sudo dpkg -i $DEBDIR/$SMBUS2 || FAILED_PKG=true
             fi
+            if $FAILED_PKG; then
+                warning "Unable to install smbus for python 2!"
+            else
+                echo -e "Python 2 smbus installed and up-to-date"
+            fi
+        else
+            echo -e "Python 2 smbus installed and up-to-date"
         fi
         if [ "$pip3support" == "yes" ] && ! apt_pkg_install "python3-smbus" &> /dev/null; then
+            FAILED_PKG=false
             if [ -n $(python3 --version 2>&1 | grep -q "3.4") ]; then
                 echo "package python3-smbus can't be found, fetching from alternative location..."
                 DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                 wget $RPIPOOL/main/i/i2c-tools/$SMBUS3 &> /dev/null
-                sudo dpkg -i $DEBDIR/$SMBUS3 && FAILED_PKG=false
+                sudo dpkg -i $DEBDIR/$SMBUS3 || FAILED_PKG=true
             elif [ -n $(python3 --version 2>&1 | grep -q "3.5") ]; then
                 if apt_pkg_req "python3-smbus1" &> /dev/null; then
                     echo "package python3-smbus can't be found, fetching from alternative location..."
                     DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
                     wget $GETPOOL/resources/$SMBUS35 &> /dev/null
-                    sudo dpkg -i $DEBDIR/$SMBUS35 && FAILED_PKG=false
+                    sudo dpkg -i $DEBDIR/$SMBUS35 || FAILED_PKG=true
                 fi
             fi
-        fi
-        if [ "$pip2support" == "yes" ] && [ -f "$(which python2)" ]; then
-            if ! $PIP2_BIN list | grep "smbus" &> /dev/null; then
-                warning "Unable to install smbus for python 2!" && FAILED_PKG=true
+            if $FAILED_PKG; then
+                warning "Unable to install smbus for python 3!"
             else
-                SMBUS2="install ok installed"
+                echo -e "Python 3 smbus installed and up-to-date"
             fi
-        fi
-        if [ "$pip3support" == "yes" ] && [ -f "$(which python3)" ]; then
-            if ! $PIP3_BIN list | grep "smbus" &> /dev/null; then
-                warning "Unable to install smbus for python 3!" && FAILED_PKG=true
-            else
-                SMBUS3="install ok installed"
-            fi
-        fi
-        if [ "$SMBUS2" == "install ok installed" ] || [ "$SMBUS3" == "install ok installed" ]; then
-            if ! $FAILED_PKG; then
-                echo -e "smbus installed and up-to-date"
-            fi
+        else
+            echo -e "Python 3 smbus installed and up-to-date"
         fi
     fi
 
