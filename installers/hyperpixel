@@ -42,8 +42,8 @@ armv7="yes" # whether armv7 processors are supported
 armv8="yes" # whether armv8 processors are supported
 raspbianonly="no" # whether the script is allowed to run on other OSes
 osreleases=( "Raspbian" "RetroPie" ) # list os-releases supported
-oswarning=( "Kano" "PiTop" "Mate" "OSMC" ) # list experimental os-releases
-osdeny=( "Darwin" "Debian" "Ubuntu" "Kali" "Linaro" "Volumio" ) # list os-releases specifically disallowed
+oswarning=( "Kano" "PiTop" "Mate" "OSMC" "Kali" ) # list experimental os-releases
+osdeny=( "Darwin" "Debian" "Ubuntu" "Linaro" "Volumio" ) # list os-releases specifically disallowed
 debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
@@ -1093,6 +1093,9 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nAll done. Enjoy your $productname!\n"
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
+        if [ "$OS_NAME" == "Kali" ]; then
+            touch /boot/config.txt
+        fi
         cd $installdir/$gitclonedir && ./setup.sh -y
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
     fi
