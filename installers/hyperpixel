@@ -1094,7 +1094,7 @@ if confirm "Do you wish to continue?"; then
     else # custom block starts here
         echo -e "\nFinalising Install...\n"
         if [ "$OS_NAME" == "Kali" ]; then
-            touch /boot/config.txt
+            sudo touch /boot/config.txt
         fi
         cd $installdir/$gitclonedir && ./setup.sh -y
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
