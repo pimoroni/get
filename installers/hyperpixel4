@@ -1096,7 +1096,7 @@ if confirm "Do you wish to continue?"; then
         if [ "$OS_NAME" == "Kali" ]; then
             sudo touch /boot/config.txt
         fi
-        cd $installdir/$gitclonedir && ./install.sh
+        cd $installdir/$gitclonedir && sudo ./install.sh
         cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
     fi
 
