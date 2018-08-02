@@ -1099,7 +1099,7 @@ if confirm "Do you wish to continue?"; then
             inform "we can still set up the hardware side for you!"
         fi
         cd $installdir/$gitclonedir
-        ./install.sh
+        sudo ./install.sh
     fi
 
     if $FAILED_PKG; then
