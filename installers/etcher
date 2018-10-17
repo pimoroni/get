@@ -674,11 +674,13 @@ if confirm "Do you wish to continue?"; then
 
     if [ $gpioreq == "yes" ]; then
         echo -e "\nChecking for packages required for GPIO control..."
-        if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
-            echo "package raspi-gpio can't be found, fetching from alternative location..."
-            DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
-            wget $RPIPOOL/main/r/raspi-gpio/$RPIGPIO1 &> /dev/null
-            sudo dpkg -i $DEBDIR/$RPIGPIO1 && FAILED_PKG=false
+        if apt_pkg_req "raspi-gpio"; then
+            if ! apt_pkg_install "raspi-gpio" &> /dev/null; then
+                echo "package raspi-gpio can't be found, fetching from alternative location..."
+                DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX` && cd $DEBDIR
+                wget $RPIPOOL/main/r/raspi-gpio/$RPIGPIO1 &> /dev/null
+                sudo dpkg -i $DEBDIR/$RPIGPIO1 && FAILED_PKG=false
+            fi
         fi
         if [ "$pip2support" == "yes" ] && ! apt_pkg_install "python-rpi.gpio" &> /dev/null; then
             if [ -n $(python --version 2>&1 | grep -q "2.7") ]; then

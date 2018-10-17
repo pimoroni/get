@@ -1,0 +1,4 @@
+#!/bin/bash
+sudo apt purge pulseaudio
+sudo rm -rf /etc/pulse
+sudo rm /etc/systemd/system/pulseaudio.service
