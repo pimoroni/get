@@ -66,7 +66,7 @@ pkgremove=() # list of conflicting packages to remove
 coredeplist=() # list of core dependencies
 pythondep=( "numpy" "pil" ) # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
-examplesdep=( "qrcode" "icalendar" "fonts" "font_hanken_grotesk" "font_intuitive" "font_fredoka_one" "font_source_serif_pro" "font_source_sans_pro" ) # list of python modules required by examples
+examplesdep=( "qrcode" "icalendar" "fonts" "font_hanken_grotesk" "font_intuitive" "font_fredoka_one" "font_source_serif_pro" "font_source_sans_pro" "wikiquotes" ) # list of python modules required by examples
 somemoredep=() # list of additional dependencies
 xdisplaydep=() # list of dependencies requiring X server
 
