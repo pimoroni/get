@@ -1099,7 +1099,7 @@ if confirm "Do you wish to continue?"; then
             sudo touch /boot/config.txt
         fi
         cd $installdir/$gitclonedir && ./setup.sh -y
-        cd $installdir && rm -r $installdir/$gitclonedir &> /dev/null
+        cd $installdir && rm -rf $installdir/$gitclonedir &> /dev/null
     fi
 
     if $FAILED_PKG; then
