@@ -1101,10 +1101,10 @@ if confirm "Do you wish to continue?"; then
         echo -e "Installing shairport-sync...\n"
         DEBDIR=`mktemp -d /tmp/pimoroni.XXXXXX`
         cd $DEBDIR
-        wget -q $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2m-3_armhf.deb
-        wget -q $RASPOOL/main/s/shairport-sync/shairport-sync_2.8.6-1_armhf.deb
-        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2m-3_armhf.deb
-        sudo dpkg -i $DEBDIR/shairport-sync_2.8.6-1_armhf.deb
+        wget -q $RASPOOL/main/o/openssl1.0/libssl1.0.2_1.0.2r-1~deb9u1_armhf.deb
+        wget -q $RASPOOL/main/s/shairport-sync/shairport-sync_3.2.2-1+b2_armhf.deb
+        sudo dpkg -i $DEBDIR/libssl1.0.2_1.0.2r-1~deb9u1_armhf.deb
+        sudo dpkg -i $DEBDIR/shairport-sync_3.2.2-1+b2_armhf.deb
         echo "What product would you like to configure?" && newline
         echo "0 : (leave audio unconfigured)"
         echo "1 : pHAT BEAT"
