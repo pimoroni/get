@@ -613,10 +613,6 @@ if [ $i2sreq == "yes" ]; then
 fi
 
 newline
-if confirm "Are you installing on a Raspberry Pi 4?"; then
-    gitrepobranch="pi4"
-    warning "HyperPixel4 will be installed for Pi 4!"
-fi
 if confirm "Do you wish to continue?"; then
 
 # basic environment preparation
