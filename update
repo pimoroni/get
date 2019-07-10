@@ -1,7 +1,13 @@
 #!/bin/bash
 
-git diff installers/template | tail -n +2 > update.patch
+git diff --no-prefix installers/template > update.patch
 
-find installers/ -exec patch {} update.patch \;
+for FILE in installers/*; do
+
+    REJECT="${FILE/installers/rejected}.rej"
+    printf "Patching $FILE - rejections to $REJECT\n"
+    patch --reject-file=$REJECT --input update.patch $FILE
+
+done
 
 rm update.patch
