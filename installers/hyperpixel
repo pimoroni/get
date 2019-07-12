@@ -613,6 +613,9 @@ if [ $i2sreq == "yes" ]; then
 fi
 
 newline
+warning 'This installer is for the OLD HyperPixel 3.5"'
+warning 'It is not compatible with HyperPixel 4 Rectangular or Weirdly Square.'
+newline
 if confirm "Do you wish to continue?"; then
 
 # basic environment preparation
