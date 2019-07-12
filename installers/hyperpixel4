@@ -613,11 +613,48 @@ if [ $i2sreq == "yes" ]; then
 fi
 
 newline
-if confirm "Are you installing on a Raspberry Pi 4?"; then
-    gitrepobranch="pi4"
-    warning "HyperPixel4 will be installed for Pi 4!"
-fi
+
 if confirm "Do you wish to continue?"; then
+
+    newline
+    echo "Pick your HyperPixel 4 and Raspberry Pi combo below:"
+    echo "0 : Rectangular    - Pi 3B+ or older"
+    echo "1 : Rectangular    - Pi 4"
+    echo "2 : Weirdly Square - Pi 3B+ or older"
+    echo "3 : Weirdly Square - Pi 4"
+    echo "Press Ctrl+C to cancel."
+    newline
+    echo "If you have problems with your install"
+    echo "let us know: https://github.com/pimoroni/hyperpixel4"
+
+while true; do
+    newline
+    read -r -p "Enter an option [0-3]: " choice < /dev/tty
+    newline
+    case $choice in
+        0*)
+            echo "Installing Rectangular for 3B+ or older"
+            gitrepobranch="master";;
+	1*)
+            echo "Installing Rectangular for Pi 4"
+	    gitrepobranch="pi4";;
+	2*)
+            echo "Installing Weirdly Square for 3B+ or older"
+            gitrepobranch="square";;
+	3*)
+            echo "Installing Weirdly Square for Pi 4"
+	    gitrepobranch="square-pi4";;
+	*)
+            echo "Invalid choice: $choice"
+            continue;;
+    esac
+    if confirm "Is this correct?"; then
+        break
+    else
+        continue
+    fi
+done
+
 
 # basic environment preparation
 
