@@ -634,17 +634,17 @@ while true; do
     case $choice in
         0*)
             echo "Installing Rectangular for 3B+ or older"
-            gitrepobranch="master";;
-	1*)
+            gitrepobranch="pi3";;
+        1*)
             echo "Installing Rectangular for Pi 4"
-	    gitrepobranch="pi4";;
-	2*)
+            gitrepobranch="pi4";;
+        2*)
             echo "Installing Weirdly Square for 3B+ or older"
             gitrepobranch="square";;
-	3*)
+        3*)
             echo "Installing Weirdly Square for Pi 4"
-	    gitrepobranch="square-pi4";;
-	*)
+            gitrepobranch="square-pi4";;
+        *)
             echo "Invalid choice: $choice"
             continue;;
     esac
