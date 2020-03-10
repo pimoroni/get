@@ -620,8 +620,9 @@ if confirm "Do you wish to continue?"; then
     echo "Pick your HyperPixel 4 and Raspberry Pi combo below:"
     echo "0 : Rectangular    - Pi 3B+ or older"
     echo "1 : Rectangular    - Pi 4"
-    echo "2 : Weirdly Square - Pi 3B+ or older"
-    echo "3 : Weirdly Square - Pi 4"
+    echo "2 : Rectangular    - Pi 4 - Experimental Touch Fix"
+    echo "3 : Weirdly Square - Pi 3B+ or older"
+    echo "4 : Weirdly Square - Pi 4"
     echo "Press Ctrl+C to cancel."
     newline
     echo "If you have problems with your install"
@@ -639,9 +640,12 @@ while true; do
             echo "Installing Rectangular for Pi 4"
             gitrepobranch="pi4";;
         2*)
+            echo "Installing Rectangular for Pi 4 (Touch Fix)"
+            gitrepobranch="pi4-i2c-fix";;
+        3*)
             echo "Installing Weirdly Square for 3B+ or older"
             gitrepobranch="square";;
-        3*)
+        4*)
             echo "Installing Weirdly Square for Pi 4"
             gitrepobranch="square-pi4";;
         *)
