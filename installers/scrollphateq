@@ -297,7 +297,7 @@ timestamp() {
 }
 
 check_network() {
-    sudo ping -q -w 10 -c 1 8.8.8.8 | grep "received, 0" &> /dev/null && return 0 || return 1
+    sudo ping -q -w 10 -c 1 1.1.1.1 | grep "received, 0" &> /dev/null && return 0 || return 1
 }
 
 launch_url() {
