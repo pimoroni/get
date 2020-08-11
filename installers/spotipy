@@ -1183,9 +1183,9 @@ EOF
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
         sed -i "s|password = passvar$|password = $passvar|" /tmp/mopidy.conf
         read -r -p "Enter your Spotify client_id: " idvar < /dev/tty
-        sed -i "s|password = idvar$|password = $idvar|" /tmp/mopidy.conf
+        sed -i "s|client_id = idvar$|client_id = $idvar|" /tmp/mopidy.conf
         read -r -p "Enter your Spotify client_secret: " secretvar < /dev/tty
-        sed -i "s|password = secretvar$|password = $secretvar|" /tmp/mopidy.conf
+        sed -i "s|client_secret = secretvar$|client_secret = $secretvar|" /tmp/mopidy.conf
         sudo mkdir /etc/mopidy &> /dev/null
         sudo mv -f /tmp/mopidy.conf /etc/mopidy/mopidy.conf
         sudo systemctl enable mopidy
