@@ -1118,7 +1118,7 @@ if confirm "Do you wish to continue?"; then
         sudo -H $PIP3_BIN install "mopidy-iris"
         sudo -H $PIP3_BIN install "mopidy-ttsgpio"
         inform "\nConfiguring mopidy...\n"
-        mkdir -p /var/lib/mopidy/media &> /dev/null
+        sudo -u mopidy mkdir -p /var/lib/mopidy/media &> /dev/null
 cat <<EOF > /tmp/mopidy.conf # Create new config with just the options we need to set
 [core]
 cache_dir = /var/cache/mopidy
