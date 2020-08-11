@@ -1116,7 +1116,7 @@ if confirm "Do you wish to continue?"; then
         apt_pkg_install mopidy-local-sqlite
         apt_pkg_install mopidy-spotify
         sudo rm /etc/apt/sources.list.d/mopidy.list
-        sudo -H $PIP2_BIN install "mopidy-iris"
+        sudo -H $PIP3_BIN install "mopidy-iris"
         sudo -H $PIP2_BIN install "mopidy-ttsgpio"
         inform "\nConfiguring mopidy...\n"
         if [ -f $HOME/.config/mopidy/mopidy.conf ]; then
