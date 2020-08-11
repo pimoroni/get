@@ -1168,7 +1168,6 @@ enabled = true
 
 [file]
 enabled = true
-library = json
 media_dirs = /var/lib/mopidy/media
 
 [alsamixer]
