@@ -63,7 +63,7 @@ libdir="library" # subdirectory of library in repo
 copydir=( "projects" ) # subdirectories to copy from repo
 copyhead="no" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
-coredeplist=() # list of core dependencies
+coredeplist=( "cut" ) # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
@@ -1120,6 +1120,7 @@ if confirm "Do you wish to continue?"; then
         inform "\nConfiguring mopidy...\n"
         sudo -u mopidy mkdir -p /var/lib/mopidy/media &> /dev/null
         sudo usermod -a -G spi,i2c,gpio,video mopidy
+        echo "mopidy ALL=NOPASSWD: $(python3 -m site | grep "/usr/local/lib" | cut -d"'" -f2)/mopidy_iris/system.sh" | sudo tee -a /etc/sudoers > /dev/null
 cat <<EOF > /tmp/mopidy.conf # Create new config with just the options we need to set
 [core]
 cache_dir = /var/cache/mopidy
