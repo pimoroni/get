@@ -1134,8 +1134,8 @@ output = autoaudiosink
 
 [iris]
 enabled = true
-country = CH
-locale = de_CH
+country = GB
+locale = en_GB
 
 [raspberry-gpio]
 enabled = true
