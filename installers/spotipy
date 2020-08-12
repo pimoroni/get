@@ -1129,7 +1129,7 @@ data_dir = /var/lib/mopidy
 
 [audio]
 mixer = software
-mixer_volume = 35
+mixer_volume = 25
 output = autoaudiosink
 
 [iris]
