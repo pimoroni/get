@@ -48,7 +48,7 @@ debpackage="na" # the name of the package in apt repo
 piplibname="na" # the name of the lib in pip repo
 pipoverride="no" # whether the script should give priority to pip repo
 pip2support="yes" # whether python2 is supported
-pip3support="no" # whether python3 is supported
+pip3support="yes" # whether python3 is supported
 topdir="Pimoroni" # the name of the top level directory
 localdir="phatbeat" # the name of the dir for copy of resources
 gitreponame="phat-beat" # the name of the git project repo
@@ -63,7 +63,7 @@ libdir="library" # subdirectory of library in repo
 copydir=( "projects" ) # subdirectories to copy from repo
 copyhead="no" # whether to use the latest repo commit or release tag
 pkgremove=() # list of conflicting packages to remove
-coredeplist=( "patch" ) # list of core dependencies
+coredeplist=( ) # list of core dependencies
 pythondep=() # list of python dependencies
 pipdeplist=() # list of dependencies to source from pypi
 examplesdep=() # list of python modules required by examples
@@ -1108,120 +1108,82 @@ if confirm "Do you wish to continue?"; then
         echo -e "\nFinalising Install...\n"
         echo -e "Setting up spotipy...\n"
         wget -q -O - https://apt.mopidy.com/mopidy.gpg | sudo apt-key add - &> /dev/null
-        sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/jessie.list
+        sudo wget -q -O /etc/apt/sources.list.d/mopidy.list https://apt.mopidy.com/buster.list
         echo "Refreshing sources..."
         UPDATE_DB=false && sysupdate && sleep 5 && newline
         apt_pkg_install mopidy
         apt_pkg_install mopidy-alsamixer
         apt_pkg_install mopidy-local-sqlite
         apt_pkg_install mopidy-spotify
-        sudo rm /etc/apt/sources.list.d/mopidy.list
-        sudo -H $PIP2_BIN install "mopidy-iris"
-        sudo -H $PIP2_BIN install "mopidy-ttsgpio"
+        sudo -H $PIP3_BIN install "mopidy-iris"
+        sudo -H $PIP3_BIN install "mopidy-raspberry-gpio"
         inform "\nConfiguring mopidy...\n"
-        if [ -f $HOME/.config/mopidy/mopidy.conf ]; then
-            rm $HOME/.config/mopidy/mopidy.conf-backup &> /dev/null
-            mv $HOME/.config/mopidy/mopidy.conf $HOME/.config/mopidy/mopidy.conf-backup
-        fi
-        mopidy config > /dev/null # generate fresh config file
-        sed -i -e "s|[[:space:]]*$||" $HOME/.config/mopidy/mopidy.conf # strip trailing spaces
-        echo >> $HOME/.config/mopidy/mopidy.conf # last line workaround
-        patch $HOME/.config/mopidy/mopidy.conf \
-<<EOT
-@@ -25,3 +25,3 @@
--#cache_dir = \$XDG_CACHE_DIR/mopidy
--#config_dir = \$XDG_CONFIG_DIR/mopidy
--#data_dir = \$XDG_DATA_DIR/mopidy
-+cache_dir = /var/cache/mopidy
-+config_dir = /etc/mopidy
-+data_dir = /var/lib/mopidy
-@@ -35,2 +35,2 @@
--#debug_file = mopidy.log
--#config_file =
-+debug_file = /var/log/mopidy/mopidy-debug.log
-+config_file = /etc/mopidy/logging.conf
-@@ -39,3 +39,3 @@
--#mixer = software
--#mixer_volume =
--#output = autoaudiosink
-+mixer = software
-+mixer_volume = 35
-+output = autoaudiosink
-@@ -61,5 +61,5 @@
--[iris]
--#enabled = true
--#pusherport = 6681
--#country = NZ
--#locale = en_NZ
-+[iris]
-+enabled = true
-+pusherport = 6681
-+country = GB
-+locale = en_GB
-@@ -67,9 +67,9 @@
--[ttsgpio]
--#enabled = true
--#debug_gpio_simulate = false
--#pin_button_main = 17
--#pin_button_next = 22
--#pin_button_previous = 23
--#pin_button_vol_up = 24
--#pin_button_vol_down = 25
--#pin_play_led = 18
-+[ttsgpio]
-+enabled = true
-+#debug_gpio_simulate = false
-+pin_button_main = 6
-+pin_button_next = 5
-+pin_button_previous = 13
-+pin_button_vol_up = 16
-+pin_button_vol_down = 26
-+pin_play_led = 20
-@@ -79,3 +79,3 @@
--#enabled = true
--#username =
--#password =
-+enabled = true
-+username = namevar
-+password = passvar
-@@ -125,3 +125,3 @@
--#enabled = true
--#hostname = 127.0.0.1
--#port = 6680
-+enabled = true
-+hostname = ::
-+port = 6680
-@@ -148,1 +148,1 @@
--#playlists_dir =
-+#playlists_dir = /var/lib/mopidy/playlists
-@@ -150,2 +150,2 @@
--[softwaremixer]
--#enabled = true
-+[softwaremixer]
-+enabled = true
-@@ -166,3 +166,3 @@
--#enabled = true
--#library = json
--#media_dir =
-+enabled = true
-+library = json
-+media_dir = /var/lib/mopidy/media
-@@ -183,3 +183,3 @@
--#enabled = true
--#card = 0
--#control = Master
-+enabled = true
-+card = 0
-+control = PCM
-EOT
+        sudo -u mopidy mkdir -p /var/lib/mopidy/media &> /dev/null
+        sudo usermod -a -G spi,i2c,gpio,video mopidy
+        echo "mopidy ALL=NOPASSWD: $(python3 -m site | grep "/usr/local/lib" | cut -d"'" -f2)/mopidy_iris/system.sh" | sudo tee -a /etc/sudoers > /dev/null
+cat <<EOF > /tmp/mopidy.conf # Create new config with just the options we need to set
+[core]
+cache_dir = /var/cache/mopidy
+config_dir = /etc/mopidy
+data_dir = /var/lib/mopidy
+
+[audio]
+mixer = software
+mixer_volume = 25
+output = autoaudiosink
+
+[iris]
+enabled = true
+country = GB
+locale = en_GB
+
+[raspberry-gpio]
+enabled = true
+bcm5 = next,active_low,150
+bcm13 = prev,active_low,150
+bcm6 = play_pause,active_low,150
+bcm26 = volume_down,active_low,150
+bcm16 = volume_up,active_low,150
+
+[spotify]
+enabled = true
+username = namevar
+password = passvar
+client_id = idvar
+client_secret = secretvar
+
+[http]
+enabled = true
+hostname = ::
+port = 6680
+
+[m3u]
+#playlists_dir = /var/lib/mopidy/playlists
+
+[softwaremixer]
+enabled = true
+
+[file]
+enabled = true
+media_dirs = /var/lib/mopidy/media
+
+[alsamixer]
+enabled = true
+card = 0
+control = PCM
+EOF
         newline
+        inform "\nPlease go to https://mopidy.com/ext/spotify/ and generate your client_id and client_secret.\n"
         read -r -p "Enter your Spotify account user name: " namevar < /dev/tty
-        sed -i "s|username = namevar$|username = $namevar|" $HOME/.config/mopidy/mopidy.conf
+        sed -i "s|username = namevar$|username = $namevar|" /tmp/mopidy.conf
         read -r -p "Enter your Spotify account password: " passvar < /dev/tty
-        sed -i "s|password = passvar$|password = $passvar|" $HOME/.config/mopidy/mopidy.conf
+        sed -i "s|password = passvar$|password = $passvar|" /tmp/mopidy.conf
+        read -r -p "Enter your Spotify client_id: " idvar < /dev/tty
+        sed -i "s|client_id = idvar$|client_id = $idvar|" /tmp/mopidy.conf
+        read -r -p "Enter your Spotify client_secret: " secretvar < /dev/tty
+        sed -i "s|client_secret = secretvar$|client_secret = $secretvar|" /tmp/mopidy.conf
         sudo mkdir /etc/mopidy &> /dev/null
-        sudo mv -f $HOME/.config/mopidy/mopidy.conf /etc/mopidy/mopidy.conf
-        mv $HOME/.config/mopidy/mopidy.conf-backup $HOME/.config/mopidy/mopidy.conf &> /dev/null
+        sudo mv -f /tmp/mopidy.conf /etc/mopidy/mopidy.conf
         sudo systemctl enable mopidy
         newline
         echo -e "\nWhat product would you like to configure?\n"
