@@ -628,10 +628,10 @@ if confirm "Do you wish to continue?"; then
     newline
     echo "Pick your HyperPixel 4 and Raspberry Pi combo below:"
     echo "0 : Rectangular    - Pi 3B+ or older"
-    echo "1 : Rectangular    - Pi 4"
-    echo "2 : Rectangular    - Pi 4 - Experimental Touch Fix"
+    echo "1 : Rectangular    - Pi 4 / Pi 400"
+    echo "2 : Rectangular    - Pi 4 / Pi 400 - Experimental Touch Fix"
     echo "3 : Weirdly Square - Pi 3B+ or older"
-    echo "4 : Weirdly Square - Pi 4"
+    echo "4 : Weirdly Square - Pi 4 / Pi 400"
     echo "Press Ctrl+C to cancel."
     newline
     echo "If you have problems with your install"
@@ -639,7 +639,7 @@ if confirm "Do you wish to continue?"; then
 
 while true; do
     newline
-    read -r -p "Enter an option [0-3]: " choice < /dev/tty
+    read -r -p "Enter an option [0-4]: " choice < /dev/tty
     newline
     case $choice in
         0*)
