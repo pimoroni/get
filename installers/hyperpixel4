@@ -623,40 +623,76 @@ fi
 
 newline
 
+function square_date() {
+    echo "When did you purchase your HyperPixel Square?"
+    echo " 0: 2021 or later"
+    echo " 1: 2020 or earlier"
+    echo "Press Ctrl+C to cancel."
+    newline
+    echo "If you're unsure, don't worry, you can change your /boot/config.txt later."
+    newline
+while true; do
+    read -r -p "Enter an option [0-1]: " sdate < /dev/tty
+    newline
+    case $sdate in
+        0*)
+            sdate="-2021"
+	    return;;
+        1*)
+	    sdate=""
+	    return;;
+	*)
+            echo "Invalid choice $sdate"
+    esac
+done
+}
+
 if confirm "Do you wish to continue?"; then
 
+while true; do
     newline
     echo "Pick your HyperPixel 4 and Raspberry Pi combo below:"
-    echo "0 : Rectangular    - Pi 3B+ or older"
-    echo "1 : Rectangular    - Pi 4 / Pi 400"
-    echo "2 : Rectangular    - Pi 4 / Pi 400 - Experimental Touch Fix"
-    echo "3 : Weirdly Square - Pi 3B+ or older"
-    echo "4 : Weirdly Square - Pi 4 / Pi 400"
+    echo " 0 : Rectangular    - Pi 3B+ or older"
+    echo " 1 : Rectangular    - Pi 4 / Pi 400"
+    echo " 2 : Rectangular    - Pi 4 / Pi 400 - Experimental Touch Fix"
+    echo " 3 : Weirdly Square - Pi 3B+ or older"
+    echo " 4 : Weirdly Square - Pi 4 / Pi 400"
     echo "Press Ctrl+C to cancel."
     newline
     echo "If you have problems with your install"
     echo "let us know: https://github.com/pimoroni/hyperpixel4"
-
-while true; do
     newline
     read -r -p "Enter an option [0-4]: " choice < /dev/tty
     newline
     case $choice in
         0*)
-            echo "Installing Rectangular for 3B+ or older"
+            inform "Installing Rectangular for Pi 3B+ or older"
             gitrepobranch="pi3";;
         1*)
-            echo "Installing Rectangular for Pi 4"
+            inform "Installing Rectangular for Pi 4 / Pi 400"
             gitrepobranch="pi4";;
         2*)
-            echo "Installing Rectangular for Pi 4 (Touch Fix)"
+            inform "Installing Rectangular for Pi 4 / Pi 400"
+	    inform "including experimental touch fix (0x14/0x5d i2c address swap)"
             gitrepobranch="pi4-i2c-fix";;
         3*)
-            echo "Installing Weirdly Square for 3B+ or older"
-            gitrepobranch="square";;
+	    square_date
+            inform "Installing Weirdly Square for Pi 3B+ or older"
+	    if [[ "$sdate" -eq "-2021" ]]; then
+                inform "for HP manufactured 2021 or later."
+            else
+                inform "for HP manufactured 2020 or earlier."
+            fi
+            gitrepobranch="square$sdate";;
         4*)
-            echo "Installing Weirdly Square for Pi 4"
-            gitrepobranch="square-pi4";;
+	    square_date
+            inform "Installing Weirdly Square for Pi 4 / Pi 400"
+	    if [[ "$sdate" -eq "-2021" ]]; then
+                inform "for HP manufactured 2021 or later."
+            else
+                inform "for HP manufactured 2020 or earlier."
+            fi
+            gitrepobranch="square-pi4$sdate";;
         *)
             echo "Invalid choice: $choice"
             continue;;
@@ -667,6 +703,9 @@ while true; do
         continue
     fi
 done
+
+echo "Using git branch: $gitrepobranch"
+newline
 
 
 # basic environment preparation
