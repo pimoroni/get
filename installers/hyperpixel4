@@ -652,11 +652,15 @@ if confirm "Do you wish to continue?"; then
 while true; do
     newline
     echo "Pick your HyperPixel 4 and Raspberry Pi combo below:"
-    echo " 0 : Rectangular    - Pi 3B+ or older"
-    echo " 1 : Rectangular    - Pi 4 / Pi 400"
-    echo " 2 : Rectangular    - Pi 4 / Pi 400 - Experimental Touch Fix"
-    echo " 3 : Weirdly Square - Pi 3B+ or older"
-    echo " 4 : Weirdly Square - Pi 4 / Pi 400"
+    echo ""
+    echo "Pi 4 / Pi 400"
+    echo " 0 : Rectangular"
+    echo " 1 : Weirdly Square"
+    echo ""
+    echo "Pi 3B+ or older"
+    echo " 2 : Rectangular"
+    echo " 3 : Weirdly Square"
+    echo ""
     echo "Press Ctrl+C to cancel."
     newline
     echo "If you have problems with your install"
@@ -666,33 +670,29 @@ while true; do
     newline
     case $choice in
         0*)
-            inform "Installing Rectangular for Pi 3B+ or older"
-            gitrepobranch="pi3";;
-        1*)
             inform "Installing Rectangular for Pi 4 / Pi 400"
-            gitrepobranch="pi4";;
-        2*)
-            inform "Installing Rectangular for Pi 4 / Pi 400"
-	    inform "including experimental touch fix (0x14/0x5d i2c address swap)"
             gitrepobranch="pi4-i2c-fix";;
-        3*)
-	    square_date
-            inform "Installing Weirdly Square for Pi 3B+ or older"
-	    if [[ "$sdate" -eq "-2021" ]]; then
-                inform "for HP manufactured 2021 or later."
-            else
-                inform "for HP manufactured 2020 or earlier."
-            fi
-            gitrepobranch="square$sdate";;
-        4*)
-	    square_date
+        1*)
+            square_date
             inform "Installing Weirdly Square for Pi 4 / Pi 400"
-	    if [[ "$sdate" -eq "-2021" ]]; then
+            if [[ "$sdate" -eq "-2021" ]]; then
                 inform "for HP manufactured 2021 or later."
             else
                 inform "for HP manufactured 2020 or earlier."
             fi
             gitrepobranch="square-pi4$sdate";;
+        2*)
+            inform "Installing Rectangular for Pi 3B+ or older"
+            gitrepobranch="pi3";;
+        3*)
+            square_date
+            inform "Installing Weirdly Square for Pi 3B+ or older"
+            if [[ "$sdate" -eq "-2021" ]]; then
+                inform "for HP manufactured 2021 or later."
+            else
+                inform "for HP manufactured 2020 or earlier."
+            fi
+            gitrepobranch="square$sdate";;
         *)
             echo "Invalid choice: $choice"
             continue;;
