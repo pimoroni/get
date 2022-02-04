@@ -899,7 +899,12 @@ if confirm "Do you wish to continue?"; then
     fi
 
     for pkgdep in ${coredeplist[@]}; do
-        if apt_pkg_req "$pkgdep"; then
+        if [[ "$pkgdep" == "wiringpi" ]]; then
+            # todo change to a temporary file
+            wget https://project-downloads.drogon.net/wiringpi-latest.deb
+            sudo dpkg -i wiringpi-latest.deb
+            rm -rf wiringpi-latest.deb
+        elif apt_pkg_req "$pkgdep"; then
             apt_pkg_install "$pkgdep"
         fi
     done
