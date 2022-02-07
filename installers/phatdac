@@ -193,89 +193,9 @@ sysreboot() {
     fi
 }
 
-arch_check() {
-    IS_ARMHF=false
-    IS_ARMv6=false
-
-    if uname -m | grep -q "armv.l"; then
-        IS_ARMHF=true
-        if uname -m | grep -q "armv6l"; then
-            IS_ARMv6=true
-        fi
-    fi
-}
-
-os_check() {
-    IS_MACOSX=false
-    IS_RASPBIAN=false
-    IS_SUPPORTED=false
-    IS_EXPERIMENTAL=false
-    OS_NAME="Unknown"
-
-    if uname -s | grep -q "Darwin"; then
-        OS_NAME="Darwin" && IS_MACOSX=true
-    elif cat /etc/os-release | grep -q "Kali"; then
-        OS_NAME="Kali"
-    elif [ -d ~/.kano-settings ] || [ -d ~/.kanoprofile ]; then
-        OS_NAME="Kano"
-    elif whoami | grep -q "linaro"; then
-        OS_NAME="Linaro"
-    elif [ -d ~/.config/ubuntu-mate ];then
-        OS_NAME="Mate"
-    elif [ -d ~/.pt-os-dashboard ] || [ -d ~/.pt-dashboard ] || [ -f ~/.pt-dashboard-config ]; then
-        OS_NAME="PiTop"
-    elif command -v emulationstation > /dev/null; then
-        OS_NAME="RetroPie"
-    elif cat /etc/os-release | grep -q "OSMC"; then
-        OS_NAME="OSMC"
-    elif cat /etc/os-release | grep -q "volumio"; then
-        OS_NAME="Volumio"
-    elif cat /etc/os-release | grep -q "Raspbian"; then
-        OS_NAME="Raspbian" && IS_RASPBIAN=true
-    elif cat /etc/os-release | grep -q "Debian"; then
-        OS_NAME="Debian"
-    elif cat /etc/os-release | grep -q "Ubuntu"; then
-        OS_NAME="Ubuntu"
-    fi
-
-    if [[ " ${osreleases[@]} " =~ " ${OS_NAME} " ]]; then
-        IS_SUPPORTED=true
-    fi
-    if [[ " ${oswarning[@]} " =~ " ${OS_NAME} " ]]; then
-        IS_EXPERIMENTAL=true
-    fi
-}
-
-raspbian_check() {
-    IS_SUPPORTED=false
-    IS_EXPERIMENTAL=false
-
-    if [ -f /etc/os-release ]; then
-        if cat /etc/os-release | grep -q "/sid"; then
-            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
-        elif cat /etc/os-release | grep -q "bullseye"; then
-            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep -q "buster"; then
-            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep -q "stretch"; then
-            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep -q "jessie"; then
-            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        elif cat /etc/os-release | grep -q "wheezy"; then
-            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
-        else
-            IS_SUPPORTED=false && IS_EXPERIMENTAL=false
-        fi
-    fi
-}
-
 home_dir() {
     if [ $EUID -ne 0 ]; then
-        if $IS_MACOSX; then
-            USER_HOME=$(dscl . -read /Users/$USER NFSHomeDirectory | cut -d: -f2)
-        else
-            USER_HOME=$(getent passwd $USER | cut -d: -f6)
-        fi
+        USER_HOME=$(getent passwd $USER | cut -d: -f6)
     else
         warning "Running as root, please log in as a regular user with sudo rights!"
         echo && exit 1
@@ -283,7 +203,7 @@ home_dir() {
 }
 
 space_chk() {
-    if command -v stat > /dev/null && ! $IS_MACOSX; then
+    if command -v stat > /dev/null; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
             echo
             warning  "There is not enough space left to proceed with  installation"
@@ -538,68 +458,21 @@ else
     if [ "$FORCE" != '-y' ]; then
         inform "\nAlways be careful when running scripts and commands copied"
         inform "from the internet. Ensure they are from a trusted source.\n"
+        warning "This script should -- only be run on a Raspberry Pi --"
+        warning "other systems and SBCs are not supported and may explode!\n"
         echo -e "If you want to see what this script does before running it,"
         echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
     fi
 fi
 
 # checks and init
-
-arch_check
-os_check
 space_chk
 home_dir
 
 if [ $debugmode != "no" ]; then
     echo "USER_HOME is $USER_HOME"
     echo "OS_NAME is $OS_NAME"
-    echo "IS_SUPPORTED is $IS_SUPPORTED"
-    echo "IS_EXPERIMENTAL is $IS_EXPERIMENTAL"
     echo
-fi
-
-if ! $IS_ARMHF; then
-    warning "This hardware is not supported, sorry!"
-    warning "Config files have been left untouched\n"
-    exit 1
-fi
-
-if $IS_ARMv8 && [ $armv8 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer\n"
-    exit 1
-elif $IS_ARMv7 && [ $armv7 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer\n"
-    exit 1
-elif $IS_ARMv6 && [ $armv6 == "no" ]; then
-    warning "Sorry, your CPU is not supported by this installer\n"
-    exit 1
-fi
-
-if [ $raspbianonly == "yes" ] && ! $IS_RASPBIAN;then
-    warning "This script is intended for Raspbian on a Raspberry Pi!\n"
-    exit 1
-fi
-
-if $IS_RASPBIAN; then
-    raspbian_check
-    if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-        warning "\n--- Warning ---\n"
-        echo "The $productname installer"
-        echo "does not work on this version of Raspbian."
-        echo "Check https://github.com/$gitusername/$gitreponame"
-        echo "for additional information and support" && echo
-        exit 1
-    fi
-fi
-
-if ! $IS_SUPPORTED && ! $IS_EXPERIMENTAL; then
-    warning "Your operating system is not supported, sorry!\n"
-    exit 1
-fi
-
-if $IS_EXPERIMENTAL; then
-    warning "\nSupport for your operating system is experimental. Please visit"
-    warning "forums.pimoroni.com if you experience issues with this product.\n"
 fi
 
 if [ $forcesudo == "yes" ]; then
@@ -1135,10 +1008,6 @@ if confirm "Do you wish to continue?"; then
 
     if $FAILED_PKG; then
         warning "\nSome packages could not be installed, review the output for details!\n"
-    fi
-    if $IS_EXPERIMENTAL; then
-        warning "\nSupport for your operating system is experimental. Please visit"
-        warning "forums.pimoroni.com if you experience issues with this product.\n"
     fi
 
     if [ "$FORCE" != '-y' ]; then

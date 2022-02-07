@@ -240,7 +240,7 @@ home_dir() {
 }
 
 space_chk() {
-    if command -v stat > /dev/null && ! $IS_MACOSX; then
+    if command -v stat > /dev/null; then
         if [ $spacereq -gt $(($(stat -f -c "%a*%S" /)/10**6)) ];then
             echo
             warning  "There is not enough space left to proceed with  installation"
