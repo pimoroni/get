@@ -458,7 +458,7 @@ else
     if [ "$FORCE" != '-y' ]; then
         inform "\nAlways be careful when running scripts and commands copied"
         inform "from the internet. Ensure they are from a trusted source.\n"
-        warning "This script should -- only be run on a Raspberry Pi --"
+        warning "This script should -- only be run on a Raspberry Pi with RPi OS --"
         warning "other systems and SBCs are not supported and may explode!\n"
         echo -e "If you want to see what this script does before running it,"
         echo -e "you should run: 'curl $GETPOOL/$scriptname'\n"
