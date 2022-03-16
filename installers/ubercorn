@@ -900,7 +900,7 @@ if confirm "Do you wish to continue?"; then
     if [ -f "$(which python2)" ] && [ $pip2support == "yes" ] && apt_pkg_req "python-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 2..." && newline
-            if ! sudo -H $PIP2_BIN install "$piplibname"; then
+            if ! sudo -H $PIP2_BIN install --upgrade "$piplibname"; then
                 warning "Python 2 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
@@ -911,7 +911,7 @@ if confirm "Do you wish to continue?"; then
     if [ -f "$(which python3)" ] && [ $pip3support == "yes" ] && apt_pkg_req "python3-$debpackage" &> /dev/null; then
         if [ $piplibname != "na" ] && [ $debpackage == "na" ]; then
             newline && echo "Installing $productname library for Python 3..." && newline
-            if ! sudo -H $PIP3_BIN install "$piplibname"; then
+            if ! sudo -H $PIP3_BIN install --upgrade "$piplibname"; then
                 warning "Python 3 library install failed!"
                 echo "If problems persist, visit forums.pimoroni.com for support"
                 exit 1
