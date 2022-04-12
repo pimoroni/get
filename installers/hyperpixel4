@@ -522,6 +522,13 @@ while true; do
 done
 }
 
+newline
+warning "---------------------------------------------------------"
+inform "PSA: The install process has changed!"
+echo "Pi 4 and Pi 3B+ users should read this before continuing:"
+echo "https://github.com/pimoroni/hyperpixel4/issues/177"
+warning "---------------------------------------------------------"
+newline
 if confirm "Do you wish to continue?"; then
 
 while true; do
