@@ -43,7 +43,7 @@ echo "Pi 4 and Pi 3B+ users should read this:"
 echo "https://github.com/pimoroni/hyperpixel4/issues/177"
 newline
 echo "If you're sure you want to install the legacy drivers, use:"
-echo "curl -sSL get.pimoroni.com/hyperpixel-legacy | bash"
+echo "curl -sSL get.pimoroni.com/hyperpixel4-legacy | bash"
 warning "---------------------------------------------------------"
 newline
 
